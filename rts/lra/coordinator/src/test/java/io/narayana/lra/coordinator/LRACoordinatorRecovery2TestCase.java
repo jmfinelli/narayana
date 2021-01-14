@@ -72,7 +72,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(Arquillian.class)
 @RunAsClient
-public class LRACoordinatorRecovery2TestCase extends TestBase {
+public class LRACoordinatorRecovery2TestCase extends FileSystemTestBaseImpl {
     private static final Long LONG_TIMEOUT = TimeoutValueAdjuster.adjustTimeout(600000L); // 10 minutes
     private static final Long SHORT_TIMEOUT = 10000L; // 10 seconds
 

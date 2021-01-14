@@ -71,7 +71,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(Arquillian.class)
 @RunAsClient
-public class LRACoordinatorRecovery1TestCase extends TestBase {
+public class LRACoordinatorRecovery1TestCase extends FileSystemTestBaseImpl {
     private static final Package[] coordinatorPackages = {
             RecoveryModule.class.getPackage(),
             Coordinator.class.getPackage(),
