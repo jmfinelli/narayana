@@ -21,33 +21,14 @@
  */
 package io.narayana.lra.coordinator;
 
-import com.arjuna.ats.arjuna.recovery.RecoveryModule;
-import io.narayana.lra.Current;
-import io.narayana.lra.client.NarayanaLRAClient;
-import io.narayana.lra.client.internal.proxy.nonjaxrs.LRAParticipantRegistry;
-import io.narayana.lra.coordinator.api.Coordinator;
-import io.narayana.lra.LRAData;
-import io.narayana.lra.coordinator.domain.model.LongRunningAction;
-import io.narayana.lra.coordinator.domain.service.LRAService;
-import io.narayana.lra.coordinator.internal.LRARecoveryModule;
-import io.narayana.lra.filter.ServerLRAFilter;
 import io.narayana.lra.logging.LRALogger;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
-import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -69,43 +50,9 @@ import static org.junit.Assert.fail;
 /**
  * Test that check that LRA deadlines are respected during crash recovery
  */
-@RunWith(Arquillian.class)
-@RunAsClient
 public class LRACoordinatorRecovery1TestCase extends FileSystemTestBaseImpl {
-    private static final Package[] coordinatorPackages = {
-            RecoveryModule.class.getPackage(),
-            Coordinator.class.getPackage(),
-            LRAData.class.getPackage(),
-            LRAStatus.class.getPackage(),
-            LRALogger.class.getPackage(),
-            NarayanaLRAClient.class.getPackage(),
-            Current.class.getPackage(),
-            LRAService.class.getPackage(),
-            LRARecoveryModule.class.getPackage(),
-            LongRunningAction.class.getPackage()
-    };
-
-    private static final Package[] participantPackages = {
-            LRAListener.class.getPackage(),
-            LRA.class.getPackage(),
-            ServerLRAFilter.class.getPackage(),
-            LRAParticipantRegistry.class.getPackage()
-    };
 
     private Client client;
-
-    @Deployment(name = COORDINATOR_DEPLOYMENT, testable = false, managed = false)
-    public static WebArchive createDeployment() {
-        // LRA uses ArjunaCore so pull in the jts module to get them on the classpath
-        // (maybe in the future we can add a WFLY LRA subsystem)
-        final String ManifestMF = "Manifest-Version: 1.0\n"
-                + "Dependencies: org.jboss.jts, org.jboss.logging\n";
-        return ShrinkWrap.create(WebArchive.class, COORDINATOR_DEPLOYMENT + ".war")
-                .addPackages(false, coordinatorPackages)
-                .addPackages(false, participantPackages)
-                .addAsManifestResource(new StringAsset(ManifestMF), "MANIFEST.MF")
-                .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
-    }
 
     @Before
     public void before() throws MalformedURLException, URISyntaxException {
