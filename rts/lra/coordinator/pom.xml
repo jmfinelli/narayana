@@ -105,6 +105,14 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-testsuite-shared</artifactId>
+            <!-- TODO: Check with the team what version is more appropriate -->
+            <version>14.0.0.Final</version>
+            <scope>test</scope>
+        </dependency>
+        
     </dependencies>
 
     <build>

@@ -21,6 +21,7 @@
  */
 package io.narayana.lra.coordinator.setup;
 
+import io.narayana.lra.coordinator.util.ServerSnapshot;
 import org.jboss.as.arquillian.api.ServerSetupTask;
 import org.jboss.as.arquillian.container.ManagementClient;
 
@@ -32,8 +33,11 @@ import org.jboss.as.arquillian.container.ManagementClient;
 
 public abstract class AbstractServerSetupTask implements ServerSetupTask {
 
+    private AutoCloseable snapshot;
+
     @Override
     public final void setup(final ManagementClient managementClient, final String containerId) throws Exception {
+        snapshot = ServerSnapshot.takeSnapshot(managementClient);
         doSetup(managementClient);
     }
 
@@ -43,6 +47,7 @@ public abstract class AbstractServerSetupTask implements ServerSetupTask {
     @Override
     public final void tearDown(ManagementClient managementClient, String containerId) throws Exception {
         undoSetup(managementClient);
+        snapshot.close();
     }
 
 }
