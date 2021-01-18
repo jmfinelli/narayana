@@ -33,7 +33,6 @@ public final class MgmtTestBase {
         return client.execute(op);
     }
 
-
     /**
      * Reads attribute from DMR model
      *
