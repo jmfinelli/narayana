@@ -21,13 +21,11 @@
  */
 package io.narayana.lra.coordinator.setup;
 
+import io.narayana.lra.coordinator.AbstractLRATestMgmt;
 import io.narayana.lra.coordinator.util.MgmtTestBase;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
 import org.jboss.as.arquillian.api.ServerSetupTask;
 import org.jboss.as.arquillian.container.ManagementClient;
-import org.jboss.dmr.ModelNode;
 
 /**
  * Implementation of ServerSetupTask for JCA related tests
@@ -38,10 +36,10 @@ import org.jboss.dmr.ModelNode;
 public abstract class AbstractServerSetupTask implements ServerSetupTask {
 
     public static boolean restartNeeded = false;
-    private static final ModelNode DEPLOYMENTS_ADDRESS = new ModelNode().add(SUBSYSTEM, "deployments").add("deployment", DS_NAME);
 
     @Override
     public final void setup(final ManagementClient managementClient, final String containerId) throws Exception {
+        unDeployment(managementClient);
         AbstractServerSetupTask.restartNeeded = doSetup(managementClient);
     }
 
@@ -57,7 +55,7 @@ public abstract class AbstractServerSetupTask implements ServerSetupTask {
     }
 
     private void unDeployment(final ManagementClient managementClient) throws Exception {
-        managementClient.getControllerClient().execute(MgmtTestBase.undeploy(DEPLOYMENTS_ADDRESS));
+        managementClient.getControllerClient().execute(MgmtTestBase.undeploy(AbstractLRATestMgmt.COORDINATOR_DEPLOYMENT + ".war"));
     }
 
 }

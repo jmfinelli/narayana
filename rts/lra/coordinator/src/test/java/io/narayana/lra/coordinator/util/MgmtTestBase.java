@@ -106,10 +106,21 @@ public final class MgmtTestBase {
      * @return result of operation
      * @throws Exception
      */
-    public static final ModelNode undeploy(ModelNode address) throws Exception {
-        ModelNode op = new ModelNode();
-        op.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.UNDEPLOY);
-        op.get(ModelDescriptionConstants.OP_ADDR).set(address);
-        return op;
+    public static final ModelNode undeploy(String deploymentName) throws Exception {
+      ModelNode undeployRequest = new ModelNode();
+      undeployRequest.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.UNDEPLOY);
+      undeployRequest.get(ModelDescriptionConstants.OP_ADDR, "deployment").set(deploymentName);
+
+      ModelNode removeRequest = new ModelNode();
+      removeRequest.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.REMOVE);
+      removeRequest.get(ModelDescriptionConstants.OP_ADDR, "deployment").set(deploymentName);
+
+      ModelNode composite = new ModelNode();
+      composite.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.COMPOSITE);
+      composite.get(ModelDescriptionConstants.OP_ADDR).setEmptyList();
+      final ModelNode steps = composite.get(ModelDescriptionConstants.STEPS);
+      steps.add(undeployRequest);
+      steps.add(removeRequest);
+      return composite;
     }
 }

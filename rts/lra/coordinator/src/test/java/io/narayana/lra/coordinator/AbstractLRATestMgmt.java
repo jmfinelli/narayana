@@ -29,6 +29,7 @@ import io.narayana.lra.coordinator.api.Coordinator;
 import io.narayana.lra.coordinator.domain.model.LongRunningAction;
 import io.narayana.lra.coordinator.domain.service.LRAService;
 import io.narayana.lra.coordinator.internal.LRARecoveryModule;
+import io.narayana.lra.coordinator.setup.AbstractServerSetupTask;
 import io.narayana.lra.filter.ServerLRAFilter;
 import io.narayana.lra.logging.LRALogger;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
@@ -94,7 +95,7 @@ public abstract class AbstractLRATestMgmt {
     }
 
     protected static final String COORDINATOR_CONTAINER = "lra-coordinator";
-    static final String COORDINATOR_DEPLOYMENT = COORDINATOR_CONTAINER;
+    public static final String COORDINATOR_DEPLOYMENT = COORDINATOR_CONTAINER;
     protected NarayanaLRAClient lraClient;
 
     @Rule
@@ -108,6 +109,13 @@ public abstract class AbstractLRATestMgmt {
 
     @Before
     public void before() throws URISyntaxException, MalformedURLException {
+
+        // restart the container
+        if (AbstractServerSetupTask.restartNeeded) {
+            restartContainer();
+            AbstractServerSetupTask.restartNeeded = false;
+        }
+
         LRALogger.logger.debugf("Starting test %s", testName);
         lraClient = new NarayanaLRAClient();
     }

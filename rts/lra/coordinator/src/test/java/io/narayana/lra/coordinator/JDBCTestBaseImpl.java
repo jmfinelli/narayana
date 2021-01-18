@@ -28,7 +28,6 @@ import io.narayana.lra.logging.LRALogger;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.as.arquillian.api.ServerSetup;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -38,10 +37,6 @@ import java.util.List;
 @ServerSetup(ActivateJDBCObjectStore.class)
 @RunAsClient
 public class JDBCTestBaseImpl extends AbstractLRATestMgmt {
-
-    @BeforeClass
-    public static void beforeClass() {
-    }
 
     @Override
     void startContainer(String bytemanScript) {
@@ -66,7 +61,6 @@ public class JDBCTestBaseImpl extends AbstractLRATestMgmt {
         }
 
         for (LRAData lra : LRAList) {
-            lraClient.cancelLRA(lra.getLraId());
             lraClient.closeLRA(lra.getLraId());
         }
     }

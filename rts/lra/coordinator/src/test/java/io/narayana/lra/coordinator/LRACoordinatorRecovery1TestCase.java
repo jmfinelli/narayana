@@ -21,7 +21,6 @@
  */
 package io.narayana.lra.coordinator;
 
-import io.narayana.lra.coordinator.setup.AbstractServerSetupTask;
 import io.narayana.lra.logging.LRALogger;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
@@ -77,10 +76,6 @@ public class LRACoordinatorRecovery1TestCase extends FileSystemTestBaseImpl {
      */
     @Test
     public void testRecovery(@ArquillianResource @OperateOnDeployment(COORDINATOR_DEPLOYMENT) URL deploymentUrl) throws URISyntaxException, InterruptedException {
-
-        if (AbstractServerSetupTask.restartNeeded) {
-            restartContainer();
-        }
 
         String lraId;
         URI lraListenerURI = UriBuilder.fromUri(deploymentUrl.toURI()).path(LRAListener.LRA_LISTENER_PATH).build();

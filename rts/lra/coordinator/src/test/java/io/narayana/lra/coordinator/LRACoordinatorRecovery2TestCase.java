@@ -21,7 +21,6 @@
  */
 package io.narayana.lra.coordinator;
 
-import io.narayana.lra.coordinator.setup.AbstractServerSetupTask;
 import io.narayana.lra.logging.LRALogger;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
@@ -59,7 +58,7 @@ import static org.junit.Assert.fail;
 @RunAsClient
 public class LRACoordinatorRecovery2TestCase extends JDBCTestBaseImpl {
     private static final Long LONG_TIMEOUT = TimeoutValueAdjuster.adjustTimeout(600000L); // 10 minutes
-    private static final Long SHORT_TIMEOUT = 5000L; // 5 seconds
+    private static final Long SHORT_TIMEOUT = 10000L; // 10 seconds
 
     private Client client;
 
@@ -86,11 +85,6 @@ public class LRACoordinatorRecovery2TestCase extends JDBCTestBaseImpl {
      */
     @Test
     public void testRecovery2(@ArquillianResource @OperateOnDeployment(COORDINATOR_DEPLOYMENT) URL deploymentUrl) throws URISyntaxException, InterruptedException {
-
-        // restart the container
-        if (AbstractServerSetupTask.restartNeeded) {
-            restartContainer();
-        }
 
         URI lraListenerURI = UriBuilder.fromUri(deploymentUrl.toURI()).path(LRAListener.LRA_LISTENER_PATH).build();
 

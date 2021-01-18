@@ -13,7 +13,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
 
@@ -33,18 +32,6 @@ public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
 
     }
 
-    @Override
-    public void undoSetup(ManagementClient managementClient) throws Exception {
-        super.undoSetup(managementClient);
-
-        //ModelControllerClient client = managementClient.getControllerClient();
-
-        //deactivateJDBCObjectStore(client);
-        //removeDatasource(client);
-
-        //mgmtUtil.restart(client);
-    }
-
     private void createDatasource(ModelControllerClient client) throws Exception {
 
         ModelNode addOperation = new ModelNode();
@@ -56,7 +43,6 @@ public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
         addOperation.get("enabled").set("true");
         addOperation.get("user-name").set("sa");
         addOperation.get("password").set("sa");
-        //addOperation.get("connection-url").set("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
         addOperation.get("connection-url").set("jdbc:h2:${jboss.home.dir}/standalone/data/test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
         addOperation.get("use-java-context").set("true");
         addOperation.get("jta").set("false");
