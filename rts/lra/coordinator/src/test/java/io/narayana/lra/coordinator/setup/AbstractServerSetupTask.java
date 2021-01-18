@@ -21,9 +21,13 @@
  */
 package io.narayana.lra.coordinator.setup;
 
-import io.narayana.lra.coordinator.util.ServerSnapshot;
+import io.narayana.lra.coordinator.util.MgmtTestBase;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+
 import org.jboss.as.arquillian.api.ServerSetupTask;
 import org.jboss.as.arquillian.container.ManagementClient;
+import org.jboss.dmr.ModelNode;
 
 /**
  * Implementation of ServerSetupTask for JCA related tests
@@ -33,21 +37,27 @@ import org.jboss.as.arquillian.container.ManagementClient;
 
 public abstract class AbstractServerSetupTask implements ServerSetupTask {
 
-    private AutoCloseable snapshot;
+    public static boolean restartNeeded = false;
+    private static final ModelNode DEPLOYMENTS_ADDRESS = new ModelNode().add(SUBSYSTEM, "deployments").add("deployment", DS_NAME);
 
     @Override
     public final void setup(final ManagementClient managementClient, final String containerId) throws Exception {
-        snapshot = ServerSnapshot.takeSnapshot(managementClient);
-        doSetup(managementClient);
+        AbstractServerSetupTask.restartNeeded = doSetup(managementClient);
     }
-
-    public abstract void doSetup(final ManagementClient managementClient) throws Exception;
-    public abstract void undoSetup(final ManagementClient managementClient) throws Exception;
 
     @Override
     public final void tearDown(ManagementClient managementClient, String containerId) throws Exception {
         undoSetup(managementClient);
-        snapshot.close();
+    }
+
+    public abstract boolean doSetup(final ManagementClient managementClient) throws Exception;
+
+    public void undoSetup(final ManagementClient managementClient) throws Exception {
+        unDeployment(managementClient);
+    }
+
+    private void unDeployment(final ManagementClient managementClient) throws Exception {
+        managementClient.getControllerClient().execute(MgmtTestBase.undeploy(DEPLOYMENTS_ADDRESS));
     }
 
 }

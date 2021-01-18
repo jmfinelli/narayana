@@ -21,8 +21,8 @@
  */
 package io.narayana.lra.coordinator;
 
-import io.narayana.lra.coordinator.domain.model.LongRunningAction;
-import io.narayana.lra.coordinator.setup.DeactivateJDBCObjectStore;
+import io.narayana.lra.LRAData;
+import io.narayana.lra.coordinator.setup.ActivateJDBCObjectStore;
 import io.narayana.lra.logging.LRALogger;
 
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -31,63 +31,58 @@ import org.jboss.as.arquillian.api.ServerSetup;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(Arquillian.class)
-@ServerSetup(DeactivateJDBCObjectStore.class)
+@ServerSetup(ActivateJDBCObjectStore.class)
 @RunAsClient
-public class FileSystemTestBaseImpl extends AbstractLRATestMgmt {
-
-    private static Path storeDir;
+public class JDBCTestBaseImpl extends AbstractLRATestMgmt {
 
     @BeforeClass
     public static void beforeClass() {
-        storeDir = Paths.get(String.format("%s/standalone/data/tx-object-store", System.getProperty("env.JBOSS_HOME", "null")));
     }
-
-
 
     @Override
     void startContainer(String bytemanScript) {
 
-        // Files are available before the container starts
-        this.clearRecoveryLog();
-
         super.startContainer(bytemanScript);
+
+        // To clear the recovery log from the H2 database, the LRA coordinator
+        // needs to be up and running
+        clearRecoveryLog();
     }
-
-
 
     @Override
     void clearRecoveryLog() {
-        try (Stream<Path> recoveryLogFiles = Files.walk(storeDir)) {
-            recoveryLogFiles
-                    .sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-        } catch (IOException ioe) {
-            // transaction logs will only exists after there has been a previous run
-            LRALogger.logger.debugf(ioe,"Cannot finish delete operation on recovery log dir '%s'", storeDir);
+
+        List<LRAData> LRAList = new ArrayList<>();
+
+        try {
+        LRAList = lraClient.getAllLRAs();
+        } catch (Exception ex) {
+         // transaction logs will only exists after there has been a previous run
+            LRALogger.logger.debugf(ex,"Cannot fetch LRAs through the client");
+        }
+
+        for (LRAData lra : LRAList) {
+            lraClient.cancelLRA(lra.getLraId());
+            lraClient.closeLRA(lra.getLraId());
         }
     }
 
     @Override
     String getFirstLRA() {
-        Path lraDir = Paths.get(storeDir.toString(), "ShadowNoFileLockStore", "defaultStore", LongRunningAction.getType());
+
+        List<LRAData> LRAList = new ArrayList<>();
 
         try {
-            Optional<Path> lra = Files.list(new File(lraDir.toString()).toPath()).findFirst();
-
-            return lra.map(path -> path.getFileName().toString()).orElse(null);
-        } catch (IOException e) {
-            return null;
+        LRAList = lraClient.getAllLRAs();
+        } catch (Exception ex) {
+         // transaction logs will only exists after there has been a previous run
+            LRALogger.logger.debugf(ex,"Cannot fetch LRAs through the client");
         }
+
+        return (LRAList.isEmpty() ? null : LRAList.get(0).getLraIdAsString());
     }
 }
