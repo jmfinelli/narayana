@@ -24,14 +24,11 @@ package io.narayana.lra.coordinator;
 import io.narayana.lra.logging.LRALogger;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -54,9 +51,8 @@ import static org.junit.Assert.fail;
 /**
  * Test that check that LRA deadlines are respected during crash recovery
  */
-@RunWith(Arquillian.class)
-@RunAsClient
-public class LRACoordinatorRecovery2TestCase extends JDBCTestBaseImpl {
+public class LRACoordinatorRecovery2TestCase extends TestBase {
+
     private static final Long LONG_TIMEOUT = TimeoutValueAdjuster.adjustTimeout(600000L); // 10 minutes
     private static final Long SHORT_TIMEOUT = 10000L; // 10 seconds
 

@@ -29,16 +29,19 @@ import io.narayana.lra.coordinator.api.Coordinator;
 import io.narayana.lra.coordinator.domain.model.LongRunningAction;
 import io.narayana.lra.coordinator.domain.service.LRAService;
 import io.narayana.lra.coordinator.internal.LRARecoveryModule;
-import io.narayana.lra.coordinator.setup.AbstractServerSetupTask;
+import io.narayana.lra.coordinator.setup.ServerSetupTaskContext;
 import io.narayana.lra.filter.ServerLRAFilter;
 import io.narayana.lra.logging.LRALogger;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
-import org.jboss.arquillian.container.test.api.Config;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.jboss.arquillian.container.test.api.Config;
+import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.as.arquillian.api.ServerSetup;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
@@ -50,6 +53,7 @@ import org.junit.Rule;
 import org.junit.rules.TestName;
 
 import com.arjuna.ats.arjuna.recovery.RecoveryModule;
+import org.junit.runner.RunWith;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
@@ -58,8 +62,13 @@ import javax.ws.rs.core.Response;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
-public abstract class AbstractLRATestMgmt {
+@RunWith(Arquillian.class)
+@ServerSetup(ServerSetupTaskContext.class)
+@RunAsClient
+public abstract class TestBase {
 
     private static final Package[] coordinatorPackages = {
             RecoveryModule.class.getPackage(),
@@ -111,9 +120,9 @@ public abstract class AbstractLRATestMgmt {
     public void before() throws URISyntaxException, MalformedURLException {
 
         // restart the container
-        if (AbstractServerSetupTask.restartNeeded) {
+        if (ServerSetupTaskContext.restartNeeded) {
             restartContainer();
-            AbstractServerSetupTask.restartNeeded = false;
+            ServerSetupTaskContext.restartNeeded = false;
         }
 
         LRALogger.logger.debugf("Starting test %s", testName);
@@ -140,6 +149,10 @@ public abstract class AbstractLRATestMgmt {
 
         containerController.start(COORDINATOR_CONTAINER, config.map());
         deployer.deploy(COORDINATOR_DEPLOYMENT);
+
+        // To clear transactions from the log store, the LRA coordinator
+        // needs to be up and running
+        clearRecoveryLog();
     }
 
     void restartContainer() {
@@ -202,7 +215,34 @@ public abstract class AbstractLRATestMgmt {
         }
     }
 
-    abstract void clearRecoveryLog();
+    void clearRecoveryLog() {
 
-    abstract String getFirstLRA();
+        List<LRAData> LRAList = new ArrayList<>();
+
+        try {
+            LRAList = lraClient.getAllLRAs();
+        } catch (Exception ex) {
+            // transaction logs will only exists after there has been a previous run
+            LRALogger.logger.debugf(ex,"Cannot fetch LRAs through the client");
+        }
+
+        for (LRAData lra : LRAList) {
+            lraClient.closeLRA(lra.getLraId());
+        }
+    }
+
+    String getFirstLRA() {
+
+        List<LRAData> LRAList = new ArrayList<>();
+
+        try {
+            LRAList = lraClient.getAllLRAs();
+        } catch (Exception ex) {
+            // transaction logs will only exists after there has been a previous run
+            LRALogger.logger.debugf(ex,"Cannot fetch LRAs through the client");
+        }
+
+        return (LRAList.isEmpty() ? null : LRAList.get(0).getLraIdAsString());
+    }
+
 }

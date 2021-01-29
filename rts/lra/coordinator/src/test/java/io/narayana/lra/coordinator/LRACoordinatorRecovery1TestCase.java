@@ -50,7 +50,7 @@ import static org.junit.Assert.fail;
 /**
  * Test that check that LRA deadlines are respected during crash recovery
  */
-public class LRACoordinatorRecovery1TestCase extends FileSystemTestBaseImpl {
+public class LRACoordinatorRecovery1TestCase extends TestBase {
 
     private Client client;
 

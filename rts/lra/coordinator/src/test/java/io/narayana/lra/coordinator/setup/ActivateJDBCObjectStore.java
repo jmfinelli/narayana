@@ -4,8 +4,10 @@ import org.jboss.as.arquillian.container.ManagementClient;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 
-import io.narayana.lra.coordinator.util.MgmtTestBase;
+import java.io.IOException;
+import java.util.function.Function;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -14,7 +16,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 
-public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
+public class ActivateJDBCObjectStore extends DMRTaskBase implements Function<ManagementClient, Boolean> {
 
     private static final String DS_JNDI_NAME = "java:jboss/datasources/TestDatasource";
     private static final String DS_NAME = "TestDatasource";
@@ -23,16 +25,21 @@ public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
     private static final ModelNode TRANSACTIONS_ADDRESS = new ModelNode().add(SUBSYSTEM, "transactions");
 
     @Override
-    public boolean doSetup(final ManagementClient managementClient) throws Exception {
+    public Boolean apply(ManagementClient managementClient) {
 
         ModelControllerClient client = managementClient.getControllerClient();
 
-        createDatasource(client);
-        return activateJDBCObjectStore(client);
-
+        try {
+            createDatasource(client);
+            return activateJDBCObjectStore(client);
+        } catch (IOException ex) {
+            ex.getCause();
+            Assert.fail("An issue ");
+            return false;
+        }
     }
 
-    private void createDatasource(ModelControllerClient client) throws Exception {
+    private void createDatasource(ModelControllerClient client) throws IOException {
 
         ModelNode addOperation = new ModelNode();
         addOperation.get(OP).set(ADD);
@@ -50,15 +57,15 @@ public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
         client.execute(addOperation);
     }
 
-    private boolean activateJDBCObjectStore(ModelControllerClient client) throws Exception {
+    private boolean activateJDBCObjectStore(ModelControllerClient client) throws IOException {
 
         // Force Narayana to use JDBC as Object Store
-        ModelNode addDataSource = MgmtTestBase.writeAttribute(
+        ModelNode addDataSource = DMRTaskBase.writeAttribute(
                 TRANSACTIONS_ADDRESS,
                 "jdbc-store-datasource",
                 DS_JNDI_NAME);
 
-        ModelNode activateJDBC = MgmtTestBase.writeAttribute(
+        ModelNode activateJDBC = DMRTaskBase.writeAttribute(
                 TRANSACTIONS_ADDRESS,
                 "use-jdbc-store",
                 "true");
@@ -78,7 +85,7 @@ public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
         return false;
     }
 
-    private ModelNode removeDatasource(ModelControllerClient client) throws Exception {
+    private ModelNode removeDatasource(ModelControllerClient client) throws IOException {
 
         ModelNode removeOperation = new ModelNode();
         removeOperation.get(OP).set(REMOVE);
@@ -86,9 +93,9 @@ public class ActivateJDBCObjectStore extends AbstractServerSetupTask {
         return client.execute(removeOperation);
     }
 
-    private void deactivateJDBCObjectStore(ModelControllerClient client) throws Exception {
+    private void deactivateJDBCObjectStore(ModelControllerClient client) throws IOException {
 
-        client.execute(MgmtTestBase.writeAttribute(
+        client.execute(DMRTaskBase.writeAttribute(
                 TRANSACTIONS_ADDRESS,
                 "use-jdbc-store",
                 "false"));

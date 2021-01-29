@@ -1,8 +1,7 @@
-package io.narayana.lra.coordinator.util;
+package io.narayana.lra.coordinator.setup;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -10,16 +9,7 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="mailto:jfinelli@redhat.com">Manuel Finelli</a>
  */
 
-public final class MgmtTestBase {
-
-    /**
-     * Provide reload operation on server
-     *
-     * @throws Exception
-     */
-    public static void reload(ModelControllerClient client) throws Exception {
-        ServerReload.executeReloadAndWaitForCompletion(client, 50000);
-    }
+public class DMRTaskBase {
 
     /**
      * Provide restart operation on server
@@ -36,12 +26,11 @@ public final class MgmtTestBase {
     /**
      * Reads attribute from DMR model
      *
-     * @param address to read
+     * @param address
      * @param attributeName
-     * @return attribute value
-     * @throws Exception
+     * @return ModelNode to be executed by the client
      */
-    public static final ModelNode readAttribute(ModelNode address, String attributeName) throws Exception {
+    public static final ModelNode readAttribute(ModelNode address, String attributeName) {
         ModelNode op = new ModelNode();
         op.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION);
         op.get(ModelDescriptionConstants.NAME).set(attributeName);
@@ -52,13 +41,12 @@ public final class MgmtTestBase {
     /**
      * Writes attribute value
      *
-     * @param address to write
+     * @param address
      * @param attributeName
      * @param attributeValue
-     * @return result of operation
-     * @throws Exception
+     * @return ModelNode to be executed by the client
      */
-    public static final ModelNode writeAttribute(ModelNode address, String attributeName, String attributeValue) throws Exception {
+    public static final ModelNode writeAttribute(ModelNode address, String attributeName, String attributeValue) {
         ModelNode op = new ModelNode();
         op.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
         op.get(ModelDescriptionConstants.NAME).set(attributeName);
@@ -70,12 +58,10 @@ public final class MgmtTestBase {
     /**
      * Remove Operation
      *
-     * @param address to write
-     * @param attributeName
-     * @return result of operation
-     * @throws Exception
+     * @param address
+     * @return ModelNode to be executed by the client
      */
-    public static final ModelNode remove(ModelNode address) throws Exception {
+    public static final ModelNode remove(ModelNode address) {
         ModelNode op = new ModelNode();
         op.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.REMOVE);
         op.get(ModelDescriptionConstants.OP_ADDR).set(address);
@@ -85,13 +71,10 @@ public final class MgmtTestBase {
     /**
      * Remove Operation
      *
-     * @param address to write
-     * @param attributeName
-     * @param attributeValue
-     * @return result of operation
-     * @throws Exception
+     * @param address
+     * @return ModelNode to be executed by the client
      */
-    public static final ModelNode remove(ModelNode address, String attributeName) throws Exception {
+    public static final ModelNode remove(ModelNode address, String attributeName) {
         ModelNode op = remove(address);
         op.get(ModelDescriptionConstants.NAME).set(attributeName);
         return op;
@@ -100,12 +83,10 @@ public final class MgmtTestBase {
     /**
      * Undeploy Operation
      *
-     * @param address to write
-     * @param attributeName
-     * @return result of operation
-     * @throws Exception
+     * @param deploymentName
+     * @return ModelNode to be executed by the client
      */
-    public static final ModelNode undeploy(String deploymentName) throws Exception {
+    public static final ModelNode undeploy(String deploymentName) {
       ModelNode undeployRequest = new ModelNode();
       undeployRequest.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.UNDEPLOY);
       undeployRequest.get(ModelDescriptionConstants.OP_ADDR, "deployment").set(deploymentName);

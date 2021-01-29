@@ -5,33 +5,35 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 
-import io.narayana.lra.coordinator.util.MgmtTestBase;
+import java.io.IOException;
+import java.util.function.Function;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 
-public class DeactivateJDBCObjectStore extends AbstractServerSetupTask {
+public class DeactivateJDBCObjectStore extends DMRTaskBase implements Function<ManagementClient, Boolean> {
 
     private static final ModelNode TRANSACTIONS_ADDRESS = new ModelNode().add(SUBSYSTEM, "transactions");
 
     @Override
-    public boolean doSetup(final ManagementClient managementClient) throws Exception {
+    public Boolean apply(ManagementClient managementClient) {
 
         ModelControllerClient client = managementClient.getControllerClient();
 
-        return deactivateJDBCObjectStore(client);
+        try {
+            return deactivateJDBCObjectStore(client);
+        } catch (IOException ex) {
+            return false;
+        }
     }
 
-    private boolean deactivateJDBCObjectStore(ModelControllerClient client) throws Exception {
+    private boolean deactivateJDBCObjectStore(ModelControllerClient client) throws IOException {
 
         // Force Narayana to use the default Object Store (FileSystem)
-        ModelNode changeDefaultObjectStore = MgmtTestBase.remove(
+        ModelNode changeDefaultObjectStore = DMRTaskBase.remove(
                 TRANSACTIONS_ADDRESS,
                 "jdbc-store-datasource");
 
-        ModelNode deactivateJDBCObjectStore = MgmtTestBase.writeAttribute(
+        ModelNode deactivateJDBCObjectStore = DMRTaskBase.writeAttribute(
                 TRANSACTIONS_ADDRESS,
                 "use-jdbc-store",
                 "false");
