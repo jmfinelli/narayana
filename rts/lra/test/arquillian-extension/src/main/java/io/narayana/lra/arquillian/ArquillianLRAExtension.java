@@ -22,6 +22,8 @@
 
 package io.narayana.lra.arquillian;
 
+import io.narayana.lra.arquillian.appender.ConfigAuxiliaryArchiveAppender;
+import io.narayana.lra.arquillian.observer.AppServerCoordinatorDeploymentObserver;
 import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 

@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package io.narayana.lra.arquillian;
+package io.narayana.lra.arquillian.appender;
 
 import io.narayana.lra.arquillian.spi.NarayanaLRARecovery;
 import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;

@@ -20,26 +20,16 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package io.narayana.lra.arquillian.api;
+package io.narayana.lra.arquillian;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.narayana.lra.arquillian.deployment.scenario.LRACoordinatorScenarioGenerator;
+import org.jboss.arquillian.container.test.spi.client.deployment.DeploymentScenarioGenerator;
+import org.jboss.arquillian.core.spi.LoadableExtension;
 
-/**
- * Annotations used within JUnit rule {@link ValidTestVersionsRule}.
- *
- * The annotation is used to limit the test method execution for particular API version values.
- *
- * The {@link ValidTestVersionsRule} verifies what is content of the {@code version} field in test class
- * and then checks if {@code version} matches to values in the annotation.
- * When it matches the test method is executed, if it does not match then the test method is skipped.
- */
-@Inherited
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
-public @interface ValidTestVersions {
-    String[] value();
+public class LRACoordinatorExtension implements LoadableExtension {
+
+    @Override
+    public void register(ExtensionBuilder extensionBuilder) {
+        extensionBuilder.service(DeploymentScenarioGenerator.class, LRACoordinatorScenarioGenerator.class);
+    }
 }

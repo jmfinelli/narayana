@@ -312,5 +312,6 @@
         <module>tck</module>
         <module>basic</module>
         <module>arquillian-extension</module>
+        <module>unmanaged</module>
     </modules>
 </project>
