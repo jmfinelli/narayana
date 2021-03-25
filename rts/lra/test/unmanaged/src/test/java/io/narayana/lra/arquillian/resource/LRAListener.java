@@ -27,6 +27,7 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -37,32 +38,59 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT
 public class LRAListener {
     public static final String LRA_LISTENER_PATH = "lra-listener";
     public static final String LRA_LISTENER_ACTION = "action";
-    public static final String LRA_LISTENER_UNTIMED_ACTION = "untimed";
+    public static final String LRA_LISTENER_ACTION_KILL = "killerAction";
+    public static final String LRA_LISTENER_UNTIMED_ACTION = "untimedAction";
+    public static final String LRA_LISTENER_UNTIMED_ACTION_KILL = "killerUntimedAction";
     public static final String LRA_LISTENER_STATUS = "status";
-    public static final String LRA_LISTENER_KILL = "kill";
+    public static final long LRA_SHORT_TIMELIMIT = 5L;
 
-    static final long LRA_SHORT_TIMELIMIT = 10L;
-    private static LRAStatus status = LRAStatus.Active;
+    private static LRAStatus status;
 
-    @GET
+    @PUT
     @Path(LRA_LISTENER_ACTION)
     @LRA(value = LRA.Type.REQUIRED, end = false, timeLimit = LRA_SHORT_TIMELIMIT) // the default unit is SECONDS
     public Response actionWithLRA(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+
         status = LRAStatus.Active;
 
         return Response.ok(lraId.toASCIIString()).build();
     }
 
-    @GET
+    @PUT
+    @Path(LRA_LISTENER_ACTION_KILL)
+    @LRA(value = LRA.Type.REQUIRED, end = false, timeLimit = LRA_SHORT_TIMELIMIT) // the default unit is SECONDS
+    public Response actionWithLRAkillJVM(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+
+        status = LRAStatus.Active;
+
+        Runtime.getRuntime().halt(1);
+
+        return Response.ok(lraId.toASCIIString()).build();
+    }
+
+    @PUT
     @Path(LRA_LISTENER_UNTIMED_ACTION)
     @LRA(value = LRA.Type.REQUIRED, end = false)
     public Response untimedActionWithLRA(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+
         status = LRAStatus.Active;
 
         return Response.ok(lraId.toASCIIString()).build();
     }
 
-    @GET
+    @PUT
+    @Path(LRA_LISTENER_UNTIMED_ACTION_KILL)
+    @LRA(value = LRA.Type.REQUIRED, end = false)
+    public Response untimedActionWithLRAkillJVM(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+
+        status = LRAStatus.Active;
+
+        Runtime.getRuntime().halt(1);
+
+        return Response.ok(lraId.toASCIIString()).build();
+    }
+
+    @PUT
     @Path("after")
     @AfterLRA
     public Response lraEndStatus(LRAStatus endStatus) {
@@ -74,13 +102,6 @@ public class LRAListener {
     @GET
     @Path(LRA_LISTENER_STATUS)
     public Response getStatus() {
-        return Response.ok(status.name()).build();
-    }
-
-    @GET
-    @Path(LRA_LISTENER_KILL)
-    public Response killJVM() {
-        Runtime.getRuntime().halt(1);
-        return Response.ok(status.name()).build();
+        return Response.ok(status != null ? status.name() : LRAStatus.FailedToCancel).build();
     }
 }

@@ -22,9 +22,7 @@
 
 package io.narayana.lra.arquillian;
 
-import io.narayana.lra.Current;
-import io.narayana.lra.LRAData;
-import io.narayana.lra.arquillian.resource.LRAListener;
+import io.narayana.lra.AnnotationResolver;
 import io.narayana.lra.client.NarayanaLRAClient;
 import io.narayana.lra.client.internal.proxy.nonjaxrs.LRAParticipantRegistry;
 import io.narayana.lra.filter.ServerLRAFilter;
@@ -40,42 +38,26 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 public class Deployer {
 
-    private static final Package[] coordinatorPackages = {
-            LRAData.class.getPackage(),
+    private static final Package[] participantPackages = {
+            LRA.class.getPackage(),
             LRAStatus.class.getPackage(),
+            LRAMetricService.class.getPackage(),
+            ServerLRAFilter.class.getPackage(),
+            AnnotationResolver.class.getPackage(),
             LRALogger.class.getPackage(),
             NarayanaLRAClient.class.getPackage(),
-            Current.class.getPackage()
-    };
-
-    private static final Package[] participantPackages = {
-            LRAListener.class.getPackage(),
-            LRA.class.getPackage(),
-            ServerLRAFilter.class.getPackage(),
             LRAParticipantRegistry.class.getPackage()
     };
 
-    public static WebArchive deploy(String appName) {
-        // manifest for WildFly deployment which requires access to transaction jboss module
-        final String ManifestMF = "Manifest-Version: 1.0\n"
-            + "Dependencies: org.jboss.jts, org.jboss.logging\n";
+    public static WebArchive createDeployment(String appName, Class<?> ...classes) {
 
         return ShrinkWrap.create(WebArchive.class, appName + ".war")
                 .addPackages(true, LRAMetricService.class.getPackage())
-                .addClasses(LRAClientOps.class, WrongHeaderException.class)
-                .addAsManifestResource(new StringAsset(ManifestMF), "MANIFEST.MF");
-    }
-
-    public static WebArchive createDeployment(String appName) {
-        // LRA uses ArjunaCore so pull in the jts module to get them on the classpath
-        // (maybe in the future we can add a WFLY LRA subsystem)
-        final String ManifestMF = "Manifest-Version: 1.0\n"
-                + "Dependencies: org.jboss.jts, org.jboss.logging\n";
-
-        return ShrinkWrap.create(WebArchive.class, appName + ".war")
-                .addPackages(false, coordinatorPackages)
                 .addPackages(false, participantPackages)
-                .addAsManifestResource(new StringAsset(ManifestMF), "MANIFEST.MF")
-                .addAsManifestResource(new StringAsset("<beans version=\"1.1\" bean-discovery-mode=\"annotated\"></beans>"), "beans.xml");
+                .addClasses(LRAClientOps.class, WrongHeaderException.class)
+                .addClasses(classes)
+                .addAsManifestResource(
+                        new StringAsset("<beans version=\"1.1\" bean-discovery-mode=\"annotated\"></beans>"),
+                        "beans.xml");
     }
 }

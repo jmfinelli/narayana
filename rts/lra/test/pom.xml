@@ -195,6 +195,11 @@
                             <skipITs>false</skipITs>
                             <systemProperties>
                                 <arquillian.xml>arquillian-wildfly.xml</arquillian.xml>
+                                <!-- used to resolve the resteasy-client version in LRACoordinatorDeployment.java -->
+                                <version.resteasy-client>${version.resteasy-client}</version.resteasy-client>
+                                <!-- used to resolve eclipse microprofile versions in LRACoordinatorDeployment.java -->
+                                <version.microprofile.lra.api>${version.microprofile.lra.api}</version.microprofile.lra.api>
+                                <version.microprofile.lra.tck>${version.microprofile.lra.tck}</version.microprofile.lra.tck>
                             </systemProperties>
                         </configuration>
                     </plugin>
