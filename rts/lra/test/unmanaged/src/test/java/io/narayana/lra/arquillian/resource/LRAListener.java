@@ -42,6 +42,7 @@ public class LRAListener {
     public static final String LRA_LISTENER_UNTIMED_ACTION = "untimedAction";
     public static final String LRA_LISTENER_UNTIMED_ACTION_KILL = "killerUntimedAction";
     public static final String LRA_LISTENER_STATUS = "status";
+    public static final String LRA_LISTENER_KILL = "kill";
     public static final long LRA_SHORT_TIMELIMIT = 5L;
 
     private static LRAStatus status;
@@ -103,5 +104,12 @@ public class LRAListener {
     @Path(LRA_LISTENER_STATUS)
     public Response getStatus() {
         return Response.ok(status != null ? status.name() : LRAStatus.FailedToCancel).build();
+    }
+
+    @GET
+    @Path(LRA_LISTENER_KILL)
+    public Response killJVM() {
+        Runtime.getRuntime().halt(1);
+        return Response.ok(status.name()).build();
     }
 }

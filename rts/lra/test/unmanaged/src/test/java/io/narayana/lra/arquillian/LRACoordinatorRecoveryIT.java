@@ -37,6 +37,7 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -47,6 +48,7 @@ import org.junit.rules.TestName;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.File;
@@ -57,14 +59,22 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static io.narayana.lra.arquillian.resource.LRAListener.LRA_LISTENER_KILL;
+import static io.narayana.lra.arquillian.resource.LRAListener.LRA_LISTENER_UNTIMED_ACTION;
+import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+/**
+ * This test class checks that an LRA, which times out while there is no running coordinator,
+ * is cancelled when a coordinator is restarted
+ */
 @RunAsClient
 public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
 
@@ -74,6 +84,9 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
     private static final String LRA_COORDINATOR_DEPLOYMENT_QUALIFIER = "lra-coordinator";
     private static final String SERVICE_DEPLOYMENT_QUALIFIER = "service";
     private static Path storeDir;
+
+    private static final Long LONG_TIMEOUT = 600000L; // 10 minutes
+    private static final Long SHORT_TIMEOUT = 10000L; // 10 seconds
 
     @Rule
     public TestName testName = new TestName();
@@ -170,6 +183,69 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
                 LRAStatus.Cancelled.name(), listenerStatus);
     }
 
+    @Test
+    public void recoveryTwoLRAs(@ArquillianResource @OperateOnDeployment(SERVICE_DEPLOYMENT_QUALIFIER) URL deploymentUrl)
+            throws URISyntaxException, InterruptedException {
+
+        URI lraListenerURI = UriBuilder.fromUri(deploymentUrl.toURI()).path(LRAListener.LRA_LISTENER_PATH).build();
+
+        // start an LRA with a long timeout to validate that timed LRAs do not finish early during recovery
+        URI longLRA = lraClient.startLRA(null, "Long Timeout Recovery Test", LONG_TIMEOUT, ChronoUnit.MILLIS);
+        // start an LRA with a short timeout to validate that timed LRAs that time out when the coordinator is unavailable are cancelled
+        URI shortLRA = lraClient.startLRA(null, "Short Timeout Recovery Test", SHORT_TIMEOUT, ChronoUnit.MILLIS);
+
+        // invoke a method that will trigger a byteman rule to kill the JVM
+        try (Response ignore = client.target(lraListenerURI).path(LRA_LISTENER_KILL)
+                .request()
+                .get()) {
+
+            fail(testName + ": the container should have halted");
+        } catch (RuntimeException e) {
+            LRALogger.logger.infof("%s: container halted", testName);
+        }
+
+        // restart the container
+        restartContainer(CONTAINER_QUALIFIER);
+
+        // waiting for the short LRA timeout really expires
+        doWait(SHORT_TIMEOUT);
+
+        // check that on restart an LRA whose deadline has expired are cancelled
+        int sc = recover();
+
+        if (sc != 0) {
+            recover();
+        }
+
+        LRAStatus longStatus = getStatus(longLRA);
+        LRAStatus shortStatus = getStatus(shortLRA);
+
+        Assert.assertEquals("LRA with long timeout should still be active",
+                LRAStatus.Active.name(), longStatus.name());
+        Assert.assertTrue("LRA with short timeout should not be active",
+                shortStatus == null ||
+                        LRAStatus.Cancelled.equals(shortStatus) || LRAStatus.Cancelling.equals(shortStatus));
+
+        // verify that it is still possible to join in with the LRA
+        try (Response response = client.target(lraListenerURI).path(LRA_LISTENER_UNTIMED_ACTION)
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, longLRA)
+                .put(Entity.text(""))) {
+
+            Assert.assertEquals("LRA participant action", 200, response.getStatus());
+        }
+
+        // closing the LRA and clearing the active thread of the launched LRAs
+        lraClient.closeLRA(longLRA);
+        lraClient.closeLRA(shortLRA);
+
+        // check that the participant was notified that the LRA has closed
+        String listenerStatus = getStatusFromListener(lraListenerURI);
+
+        assertEquals("LRA listener should have been told that the final state of the LRA was closed",
+                LRAStatus.Closed.name(), listenerStatus);
+    }
+
     /*****************************/
     /** Class's private methods **/
     /*****************************/
@@ -215,8 +291,8 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
     }
 
     /**
-     * Ask {@link LRAListener} if it has been notified of the final outcome of the LRA
-     * @return the listeners view of the LRA status
+     * Asks {@link LRAListener} if it has been notified of the final outcome of the LRA
+     * @return the listener's view of the LRA status
      */
     private String getStatusFromListener(URI lraListenerURI) {
         try (Response response = client.target(lraListenerURI).path(LRAListener.LRA_LISTENER_STATUS)
@@ -229,6 +305,12 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
         }
     }
 
+    /**
+     * <p>This method fetches the first LRA transaction from the File System Object Store (ShadowNoFileLockStore).
+     * The FS Object Store is used as this is the default option of Narayana and, therefore, the default
+     * option when Narayana is used as a module (e.g. Wildfly)</p>
+     * @return The ID of the first LRA transaction
+     */
     String getFirstLRA() {
         Path lraDir = Paths.get(storeDir.toString(), "ShadowNoFileLockStore", "defaultStore", LongRunningAction.getType());
 
@@ -241,6 +323,11 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
         }
     }
 
+    /**
+     * <p>This method physically deletes the folder (and all its content) where the File System Object Store
+     * is stored. As specified in the JavaDoc of <code>getFirstLRA()</code>, the FS Object Store is used as
+     * it is the default option of Narayana.</p>
+     */
     private void clearRecoveryLog() {
         try (Stream<Path> recoveryLogFiles = Files.walk(storeDir)) {
             recoveryLogFiles
