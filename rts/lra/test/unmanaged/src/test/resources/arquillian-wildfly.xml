@@ -24,7 +24,7 @@
         http://jboss.org/schema/arquillian
         http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
-    <container qualifier="wildfly_lra-coordinator" default="true" mode="manual">
+    <container qualifier="${arquillian.container.qualifier}" default="true" mode="manual">
         <configuration>
             <property name="javaVmArguments">${server.jvm.args} -Dlra.coordinator.url=${lra.coordinator.url} -DObjectStoreEnvironmentBean.objectStoreDir=${project.build.directory}/wfly_lra_objectstore -DObjectStoreEnvironmentBean.communicationStore.objectStoreDir=${project.build.directory}/wfly_lra_objectstore</property>
             <property name="managementAddress">${test.application.host}</property> <!-- default management port is 9990 -->
@@ -33,7 +33,7 @@
     </container>
 
     <extension qualifier="LRADeployment">
-        <property name="containerName">wildfly_lra-coordinator</property>
+        <property name="containerName">${arquillian.container.qualifier}</property>
         <property name="deploymentMethod">io.narayana.lra.arquillian.deployment.WildflyLRACoordinatorDeployment.create</property>
         <property name="deploymentName">lra-coordinator</property>
     </extension>

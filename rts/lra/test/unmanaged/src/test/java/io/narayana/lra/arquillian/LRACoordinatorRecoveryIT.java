@@ -31,13 +31,11 @@ import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -80,7 +78,7 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
 
     private ResteasyClient client;
     private NarayanaLRAClient lraClient;
-    private static final String CONTAINER_QUALIFIER = "wildfly_lra-coordinator";
+    private static String CONTAINER_QUALIFIER;
     private static final String LRA_COORDINATOR_DEPLOYMENT_QUALIFIER = "lra-coordinator";
     private static final String SERVICE_DEPLOYMENT_QUALIFIER = "service";
     private static Path storeDir;
@@ -93,7 +91,13 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
 
     @BeforeClass
     public static void beforeClass() {
+
         storeDir = Paths.get(String.format("%s/standalone/data/tx-object-store", System.getenv("JBOSS_HOME")));
+
+        CONTAINER_QUALIFIER = System.getProperty("arquillian.container.qualifier");
+        if (CONTAINER_QUALIFIER == null || CONTAINER_QUALIFIER.isEmpty()) {
+            fail("The System Property \"arquillian.container.quilifer\" is not defined");
+        }
     }
 
     @Before
@@ -119,7 +123,6 @@ public class LRACoordinatorRecoveryIT extends UnmanagedTestBase {
     }
 
     @Deployment(name = SERVICE_DEPLOYMENT_QUALIFIER, testable = false, managed = false)
-    @TargetsContainer(CONTAINER_QUALIFIER)
     public static WebArchive deploy() {
         return Deployer.createDeployment(SERVICE_DEPLOYMENT_QUALIFIER, JaxRsActivator.class, LRAListener.class);
     }

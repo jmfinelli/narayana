@@ -129,6 +129,7 @@
                             <skipITs>false</skipITs>
                             <systemProperties>
                                 <arquillian.xml>arquillian-thorntail.xml</arquillian.xml>
+                                <arquillian.container.qualifier>thorntail-unmanaged</arquillian.container.qualifier>
                             </systemProperties>
                             <systemPropertyVariables>
                                 <thorntail.test.logging.category.arjuna>${thorntail.test.logging.category.arjuna}</thorntail.test.logging.category.arjuna>
@@ -195,6 +196,7 @@
                             <skipITs>false</skipITs>
                             <systemProperties>
                                 <arquillian.xml>arquillian-wildfly.xml</arquillian.xml>
+                                <arquillian.container.qualifier>wildfly-unmanaged</arquillian.container.qualifier>
                                 <!-- used to resolve the resteasy-client version in LRACoordinatorDeployment.java -->
                                 <version.resteasy-client>${version.resteasy-client}</version.resteasy-client>
                                 <!-- used to resolve eclipse microprofile versions in LRACoordinatorDeployment.java -->
