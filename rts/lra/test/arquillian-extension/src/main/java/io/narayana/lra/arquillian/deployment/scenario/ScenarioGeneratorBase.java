@@ -1,23 +1,6 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2021, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
- *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Copyright Red Hat
+ * SPDX-License-Identifier: LGPL-2.1-only
  */
 
 package io.narayana.lra.arquillian.deployment.scenario;
@@ -27,6 +10,7 @@ import org.jboss.arquillian.config.descriptor.api.ArquillianDescriptor;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.config.descriptor.api.ExtensionDef;
 import org.jboss.arquillian.config.descriptor.api.GroupDef;
+import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.logging.Logger;
@@ -51,7 +35,6 @@ import java.util.stream.Collectors;
  * among the showcases of Arquillian.
  * </p>
  * @see <a href="https://github.com/arquillian/arquillian-showcase/tree/master/extensions/deploymentscenario">Arquillian Deployment Scenario</a>
- * @author <a href="mailto:mfinelli@redhat.com">Manuel Finelli</a>
  */
 public class ScenarioGeneratorBase {
 
@@ -75,10 +58,12 @@ public class ScenarioGeneratorBase {
                 .map(ExtensionDef::getExtensionProperties).findAny();
 
         if (!checkExistance.isPresent()) {
-            String message = String.format("There is not extension section with name %s defined in the Arquillian.xml file", extensionName);
+            String message = String.format("%s: there is not extension section with name %s defined in the %s file",
+                    this.getClass().getSimpleName(),
+                    extensionName,
+                    System.getProperty("arquillian.xml", "arquillian.xml"));
 
-            log.error(message);
-            throw new RuntimeException(message);
+            log.warn(message);
         }
 
         return checkExistance.orElse(null);
@@ -91,17 +76,17 @@ public class ScenarioGeneratorBase {
      * @param toCheck {@link List} of properties that need to be defined
      * @throws RuntimeException if a property is not found
      */
-    void checkPropertiesExistence(final Map<String, String> properties, final List<String> toCheck)
-            throws RuntimeException {
+    void checkPropertiesExistence(final Map<String, String> properties, final List<String> toCheck) {
         // if not all properties in toCkeck are defined in properties
         if (!toCheck.stream().allMatch(properties::containsKey)) {
             // tell me what property need to be defined
             toCheck.forEach(x -> {
                 if (!properties.containsKey(x)) {
-                    String message = String.format("The property %s is not defined in the extension ", x);
+                    String message = String.format("%s: the property %s is not defined in the extension",
+                            ScenarioGeneratorBase.class.getSimpleName(),
+                            x);
 
-                    log.error(message);
-                    throw new RuntimeException(message);
+                    log.warn(message);
                 }
             });
         }
@@ -128,7 +113,8 @@ public class ScenarioGeneratorBase {
         // Checks if clazz is an implementation of the interface Deployment
         if (!Deployment.class.isAssignableFrom(clazz)) {
             String message = String.format(
-                    "The specified class %s for the property %s is not an implementation of the interface Deployment",
+                    "%s: the specified class %s for the property %s is not an implementation of the interface Deployment<T>",
+                    this.getClass().getSimpleName(),
                     className,
                     deploymentMethodPropertyName);
 
@@ -174,10 +160,13 @@ public class ScenarioGeneratorBase {
                 .filter(x -> x.getContainerName().equals(containerName)).collect(Collectors.toList());
 
         if (containers.isEmpty()) {
-            String message = String.format("There is not a container with qualifier %s in the Arquillian.xml file!", containerName);
+            String message = String.format("%s: there is not a standalone container with qualifier %s in the %s file!",
+                    this.getClass().getSimpleName(),
+                    containerName,
+                    System.getProperty("arquillian.xml", "arquillian.xml"));
 
-            log.errorf(message);
-            throw new RuntimeException(message);
+            log.warn(message);
+            return null;
         }
 
         // It is pointless to check if there are more containers with the
@@ -201,12 +190,14 @@ public class ScenarioGeneratorBase {
                 .filter(x -> x.getContainerName().equals(containerName)).collect(Collectors.toList());
 
         if (containers.isEmpty()) {
-            String message = String.format("There is not a container with qualifier %s in the group %s!",
+            String message = String.format("%s: there is not a container with qualifier %s in the group %s defined in the %s file!",
+                    this.getClass().getSimpleName(),
                     containerName,
-                    group.getGroupName());
+                    group.getGroupName(),
+                    System.getProperty("arquillian.xml", "arquillian.xml"));
 
-            log.errorf(message);
-            throw new RuntimeException(message);
+            log.warn(message);
+            return null;
         }
 
         return containers.get(0);
@@ -227,10 +218,13 @@ public class ScenarioGeneratorBase {
                 .filter(x -> x.getGroupName().equals(groupName)).collect(Collectors.toList());
 
         if (groups.isEmpty()) {
-            String message = String.format("There is not a group with qualifier %s in the Arquillian.xml file!", groupName);
+            String message = String.format("%s: there is not a group with qualifier %s in the %s file!",
+                    this.getClass().getSimpleName(),
+                    groupName,
+                    System.getProperty("arquillian.xml", "arquillian.xml"));
 
-            log.error(message);
-            throw new RuntimeException(message);
+            log.warn(message);
+            return null;
         }
         // It is not needed to check if the groups list contains more than one group
         // with qualifier groupName as Arquillian should do that already.

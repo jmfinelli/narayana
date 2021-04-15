@@ -129,7 +129,6 @@
                             <skipITs>false</skipITs>
                             <systemProperties>
                                 <arquillian.xml>arquillian-thorntail.xml</arquillian.xml>
-                                <arquillian.container.qualifier>thorntail-unmanaged</arquillian.container.qualifier>
                             </systemProperties>
                             <systemPropertyVariables>
                                 <thorntail.test.logging.category.arjuna>${thorntail.test.logging.category.arjuna}</thorntail.test.logging.category.arjuna>

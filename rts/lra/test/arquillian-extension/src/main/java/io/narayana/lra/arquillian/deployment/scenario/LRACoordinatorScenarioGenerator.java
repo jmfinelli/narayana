@@ -1,23 +1,6 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2021, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
- *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Copyright Red Hat
+ * SPDX-License-Identifier: LGPL-2.1-only
  */
 
 package io.narayana.lra.arquillian.deployment.scenario;
@@ -51,6 +34,12 @@ public class LRACoordinatorScenarioGenerator extends ScenarioGeneratorBase imple
         // Fetch all properties in the section EXTENSION_NAME
         Map<String, String> extensionProperties = getExtensionProperties(EXTENSION_NAME);
 
+        // If the section of this extension is not in the arquillian.xml file, it means that this extension
+        // does not need to start. As a consequence, an empty list of DeploymentDescription is returned
+        if (extensionProperties == null) {
+            return new ArrayList<>();
+        }
+
         // Checks that all required properties are defined
         checkPropertiesExistence(
                 extensionProperties,
@@ -75,8 +64,7 @@ public class LRACoordinatorScenarioGenerator extends ScenarioGeneratorBase imple
             deploymentDescription.shouldBeTestable(false);
             deploymentDescription.shouldBeManaged(false);
             descriptions.add(deploymentDescription);
-        }
-        catch (ClassNotFoundException | NoSuchMethodException ex) {
+        } catch (ClassNotFoundException | NoSuchMethodException ex) {
             String message = String.format(
                     "%s: an exception occurred while looking for the deployment method: %s.",
                     EXTENSION_NAME,
