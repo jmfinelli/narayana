@@ -32,10 +32,8 @@ package org.jboss.jbossts.qa.Utils;
 
 import com.arjuna.ats.internal.jdbc.DynamicClass;
 
-import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.XADataSource;
-import java.util.Hashtable;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
@@ -50,6 +48,7 @@ public class JNDIManager {
             String driver = JDBCProfileStore.driver(profileName, 0 /*driver number*/);
             String binding = JDBCProfileStore.binding(profileName);
             String databaseName = JDBCProfileStore.databaseName(profileName);
+            String serviceName = JDBCProfileStore.serviceName(profileName);
             String host = JDBCProfileStore.host(profileName);
             String dynamicClass = JDBCProfileStore.databaseDynamicClass(profileName);
             String databaseURL = JDBCProfileStore.databaseURL(profileName);
@@ -82,7 +81,12 @@ public class JNDIManager {
 
                 XADataSourceReflectionWrapper wrapper = new XADataSourceReflectionWrapper("oracle.jdbc.xa.client.OracleXADataSource");
 
-                wrapper.setProperty("databaseName", databaseName);
+                // This checks if a service name has been specified instead of a database identifier
+                if (serviceName.equals("")) {
+                    wrapper.setProperty("databaseName", databaseName);
+                } else {
+                    wrapper.setProperty("serviceName", serviceName);
+                }
                 wrapper.setProperty("serverName", host);
                 wrapper.setProperty("portNumber", Integer.valueOf(port));
                 wrapper.setProperty("driverType", "thin");
