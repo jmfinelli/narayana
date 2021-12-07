@@ -129,10 +129,10 @@
     <junit-tests tests="crashrecovery12"/>
     <fail if="failed-tests" message="some tests failed"/>
   </target>
-  <target name="ci-tests" depends="junit-testsuite,junit-jts-testsuite,junit-jdbc-ncl-testsuite">
+  <target name="ci-tests" depends="junit-jdbc-ncl-testsuite">
     <fail if="failed-tests" message="some tests failed"/>
   </target>
-  <target name="ci-tests-nojts" depends="junit-testsuite,junit-jdbc-ncl-testsuite">
+  <target name="ci-tests-nojts" depends="junit-jdbc-ncl-testsuite">
     <fail if="failed-tests" message="some tests failed"/>
   </target>
   <!-- General tests.
@@ -309,12 +309,6 @@
     <install-dbdriver files="ojdbc8.jar"/>
     <junit-tests tests="jdbcresources01_oracle_thin_jndi"/>
     <junit-tests tests="jdbcresources02_oracle_thin_jndi"/>
-    <install-dbdriver files="mysql-connector-java.jar"/>
-    <junit-tests tests="jdbcresources01_mysql_jndi"/>
-    <junit-tests tests="jdbcresources02_mysql_jndi"/>
-    <install-dbdriver files="postgresql.jar"/>
-    <junit-tests tests="jdbcresources01_pgsql_jndi"/>
-    <junit-tests tests="jdbcresources02_pgsql_jndi"/>
   </target>
   <target name="junit-jdbc-crachrec">
     <!-- crashrecovery11 : jdbc resource crash recovery tests. 4 tests, 4 minutes per db -->
