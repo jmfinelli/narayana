@@ -25,11 +25,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import javax.management.MBeanException;
 
@@ -160,7 +163,8 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
     }
 
     // holder of type to Uid mapping
-    private final Map<String, List<UidWrapper>> registeredMBeans = new ConcurrentHashMap<>();
+    private final Map<String, UidWrapper> registeredMBeans = new ConcurrentHashMap<>();
+    private static volatile boolean isObjectStoreEmpty = true;
     private boolean exposeAllLogs = false;
 
     /**
@@ -182,24 +186,31 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
         JMXServer.getAgent().unregisterMBean(arjPropertyManager.getObjectStoreEnvironmentBean().getJmxToolingMBeanName());
     }
 
-    private void unregisterMBeans(List<UidWrapper> beans) {
-        for (UidWrapper w : beans)
-            w.unregister();
+    private List<UidWrapper> registeredMBeansByType(String type) {
+        List<UidWrapper> returnList = registeredMBeans.values()
+                .stream().filter(x -> type.equals(x.getType()))
+                .collect(Collectors.toUnmodifiableList());
 
-        beans.clear();
+        return returnList.isEmpty() ? null : returnList;
+    }
+
+    private void unregisterMBeans(List<UidWrapper> beans) {
+        for (UidWrapper w : beans) {
+            w.unregister();
+            registeredMBeans.remove(w.getUid().stringForm());
+        }
     }
 
     protected void unregisterMBeans() {
-        for (List<UidWrapper> uids : registeredMBeans.values())
-            unregisterMBeans(uids);
-
-        registeredMBeans.clear();
+        for (UidWrapper uid : Collections.unmodifiableCollection(registeredMBeans.values())) {
+            uid.unregister();
+            registeredMBeans.remove(uid.getUid().stringForm());
+        }
     }
 
     private void registerMBeans() {
-        for (List<UidWrapper> uids : registeredMBeans.values()) {
-            for (UidWrapper w : uids)
-                w.register();
+        for (UidWrapper uid : registeredMBeans.values()) {
+            uid.register();
         }
     }
 
@@ -321,11 +332,8 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
      * @return the passed in buffer
      */
     public StringBuilder dump(StringBuilder sb) {
-        for (Map.Entry<String, List<UidWrapper>> typeEntry : registeredMBeans.entrySet()) {
-            sb.append(typeEntry.getKey()).append('\n');
-
-            for (UidWrapper uid : typeEntry.getValue())
-                uid.toString("\t", sb);
+        for (UidWrapper uid : registeredMBeans.values()) {
+            uid.toString("\t", sb);
         }
 
         return sb;
@@ -338,12 +346,7 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
      * if it hasn't been registered)
      */
     public UidWrapper findUid(Uid uid) {
-        for (Map.Entry<String, List<UidWrapper>> typeEntry : registeredMBeans.entrySet())
-            for (UidWrapper w : typeEntry.getValue())
-                if (w.getUid().equals(uid))
-                    return w;
-
-        return null;
+        return registeredMBeans.getOrDefault(uid.stringForm(), null);
     }
 
     /**
@@ -355,23 +358,13 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
      */
     @Deprecated
     public UidWrapper findUid(String uid) {
-        for (Map.Entry<String, List<UidWrapper>> typeEntry : registeredMBeans.entrySet())
-            for (UidWrapper w : typeEntry.getValue())
-                if (w.getUid().stringForm().equals(uid))
-                    return w;
+        for (UidWrapper registeredUid : registeredMBeans.values()) {
+            if (registeredUid.getUid().stringForm().equals(uid)) {
+                return registeredUid;
+            }
+        }
 
         return null;
-    }
-
-    private boolean isRegistered(String type, Uid uid) {
-        List<UidWrapper> beans = registeredMBeans.get(type);
-
-        if (beans != null)
-            for (UidWrapper w : beans)
-                if (uid.equals(w.getUid()))
-                    return true;
-
-        return false;
     }
 
     public void viewSubordinateAtomicActions(boolean enable) {
@@ -392,16 +385,11 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
             records.add(subordinateATI.getRecordClass());
         }
 
-
-
         if (!enable) {
-            for (List<UidWrapper> uids : registeredMBeans.values()) {
-                for (Iterator<UidWrapper> i = uids.iterator(); i.hasNext(); ) {
-                    UidWrapper w = i.next();
-                    if (records.contains(w.getClassName())) {
-                        i.remove();
-                        w.unregister();
-                    }
+            for (UidWrapper uid : Collections.unmodifiableCollection(registeredMBeans.values())) {
+                if (records.contains(uid.getClassName())) {
+                    registeredMBeans.remove(uid);
+                    uid.unregister();
                 }
             }
         }
@@ -417,24 +405,19 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
      */
     private void unregisterRemovedUids(Map<String, Collection<Uid>> allCurrUids) {
 
-        for (Map.Entry<String, List<UidWrapper>> e : registeredMBeans.entrySet()) {
-            String type = e.getKey();
-            List<UidWrapper> registeredBeansOfType = e.getValue();
-            Collection<Uid> currUidsOfType = allCurrUids.get(type);
-
-            if (currUidsOfType != null) {
-                Iterator<UidWrapper> iterator = registeredBeansOfType.iterator();
-
-                while (iterator.hasNext()) {
-                    UidWrapper w = iterator.next();
-
-                    if (!currUidsOfType.contains(w.getUid())) {
-                        w.unregister();
-                        iterator.remove();
+        for (Map.Entry<String, Collection<Uid>> currUidsOfType : allCurrUids.entrySet()) {
+            List<UidWrapper> registeredMBeansByType = registeredMBeansByType(currUidsOfType.getKey());
+            if (Objects.nonNull(registeredMBeansByType)) {
+                if (Objects.nonNull(currUidsOfType.getValue())) {
+                    for (UidWrapper uid : registeredMBeansByType) {
+                        if (!currUidsOfType.getValue().contains(uid.getUid())) {
+                            uid.unregister();
+                            registeredMBeans.remove(uid.getUid().stringForm());
+                        }
                     }
+                } else {
+                    unregisterMBeans(registeredMBeansByType);
                 }
-            } else {
-                unregisterMBeans(registeredBeansOfType);
             }
         }
     }
@@ -448,8 +431,9 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
     public synchronized void probe() throws MBeanException {
         Map<String, Collection<Uid>> currUidsForType = new HashMap<>();
 
-        for (String type : getTypes())
+        for (String type : getTypes()) {
             currUidsForType.put(type, getUids(type));
+        }
 
         // if there are any beans in registeredMBeans that don't appear in new list and unregister them
         unregisterRemovedUids(currUidsForType); //unregisterMBeans();
@@ -457,22 +441,17 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
         for (Map.Entry<String, Collection<Uid>> e : currUidsForType.entrySet()) {
             String type = e.getKey();
 
-            List<UidWrapper> beans = registeredMBeans.get(type);
-
-            if (beans == null) {
-                beans = new ArrayList<>();
-                registeredMBeans.put(type, beans);
-            }
-
             for (Uid uid : e.getValue()) {
-                if (!isRegistered(type, uid)) {
+                if (!registeredMBeans.containsKey(uid.stringForm())) {
                     UidWrapper w = createBean(uid, type); // can return null if type isn't instrumented
 
                     if (w != null)
-                        beans.add(w);
+                        registeredMBeans.put(uid.stringForm(), w);
                 }
             }
         }
+
+        isObjectStoreEmpty = registeredMBeans.isEmpty();
 
         /*
          * now create the actual MBeans - we create all the UidWrappers before registering because
@@ -491,7 +470,20 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
     public List<UidWrapper> probe(String type) {
         type = canonicalType(type);
 
-        return (type == null ? null : registeredMBeans.get(type));
+        return (type == null ? null : registeredMBeansByType(type));
+    }
+
+    /**
+     * Check if the Object Store is empty
+     *
+     * @return true if the Object Store is empty, false otherwise
+     * @throws MBeanException exception is thrown when it's not possible to list Uids from the object store
+     */
+    public boolean isObjectStoreEmpty() throws MBeanException {
+        probe();
+        synchronized (this) {
+            return isObjectStoreEmpty;
+        }
     }
 
     private UidWrapper createBean(Uid uid, String type) {
@@ -571,7 +563,8 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
             }
         } catch (ObjectStoreException e) {
             if (tsLogger.logger.isTraceEnabled())
-                tsLogger.logger.trace(e.toString());        }
+                tsLogger.logger.trace(e.toString());
+        }
 
         return allTypes;
     }
