@@ -90,6 +90,10 @@ public class PeriodicRecovery extends Thread
    public static enum Mode
    {
        /**
+        * state value indicating an undefined state
+        */
+       UNKNOWN,
+       /**
         * state value indicating that new scans may proceed
         */
        ENABLED,

@@ -32,11 +32,28 @@
 package com.arjuna.ats.internal.arjuna.recovery;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.Vector;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
+import com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean;
+import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
+import com.arjuna.ats.arjuna.coordinator.TxControl;
 import com.arjuna.ats.arjuna.exceptions.FatalError;
+import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
 import com.arjuna.ats.arjuna.logging.tsLogger;
+import com.arjuna.ats.arjuna.objectstore.ObjectStoreIterator;
+import com.arjuna.ats.arjuna.objectstore.RecoveryStore;
+import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryModule;
 
@@ -48,9 +65,10 @@ import com.arjuna.ats.arjuna.recovery.RecoveryModule;
 
 public class RecoveryManagerImple
 {
-    private PeriodicRecovery _periodicRecovery = null;
+    private final PeriodicRecovery _periodicRecovery;
+    private final RecActivatorLoader _recActivatorLoader;
 
-    private RecActivatorLoader _recActivatorLoader = null;
+    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     /**
      * Does the work of setting up crash recovery.
@@ -180,20 +198,71 @@ public class RecoveryManagerImple
     }
 
     /**
-     * Suspend the recovery manager. If the recovery manager is in the process of
-     * doing recovery scans then it will be suspended afterwards, in order to
-     * preserve data integrity.
+     * Suspend the Recovery Manager. This method changes behaviour based on {@link RecoveryEnvironmentBean#setWaitUntilNoTxns(boolean)}.
+     * When this parameter is set to true, the Recovery Manager gets suspended ONLY after the Object Store is verified to
+     * be empty. In case the {@link RecoveryEnvironmentBean#setWaitUntilNoTxns(boolean)} is set to false, the Recovery Manager
+     * gets suspended without checking if there are transactions left in the Object Store. In both cases, if the Recovery Manager
+     * is running a recovery scan, it will be suspended only afterwards, in order to preserve data integrity.
+     *
+     * {@link RecoveryManagerImple#trySuspendScan(boolean)} must be used with {@code synchronized}.
      *
      * @param async false means wait for the recovery manager to finish any scans before returning.
+     * @return {@link PeriodicRecovery.Mode} to inform how the suspension finished
      */
-
-    public PeriodicRecovery.Mode trySuspendScan (boolean async)
+    public PeriodicRecovery.Mode trySuspendScan (boolean async) throws InterruptedException, ObjectStoreException, IOException
     {
-        return _periodicRecovery.suspendScan(async);
+
+        if (recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns())
+        {
+            // Stop the transaction system. New transactions will not be created
+            TxControl.disable();
+
+            // Check if there are transactions in the Object Store
+            Instant start = Instant.now();
+            Instant check = start;
+
+            while (!isObjectStoreEmpty() &&
+                    recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns() &&
+                    (recoveryPropertyManager.getRecoveryEnvironmentBean().getTimeoutToWaitUntilNoTxns() <= 0 ||
+                            Duration.between(start, check).toMillis() < recoveryPropertyManager.getRecoveryEnvironmentBean().getTimeoutToWaitUntilNoTxns()))
+            {
+                TimeUnit.MILLISECONDS.sleep(recoveryPropertyManager.getRecoveryEnvironmentBean().getBackoffWaitUntilNoTxns());
+                check = Instant.now();
+            }
+        }
+
+        // If the Object Store is not empty at this point (and the Recovery Manager was configured to suspend only when there were no
+        // transactions left in the Object Store), suspending the periodic recovery after an ongoing scan will not help to recover
+        // in-doubt transactions. As a consequence, async is overridden by isWaitUntilNoTxns. If WaitUntilNoTxns was set to false,
+        // then async can decide if suspendScan will wait for the completion of the ongoing scan
+        return _periodicRecovery.suspendScan(!recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns() && async);
+    }
+
+    private boolean isObjectStoreEmpty() throws ObjectStoreException, IOException
+    {
+        boolean empty = true;
+        // Holds the list of types
+        final List<String> typeOfInterest = new ArrayList<>();
+
+        this.getModules().forEach(recoveryModule -> typeOfInterest.addAll(recoveryModule.getTypes()));
+        Iterator<String> iterator = typeOfInterest.iterator();
+
+        while (iterator.hasNext() && empty)
+        {
+            String type = iterator.next();
+            if (Objects.nonNull(type))
+            {
+                ObjectStoreTypeChecker objectStoreTypeChecker = new ObjectStoreTypeChecker(StoreManager.getRecoveryStore(), type);
+                empty = objectStoreTypeChecker.areThereTxns();
+            }
+        }
+
+        return empty;
     }
 
     public void resumeScan ()
     {
+        TxControl.enable();
         _periodicRecovery.resumeScan();
     }
 
@@ -225,10 +294,45 @@ public class RecoveryManagerImple
         * attempt to create the server socket. If an exception is thrown then some other
         * process is using the RM endpoint
         */
-        if(_periodicRecovery != null) {
+        if(_periodicRecovery != null)
+        {
             return _periodicRecovery.getMode() != PeriodicRecovery.Mode.TERMINATED;
-        } else {
+        } else
+        {
             return false;
+        }
+    }
+
+    private static class ObjectStoreTypeChecker
+    {
+        private final ObjectStoreIterator objectStoreIterator;
+        private final List<Uid> txns;
+
+        public ObjectStoreTypeChecker(RecoveryStore recoveryStore, String type) throws ObjectStoreException
+        {
+            this.objectStoreIterator = new ObjectStoreIterator(recoveryStore, type);
+            txns = new ArrayList<>();
+        }
+
+        public boolean areThereTxns() throws IOException
+        {
+            Uid uid;
+            txns.clear();
+
+            while (!Uid.nullUid().equals(uid = objectStoreIterator.iterate()))
+            {
+                txns.add(uid);
+            }
+
+            return txns.isEmpty();
+        }
+
+        public List<Uid> getTxns()
+        {
+             // It does not really matter that txns is published as:
+             // - Collections.unmodifiableList stops possible modifications of the Collection
+             // - The Uid class is immutable
+            return Collections.unmodifiableList(txns);
         }
     }
 }

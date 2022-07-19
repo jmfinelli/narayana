@@ -55,6 +55,11 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
     private volatile int expiryScanInterval = 12; // hours
     private volatile int transactionStatusManagerExpiryTime = 12; // hours
 
+    private volatile boolean waitUntilNoTxns = false;
+    private volatile long timeoutToWaitUntilNoTxns = 0; // millisecond
+
+    private volatile long backoffWaitUntilNoTxns = 250; // millisecond
+
     @ConcatenationPrefix(prefix = "com.arjuna.ats.arjuna.recovery.expiryScanner")
     private volatile List<String> expiryScannerClassNames = new ArrayList<String>();
     private volatile List<ExpiryScanner> expiryScanners = null;
@@ -612,5 +617,76 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
     public void setTimeoutSocket(boolean timeoutSocket)
     {
         this.timeoutSocket = timeoutSocket;
+    }
+
+    /**
+     * <p>This method checks the configuration of the Recovery to find out if the Recovery Manager
+     * should suspend ONLY when there are no transactions left in the Object Store.</p>
+     * <p>Note that only transactions in the Object Store will be considered before suspending the
+     * Recovery Manager. This means that there might be transactions hanging around (at the Resource
+     * Manager) that will not be taken into account before suspending the Recovery Manager.</p>
+     *
+     * @return true if the Recovery Manager should suspend after the Object Store gets empty,
+     * false otherwise
+     */
+    public boolean isWaitUntilNoTxns() {
+        return waitUntilNoTxns;
+    }
+
+    /**
+     * This method controls the behaviour of the Recovery Manager when it gets suspended: if {@code waitUntilNoTxnx}
+     * is true then the Recovery Manager will wait until there are no transactions left in the Object Store
+     * before suspending.
+     *
+     * @param waitUntilNoTxns if true, the Recovery Manager will wait until there are no transactions left in the Object Store
+     *                        before suspending; if false, transactions left in the Object Store will not be considered
+     */
+    public void setWaitUntilNoTxns(boolean waitUntilNoTxns) {
+        this.waitUntilNoTxns = waitUntilNoTxns;
+    }
+
+    /**
+     * This method returns the timeout after which the Recovery Manager gets suspended even in case there
+     * are transactions left in the Object Store.
+     *
+     * @return the timeout (in millisecond)
+     */
+    public long getTimeoutToWaitUntilNoTxns() {
+        return timeoutToWaitUntilNoTxns;
+    }
+
+    /**
+     * This method controls the timeout after which the Recovery Manager gets suspended even in case there
+     * are transactions left in the Object Store. If {@code timeoutToWaitUntilNoTxns} has a negative value
+     * then the RecoveryManager will wait for the Object Store to be empty indefinitely (i.e. without any timeout).
+     *
+     * @param timeoutToWaitUntilNoTxns the timeout (in millisecond)
+     */
+    public void setTimeoutToWaitUntilNoTxns(long timeoutToWaitUntilNoTxns) {
+        this.timeoutToWaitUntilNoTxns = timeoutToWaitUntilNoTxns;
+    }
+
+    /**
+     * <p>This method returns the period of time between two scans of the Object Store during the suspension
+     * of the Recovery Manager.</p>
+     * <p>{@code BackoffWaitUntilNoTxns} is only used when {@link this#setWaitUntilNoTxns(boolean)}
+     * is set to true.</p>
+     *
+     * @return the period of time between two scans of the Object Store (in millisecond)
+     */
+    public long getBackoffWaitUntilNoTxns() {
+        return backoffWaitUntilNoTxns;
+    }
+
+    /**
+     * <p>This method controls the period of time between two scans of the Object Store during the suspension
+     * of the Recovery Manager.</p>
+     * <p>{@code BackoffWaitUntilNoTxns} is only used when {@link this#setWaitUntilNoTxns(boolean)}
+     * is set to true.</p>
+     *
+     * @param  backoffWaitUntilNoTxns the period of time between two scans of the Object Store (in millisecond)
+     */
+    public void setBackoffWaitUntilNoTxns(long backoffWaitUntilNoTxns) {
+        this.backoffWaitUntilNoTxns = backoffWaitUntilNoTxns;
     }
 }

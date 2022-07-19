@@ -1634,6 +1634,12 @@ public interface arjunaI18NLogger {
 	@LogMessage(level = WARN)
 	void warn_invalidObjStoreBrowser_type(String type, @Cause Exception e);
 
+	@Message(id = 12407,
+			value = "The suspension of the Recovery Manager did not complete properly. There might be in-doubt transactions left in the Object Store",
+			format = MESSAGE_FORMAT)
+	@LogMessage(level = FATAL)
+	void fatal_recovery_manager_suspension(@Cause Throwable exception);
+
     /*
         Allocate new messages directly above this notice.
           - id: use the next id number in numeric sequence. Don't reuse ids.

@@ -38,6 +38,7 @@ import java.net.UnknownHostException;
 import java.util.Vector;
 
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
+import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
 import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.utils.Utility;
 import com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery;
@@ -256,15 +257,19 @@ public class RecoveryManager
      * @throws IllegalStateException if the recovery manager has been shutdown.
      */
 
-    public void suspend (boolean async)
-    {
+    public void suspend (boolean async) {
         trySuspend(async);
     }
 
-    public RecoveryManagerStatus trySuspend(boolean async) {
+    public synchronized RecoveryManagerStatus trySuspend(boolean async) {
         checkState();
 
-        PeriodicRecovery.Mode mode = _theImple.trySuspendScan(async);
+        PeriodicRecovery.Mode mode = PeriodicRecovery.Mode.UNKNOWN;
+        try {
+            mode = _theImple.trySuspendScan(async);
+        } catch (InterruptedException | ObjectStoreException | IOException ex) {
+            tsLogger.i18NLogger.fatal_recovery_manager_suspension(ex);
+        }
 
         switch (mode) {
             case ENABLED:
