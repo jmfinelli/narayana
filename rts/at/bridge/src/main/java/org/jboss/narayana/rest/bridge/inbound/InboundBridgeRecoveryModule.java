@@ -21,6 +21,8 @@
  */
 package org.jboss.narayana.rest.bridge.inbound;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -52,6 +54,8 @@ public class InboundBridgeRecoveryModule implements RecoveryModule {
     private static final Set<InboundBridge> recoveredBridges = new HashSet<InboundBridge>();
 
     private static final Logger LOG = Logger.getLogger(InboundBridgeRecoveryModule.class);
+
+    private final String _transactionType = SubordinateAtomicAction.getType();
 
     /**
      * UIDs found in transaction log after first pass.
@@ -110,6 +114,14 @@ public class InboundBridgeRecoveryModule implements RecoveryModule {
         addBridgesToMapping();
     }
 
+    public Collection<String> getTypes() {
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("InboundBridgeRecoveryModule.getTypes");
+        }
+
+        return Collections.singleton(_transactionType);
+    }
+
     /**
      * Returns UIDs of JTA subordinate transactions with format id specified in inbound bridge class which were found in
      * transaction log.
@@ -128,7 +140,7 @@ public class InboundBridgeRecoveryModule implements RecoveryModule {
             final InputObjectState states = new InputObjectState();
 
             // Only look in the JCA section of the object store
-            if (recoveryStore.allObjUids(SubordinateAtomicAction.getType(), states) && states.notempty()) {
+            if (recoveryStore.allObjUids(_transactionType, states) && states.notempty()) {
                 boolean finished = false;
 
                 do {

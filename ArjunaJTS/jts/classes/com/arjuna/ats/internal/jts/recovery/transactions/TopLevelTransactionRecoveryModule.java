@@ -35,6 +35,9 @@ import com.arjuna.ats.arjuna.recovery.RecoveryModule;
 import com.arjuna.ats.internal.jts.orbspecific.coordinator.ArjunaTransactionImple;
 import com.arjuna.ats.jts.logging.jtsLogger;
 
+import java.util.Collection;
+import java.util.Collections;
+
 
 // todo - make add a protected getTransactionType() method
 
@@ -71,6 +74,10 @@ public class TopLevelTransactionRecoveryModule extends TransactionRecoveryModule
     {
         jtsLogger.i18NLogger.info_recovery_transactions_TopLevelTransactionRecoveryModule_4();
 	super.periodicWorkSecondPass();
+    }
+
+    public Collection<String> getTypes() {
+        return Collections.singleton(super._transactionType);
     }
 
     /**

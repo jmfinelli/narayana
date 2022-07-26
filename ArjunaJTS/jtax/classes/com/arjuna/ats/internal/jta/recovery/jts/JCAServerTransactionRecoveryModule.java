@@ -32,6 +32,8 @@ import com.arjuna.ats.internal.jta.transaction.jts.subordinate.jca.coordinator.S
 
 import javax.transaction.xa.XAException;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 
 
 /**
@@ -79,5 +81,10 @@ public class JCAServerTransactionRecoveryModule implements RecoveryModule {
     @Override
     public void periodicWorkSecondPass() {
 
+    }
+
+    @Override
+    public Collection<String> getTypes() {
+        return Collections.singletonList(ServerTransaction.getType());
     }
 }

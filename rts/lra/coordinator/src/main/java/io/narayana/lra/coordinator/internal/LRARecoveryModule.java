@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -106,6 +107,14 @@ public class LRARecoveryModule implements RecoveryModule {
         }
 
         recoverTransactions();
+    }
+
+    public Collection<String> getTypes() {
+        if (LRALogger.logger.isTraceEnabled()) {
+            LRALogger.logger.trace("LRARecoveryModule: get types");
+        }
+
+        return Collections.singleton(_transactionType);
     }
 
     private synchronized void recoverTransactions() {

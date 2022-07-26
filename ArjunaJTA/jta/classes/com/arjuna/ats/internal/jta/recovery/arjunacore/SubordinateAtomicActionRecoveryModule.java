@@ -34,6 +34,8 @@ import com.arjuna.ats.jta.logging.jtaLogger;
 
 import javax.transaction.xa.XAException;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Vector;
 
 
@@ -92,6 +94,11 @@ public class SubordinateAtomicActionRecoveryModule implements RecoveryModule {
     @Override
     public void periodicWorkSecondPass() {
         // No-op - recovery is performed by the EIS
+    }
+
+    @Override
+    public Collection<String> getTypes() {
+        return Collections.singleton(SubordinateAtomicAction.getType());
     }
 
     /**

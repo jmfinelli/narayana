@@ -31,6 +31,8 @@ import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import org.jboss.jbossts.xts.recovery.XTSRecoveryModule;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Vector;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -135,6 +137,15 @@ public class BAParticipantRecoveryModule implements XTSRecoveryModule
         }
 
         processParticipantsStatus() ;
+    }
+
+    public Collection<String> getTypes()
+    {
+        if (RecoveryLogger.logger.isDebugEnabled()) {
+            RecoveryLogger.logger.debug("BAParticipantRecoveryModule: get types ");
+        }
+
+        return Collections.singletonList(_participantType);
     }
 
     private void doRecoverParticipant( Uid recoverUid )

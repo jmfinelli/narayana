@@ -25,6 +25,9 @@ import com.arjuna.ats.arjuna.recovery.RecoveryModule;
 import org.jboss.jbossts.txbridge.utils.txbridgeLogger;
 import org.jboss.jbossts.xts.bridge.at.BridgeWrapper;
 
+import java.util.Collection;
+import java.util.Collections;
+
 /**
  * Integrates with JBossAS MC lifecycle and JBossTS recovery manager to provide
  * recovery services for outbound bridged transactions.
@@ -92,5 +95,11 @@ public class OutboundBridgeRecoveryManager implements RecoveryModule
                 bridgeWrapper.rollback();
             }
         }
+    }
+
+    @Override
+    public Collection<String> getTypes()
+    {
+        return Collections.emptyList();
     }
 }
