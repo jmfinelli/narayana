@@ -31,6 +31,9 @@
 
 package com.hp.mwtests.ts.arjuna.recovery;
 
+import java.util.Collection;
+import java.util.Collections;
+
 class DummyRecoveryModule implements com.arjuna.ats.arjuna.recovery.RecoveryModule
 {
     public DummyRecoveryModule()
@@ -47,6 +50,11 @@ class DummyRecoveryModule implements com.arjuna.ats.arjuna.recovery.RecoveryModu
         System.err.println("DummyRecoveryModule.periodicWorkSecondPass");
 
         _complete = true;
+    }
+
+    public Collection<String> getTypes()
+    {
+        return Collections.emptyList();
     }
 
     public final boolean finished()

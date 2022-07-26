@@ -37,6 +37,8 @@ import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.mwlabs.wscf.model.sagas.arjunacore.BACoordinator;
 import org.jboss.jbossts.xts.recovery.participant.ba.XTSBARecoveryManagerImple;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Vector;
 import java.util.Enumeration;
 
@@ -132,6 +134,15 @@ public class BACoordinatorRecoveryModule implements XTSRecoveryModule
 
         // ok notify the coordinator processor that recovery processing has completed
 
+    }
+
+    public Collection<String> getTypes()
+    {
+        if (RecoveryLogger.logger.isDebugEnabled()) {
+            RecoveryLogger.logger.debug("BACoordinatorRecoveryModule: get types ");
+        }
+
+        return Collections.singletonList(_transactionType);
     }
 
     protected BACoordinatorRecoveryModule(String type)

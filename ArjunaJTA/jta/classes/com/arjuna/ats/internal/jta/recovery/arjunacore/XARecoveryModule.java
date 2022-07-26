@@ -34,6 +34,7 @@ package com.arjuna.ats.internal.jta.recovery.arjunacore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -310,7 +311,11 @@ public class XARecoveryModule implements ExtendedRecoveryModule
         setScanState(ScanStates.IDLE);
  	}
 
- 	public static XARecoveryModule getRegisteredXARecoveryModule () {
+	public Collection<String> getTypes() {
+		return Collections.singletonList(_recoveryManagerClass.type());
+	}
+
+	public static XARecoveryModule getRegisteredXARecoveryModule () {
  		if (registeredXARecoveryModule == null) {
 			RecoveryManager recMan = RecoveryManager.manager();
 			Vector<RecoveryModule> recoveryModules = recMan.getModules();

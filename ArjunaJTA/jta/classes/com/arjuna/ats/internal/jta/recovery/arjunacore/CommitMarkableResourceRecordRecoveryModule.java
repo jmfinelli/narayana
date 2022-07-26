@@ -30,6 +30,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -502,6 +504,11 @@ public class CommitMarkableResourceRecordRecoveryModule implements
 			tsLogger.logger.warn("Could not read " + ATOMIC_ACTION_TYPE
 					+ " from object store", e);
 		}
+	}
+
+	@Override
+	public Collection<String> getTypes() {
+		return Arrays.asList(ATOMIC_ACTION_TYPE, CONNECTABLE_ATOMIC_ACTION_TYPE);
 	}
 
 	/**

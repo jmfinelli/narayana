@@ -31,6 +31,8 @@
 
 package com.arjuna.ats.internal.arjuna.recovery ;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -109,11 +111,20 @@ public class AtomicActionRecoveryModule implements RecoveryModule
        processTransactionsStatus() ;
    }
 
-    protected AtomicActionRecoveryModule (String type)
-    {
+   public Collection<String> getTypes()
+   {
        if (tsLogger.logger.isDebugEnabled()) {
-           tsLogger.logger.debug("AtomicActionRecoveryModule created");
+           tsLogger.logger.debug("AtomicActionRecoveryModule get types");
        }
+
+       return Collections.singleton(this._transactionType);
+   }
+
+   protected AtomicActionRecoveryModule (String type)
+   {
+      if (tsLogger.logger.isDebugEnabled()) {
+          tsLogger.logger.debug("AtomicActionRecoveryModule created");
+      }
 
       if (_recoveryStore == null)
       {

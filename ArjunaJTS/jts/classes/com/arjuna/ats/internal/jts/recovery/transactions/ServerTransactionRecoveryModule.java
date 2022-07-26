@@ -31,6 +31,8 @@
 
 package com.arjuna.ats.internal.jts.recovery.transactions;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 
 import org.omg.CosTransactions.Status;
@@ -107,7 +109,11 @@ public class ServerTransactionRecoveryModule extends TransactionRecoveryModule
 	    }
 
     }
-    
+
+    public Collection<String> getTypes() {
+        return Collections.singleton(super._transactionType);
+    }
+
     /**
      * Set-up routine
      */

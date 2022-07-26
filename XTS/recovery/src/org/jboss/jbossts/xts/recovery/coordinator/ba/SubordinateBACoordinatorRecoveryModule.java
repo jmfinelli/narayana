@@ -36,6 +36,8 @@ import com.arjuna.ats.internal.arjuna.common.UidHelper;
 
 import com.arjuna.mwlabs.wscf.model.sagas.arjunacore.subordinate.SubordinateBACoordinator;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Vector;
 import java.util.Enumeration;
 
@@ -123,6 +125,15 @@ public class SubordinateBACoordinatorRecoveryModule implements XTSRecoveryModule
 
         // ok notify the coordinator processor that recovery processing has completed
 
+    }
+
+    public Collection<String> getTypes()
+    {
+        if (RecoveryLogger.logger.isDebugEnabled()) {
+            RecoveryLogger.logger.debug("SubordinateBACoordinatorRecoveryModule: get types ");
+        }
+
+        return Collections.singletonList(_transactionType);
     }
 
     protected SubordinateBACoordinatorRecoveryModule(String type)

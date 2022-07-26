@@ -31,6 +31,11 @@
 
 package com.arjuna.ats.arjuna.recovery ;
 
+import com.arjuna.ats.arjuna.StateManager;
+
+import java.util.Collection;
+import java.util.Collections;
+
 /**
  * Interface for Recovery manager plug-in module.
  * RecoveryModules are registered via the properties mechanisms.
@@ -61,4 +66,20 @@ public interface RecoveryModule
      */
 
     public void periodicWorkSecondPass ();
+
+    /**
+     * <p>
+     *     This method returns all Object Store types that the RecoveryModule deals with.
+     * In case the RecoveryModule is a proxy (e.g. a middleman that "recovers" transactions
+     * without knowing their Object Store types), this method can return an empty
+     * {@link java.util.Collection<String>}.
+     * </p>
+     * <p>
+     *     It is mandatory that this method does <b>NOT</b> return {@code null}.
+     * </p>
+     *
+     * @return A {@link java.util.Collection<String>} representing the Object Store types
+     * that the RecoveryModule handles
+     */
+    public Collection<String> getTypes();
 }

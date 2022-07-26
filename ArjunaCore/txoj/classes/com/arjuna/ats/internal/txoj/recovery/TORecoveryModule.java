@@ -32,6 +32,8 @@
 package com.arjuna.ats.internal.txoj.recovery;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -196,6 +198,11 @@ public class TORecoveryModule implements RecoveryModule
                 }
             }
         }
+    }
+
+    public Collection<String> getTypes()
+    {
+        return Collections.emptyList();
     }
 
     /**
