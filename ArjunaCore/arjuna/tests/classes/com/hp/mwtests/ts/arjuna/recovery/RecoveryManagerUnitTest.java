@@ -34,6 +34,7 @@ import com.arjuna.ats.arjuna.tools.osb.mbean.OSEntryBean;
 import com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowser;
 import com.arjuna.ats.arjuna.tools.osb.mbean.UidWrapper;
 import com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule;
+import com.arjuna.ats.internal.arjuna.recovery.RecoveryManagerStatus;
 import com.hp.mwtests.ts.arjuna.resources.BasicRecord;
 import com.hp.mwtests.ts.arjuna.resources.CrashRecord;
 import com.hp.mwtests.ts.arjuna.resources.ShutdownRecord;
@@ -76,10 +77,10 @@ public class RecoveryManagerUnitTest {
 
     @Parameterized.Parameters
     public static Collection<Long> timeouts() {
-        // Any timeout less than 3000L has a probability to fail due to testSuspendResumeWithErrorTxn
+        // Any timeout less than 4000L has a probability to fail due to testSuspendResumeWithErrorTxn
         // The reason is that the txn in testSuspendResumeWithErrorTxn gets recovered but this process
-        // cannot happen in less than 2 seconds (because of the way PeriodicRecovery works).
-        return Arrays.asList(3000L, 5000L, 10000L);
+        // cannot happen in less than 3 seconds (because of the way PeriodicRecovery works).
+        return Arrays.asList(4000L, 7000L, 10000L);
     }
 
     public RecoveryManagerUnitTest(long timeout) {
@@ -154,13 +155,13 @@ public class RecoveryManagerUnitTest {
     }
 
     @Test
-    public void testSuspendResume() {
+    public void testSuspendResume() throws InterruptedException {
 
         runTest();
     }
 
     @Test
-    public void testSuspendResumeWithCleanObjectStore() {
+    public void testSuspendResumeWithCleanObjectStore() throws InterruptedException {
 
         recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(true);
 
@@ -168,7 +169,7 @@ public class RecoveryManagerUnitTest {
     }
 
     @Test
-    public void testSuspendResumeWithHeuristicTxn() {
+    public void testSuspendResumeWithHeuristicTxn() throws InterruptedException {
 
         recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(true);
 
@@ -199,7 +200,11 @@ public class RecoveryManagerUnitTest {
             // This thread will call RecoveryManager.suspend() thus it will check if the object store is empty.
             // As setTimeoutToWaitUntilNoTxns = 0, the checking loop will never end. To end the infinite loop,
             // test.interrupt() will be called.
-            runTest((x, y) -> x >= y, null, false, txns);
+            try {
+                runTest((x, y) -> x >= y, null, false, txns);
+            } catch (InterruptedException e) {
+                // Safe to ignore: we are only checking that the thread is no longer alive
+            }
         });
 
         test.start();
@@ -209,12 +214,16 @@ public class RecoveryManagerUnitTest {
             test.interrupt();
             // success
         } else {
-            fail();
+            fail("The thread used to run the test (and call RecoveryManager.suspend()) should have been alive.");
+        }
+
+        if (!test.isInterrupted()) {
+            fail("The thread used to run the test (and call RecoveryManager.suspend()) should have been interrupted.");
         }
     }
 
     @Test
-    public void testSuspendResumeWithHeuristicTxnSwitchingWaitUntilNoTxns() {
+    public void testSuspendResumeWithHeuristicTxnSwitchingWaitUntilNoTxns() throws InterruptedException {
 
         recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(true);
 
@@ -237,7 +246,7 @@ public class RecoveryManagerUnitTest {
     }
 
     @Test
-    public void testSuspendResumeWithSolvedHeuristicTxn() {
+    public void testSuspendResumeWithSolvedHeuristicTxn() throws InterruptedException {
 
         recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(true);
 
@@ -264,7 +273,7 @@ public class RecoveryManagerUnitTest {
     }
 
     @Test
-    public void testSuspendResumeWithAbortedTxn() {
+    public void testSuspendResumeWithAbortedTxn() throws InterruptedException {
 
         recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(true);
 
@@ -278,7 +287,7 @@ public class RecoveryManagerUnitTest {
     }
 
     @Test
-    public void testSuspendResumeWithErrorTxn() {
+    public void testSuspendResumeWithErrorTxn() throws InterruptedException {
 
         recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(true);
 
@@ -291,11 +300,11 @@ public class RecoveryManagerUnitTest {
         runTest((x, y) -> x < y, null, false, txns);
     }
 
-    private void runTest() {
+    private void runTest() throws InterruptedException {
         runTest(null, null, false, new HashMap<>());
     }
 
-    private void runTest(BiFunction<Long, Long, Boolean> booleanOperator, RecoveryScan callback, boolean async, Map<Integer, Collection<AbstractRecord>> txns) {
+    private void runTest(BiFunction<Long, Long, Boolean> booleanOperator, RecoveryScan callback, boolean async, Map<Integer, Collection<AbstractRecord>> txns) throws InterruptedException {
 
         for (Map.Entry<Integer, Collection<AbstractRecord>> entry : txns.entrySet()) {
             // Create transactions
@@ -313,11 +322,18 @@ public class RecoveryManagerUnitTest {
 
         Instant start = Instant.now();
         // Call the RM's suspend method with the constraint that the Object Store should be empty before suspending
-        rm.suspend(async);
+        RecoveryManagerStatus status = rm.suspend(async);
         Instant stop = Instant.now();
         if (Objects.nonNull(booleanOperator)) {
             long duration = Duration.between(start, stop).toMillis();
             assertTrue(booleanOperator.apply(duration, _timeout));
+        }
+
+        // Checking that the RecoveryManager is SUSPENDED
+        assertEquals(RecoveryManagerStatus.State.SUSPENDED, status.getState());
+        // Checking that the transactions left in the Object Store are among what we started with
+        for(Uid uid : status.getUids()) {
+            assertTrue(atomicActionsToClean.containsKey(uid));
         }
 
         rm.resume();

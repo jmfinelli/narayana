@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -203,15 +204,17 @@ public class RecoveryManagerImple
      * be empty. In case the {@link RecoveryEnvironmentBean#setWaitUntilNoTxns(boolean)} is set to false, the Recovery Manager
      * gets suspended without checking if there are transactions left in the Object Store. In both cases, if the Recovery Manager
      * is running a recovery scan, it will be suspended only afterwards, in order to preserve data integrity.
-     *
-     * {@link RecoveryManagerImple#trySuspendScan(boolean)} must be used with {@code synchronized}.
+     * <b>This method must be used with {@code synchronized}.</b>
      *
      * @param async false means wait for the recovery manager to finish any scans before returning.
-     * @return {@link PeriodicRecovery.Mode} to inform how the suspension finished
+     * @return {@link RecoveryManagerStatus} to inform how the suspension finished
+     * @throws InterruptedException when the calling thread is interrupted; the calling thread is responsible for checking
+     * whether the Object Store is empty thus any interruption happening during this task should be communicated to the caller.
+     * @throws ObjectStoreException when there are issues with {@link ObjectStoreIterator}
+     * @throws IOException when there are issues with {@link ObjectStoreIterator}
      */
-    public PeriodicRecovery.Mode trySuspendScan (boolean async) throws InterruptedException, ObjectStoreException, IOException
+    public RecoveryManagerStatus trySuspendScan (boolean async) throws InterruptedException, ObjectStoreException, IOException
     {
-
         if (recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns())
         {
             // Stop the transaction system. New transactions will not be created
@@ -221,7 +224,7 @@ public class RecoveryManagerImple
             Instant start = Instant.now();
             Instant check = start;
 
-            while (!isObjectStoreEmpty() &&
+            while (!isObjectStoreEmpty(null) &&
                     recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns() &&
                     (recoveryPropertyManager.getRecoveryEnvironmentBean().getTimeoutToWaitUntilNoTxns() <= 0 ||
                             Duration.between(start, check).toMillis() < recoveryPropertyManager.getRecoveryEnvironmentBean().getTimeoutToWaitUntilNoTxns()))
@@ -235,25 +238,29 @@ public class RecoveryManagerImple
         // transactions left in the Object Store), suspending the periodic recovery after an ongoing scan will not help to recover
         // in-doubt transactions. As a consequence, async is overridden by isWaitUntilNoTxns. If WaitUntilNoTxns was set to false,
         // then async can decide if suspendScan will wait for the completion of the ongoing scan
-        return _periodicRecovery.suspendScan(!recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns() && async);
+        _periodicRecovery.suspendScan(!recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns() && async);
+        // Populates uidsLeftInTheObjectStore with transactions left in the Object Store (in case there are any)
+        Collection<Uid> uidsLeftInTheObjectStore = new ArrayList<>();
+        isObjectStoreEmpty(uidsLeftInTheObjectStore);
+        return new RecoveryManagerStatus(_periodicRecovery.getMode(), uidsLeftInTheObjectStore);
     }
 
-    private boolean isObjectStoreEmpty() throws ObjectStoreException, IOException
+    private boolean isObjectStoreEmpty(Collection<Uid> txnsLeftInTheObjectStore) throws ObjectStoreException, IOException
     {
         boolean empty = true;
         // Holds the list of types
         final List<String> typeOfInterest = new ArrayList<>();
 
         this.getModules().forEach(recoveryModule -> typeOfInterest.addAll(recoveryModule.getTypes()));
-        Iterator<String> iterator = typeOfInterest.iterator();
 
-        while (iterator.hasNext() && empty)
-        {
-            String type = iterator.next();
-            if (Objects.nonNull(type))
-            {
+        for (String type : typeOfInterest) {
+            if (Objects.nonNull(type)) {
                 ObjectStoreTypeChecker objectStoreTypeChecker = new ObjectStoreTypeChecker(StoreManager.getRecoveryStore(), type);
-                empty = objectStoreTypeChecker.areThereTxns();
+                empty &= objectStoreTypeChecker.areThereTxns();
+                if (Objects.nonNull(txnsLeftInTheObjectStore)) {
+                    // Loads Uids in the external buffer. NB Uid is immutable
+                    txnsLeftInTheObjectStore.addAll(objectStoreTypeChecker.getTxns());
+                }
             }
         }
 
@@ -303,18 +310,32 @@ public class RecoveryManagerImple
         }
     }
 
+    /**
+     * <p>
+     *     This class checks if there are transactions of a specified type in the Object Store.
+     * </p>
+     * <p>
+     *     This class has been designed as a helper class for {@link RecoveryManagerImple} thus more
+     *     considerations should be given in case its visibility needs to be changed.
+     * </p>
+     */
     private static class ObjectStoreTypeChecker
     {
         private final ObjectStoreIterator objectStoreIterator;
         private final List<Uid> txns;
 
-        public ObjectStoreTypeChecker(RecoveryStore recoveryStore, String type) throws ObjectStoreException
+        private ObjectStoreTypeChecker(RecoveryStore recoveryStore, String type) throws ObjectStoreException
         {
             this.objectStoreIterator = new ObjectStoreIterator(recoveryStore, type);
             txns = new ArrayList<>();
         }
 
-        public boolean areThereTxns() throws IOException
+        /**
+         * Checks if there are transactions of a specified type in the Object Store
+         * @return true if there are transactions, false otherwise
+         * @throws IOException in case {@link ObjectStoreIterator} throws an {@link IOException}
+         */
+        private boolean areThereTxns() throws IOException
         {
             Uid uid;
             txns.clear();
@@ -327,8 +348,16 @@ public class RecoveryManagerImple
             return txns.isEmpty();
         }
 
-        public List<Uid> getTxns()
-        {
+        /**
+         * This method should be called ONLY after {@link ObjectStoreTypeChecker#areThereTxns()}, otherwise
+         * {@link ObjectStoreTypeChecker#txns} would be empty. This is not a problem as this class is private and only
+         * used inside {@link RecoveryManagerImple}. Be careful though! If there is the need to change the visibility
+         * of this class to public, further consideration should be given to how {@link ObjectStoreTypeChecker}'s methods
+         * interact with each other. For example, synchronization should be used to check if {@link ObjectStoreTypeChecker#txns}
+         * is empty or not before returning Uids from the Object Store.
+         * @return {@link List} of {@link Uid} wrapped with {@link Collections#unmodifiableList}
+         */
+        private List<Uid> getTxns() {
              // It does not really matter that txns is published as:
              // - Collections.unmodifiableList stops possible modifications of the Collection
              // - The Uid class is immutable

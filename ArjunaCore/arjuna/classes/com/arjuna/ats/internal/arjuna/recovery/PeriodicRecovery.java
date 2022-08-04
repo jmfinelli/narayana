@@ -239,6 +239,7 @@ public class PeriodicRecovery extends Thread
                    tsLogger.logger.debug("PeriodicRecovery: Mode <== SUSPENDED");
                }
                setMode(Mode.SUSPENDED);
+               currentMode = getMode();
                _stateLock.notifyAll();
            }
            if (!async) {

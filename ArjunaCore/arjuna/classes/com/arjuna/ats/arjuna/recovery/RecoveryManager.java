@@ -257,30 +257,22 @@ public class RecoveryManager
      * @throws IllegalStateException if the recovery manager has been shutdown.
      */
 
-    public void suspend (boolean async) {
-        trySuspend(async);
+    public RecoveryManagerStatus suspend (boolean async) throws InterruptedException {
+        return trySuspend(async);
     }
 
-    public synchronized RecoveryManagerStatus trySuspend(boolean async) {
+    public synchronized RecoveryManagerStatus trySuspend(boolean async) throws InterruptedException {
         checkState();
 
-        PeriodicRecovery.Mode mode = PeriodicRecovery.Mode.UNKNOWN;
+        RecoveryManagerStatus returnValue;
         try {
-            mode = _theImple.trySuspendScan(async);
-        } catch (InterruptedException | ObjectStoreException | IOException ex) {
+            returnValue = _theImple.trySuspendScan(async);
+        } catch (ObjectStoreException | IOException ex) {
             tsLogger.i18NLogger.fatal_recovery_manager_suspension(ex);
+            returnValue = new RecoveryManagerStatus(PeriodicRecovery.Mode.UNKNOWN);
         }
 
-        switch (mode) {
-            case ENABLED:
-                return RecoveryManagerStatus.ENABLED;
-            case SUSPENDED:
-                return RecoveryManagerStatus.SUSPENDED;
-            case TERMINATED:
-                return RecoveryManagerStatus.TERMINATED;
-            default:
-                throw new IllegalArgumentException("incompatible enum types");
-        }
+        return returnValue;
     }
 
     /**
