@@ -32,18 +32,19 @@
 package com.arjuna.ats.internal.arjuna.recovery;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
@@ -68,8 +69,7 @@ public class RecoveryManagerImple
 {
     private final PeriodicRecovery _periodicRecovery;
     private final RecActivatorLoader _recActivatorLoader;
-
-    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService _scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
 
     /**
      * Does the work of setting up crash recovery.
@@ -196,6 +196,8 @@ public class RecoveryManagerImple
         ExpiredEntryMonitor.shutdown();
 
         _periodicRecovery.shutdown(async);
+
+        _scheduledExecutorService.shutdown();
     }
 
     /**
@@ -215,11 +217,53 @@ public class RecoveryManagerImple
      */
     public RecoveryManagerStatus trySuspendScan (boolean async) throws InterruptedException, ObjectStoreException, IOException
     {
+        // This method should not be invoked very often as it suspends the Periodic Recovery and the Recovery Manager;
+        // As a consequence, using a local ScheduledExecutorService is an affordable overhead
+
         if (recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns())
         {
             // Stop the transaction system. New transactions will not be created
             TxControl.disable();
 
+            // It must not be possible to change the timeout after this point as a concurrent change of the timeout
+            // will mess Future<?>.get and the while-loop within the Callable task
+            final long timeout = recoveryPropertyManager.getRecoveryEnvironmentBean().getTimeoutToWaitUntilNoTxns();
+
+            // Define a Callable that check if the Object Store is empty
+            Callable<Void> checkIfObjectStoreIsEmpty = new Callable<Void>() {
+                @Override
+                public Void call() throws ObjectStoreException, IOException, InterruptedException {
+                    while ((!isObjectStoreEmpty(null) || timeout <= 0) &&
+                            recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitUntilNoTxns())
+                    {
+                        // sleep is responsive to InterruptedException, so it will allow checkIfObjectStoreIsEmpty
+                        // to be responsive to interruptions.
+                        TimeUnit.MILLISECONDS.sleep(recoveryPropertyManager.getRecoveryEnvironmentBean().getBackoffWaitUntilNoTxns());
+                    }
+                    return null;
+                }
+            };
+
+            Future<Void> checkingTask = _scheduledExecutorService.submit(checkIfObjectStoreIsEmpty);
+
+            try {
+                if (timeout > 0) {
+                    checkingTask.get(recoveryPropertyManager.getRecoveryEnvironmentBean().getTimeoutToWaitUntilNoTxns(), TimeUnit.MILLISECONDS);
+                } else {
+                    checkingTask.get();
+                }
+            } catch (ExecutionException e) {
+                // TODO Create a better handling of this situation (maybe a fatal in logs followed by an exception?)
+                throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                // Ignored as checkingTask will be interrupted in the "finally" block
+            } finally {
+                // "cancel" does not do anything if checkingTask has completed
+                checkingTask.cancel(true);
+            }
+
+
+            /*
             // Check if there are transactions in the Object Store
             Instant start = Instant.now();
             Instant check = start;
@@ -232,6 +276,7 @@ public class RecoveryManagerImple
                 TimeUnit.MILLISECONDS.sleep(recoveryPropertyManager.getRecoveryEnvironmentBean().getBackoffWaitUntilNoTxns());
                 check = Instant.now();
             }
+            */
         }
 
         // If the Object Store is not empty at this point (and the Recovery Manager was configured to suspend only when there were no

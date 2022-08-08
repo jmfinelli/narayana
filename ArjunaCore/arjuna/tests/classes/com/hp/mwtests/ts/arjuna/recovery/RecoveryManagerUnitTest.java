@@ -186,9 +186,18 @@ public class RecoveryManagerUnitTest {
     public void testSuspendResumeWithHeuristicTxnNegativeTimeout() throws InterruptedException {
 
         recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(true);
+        // Negative Timeout -> Suspension should last forever
+        recoveryPropertyManager.getRecoveryEnvironmentBean().setTimeoutToWaitUntilNoTxns(-100);
 
-        // Negative Timeout => Suspension should last forever
-        recoveryPropertyManager.getRecoveryEnvironmentBean().setTimeoutToWaitUntilNoTxns(0);
+        // This simulates an interruption to stop the infinite attempt to recover transactions
+        // Basically, this switches WaitUntilNoTxns after _timeout * 2
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                recoveryPropertyManager.getRecoveryEnvironmentBean().setWaitUntilNoTxns(false);
+            }
+        }, _timeout * 2);
 
         Map<Integer, Collection<AbstractRecord>> txns = new HashMap<>();
         // Initiate a transaction that will end with HEURISTIC_HAZARD outcome
@@ -196,30 +205,7 @@ public class RecoveryManagerUnitTest {
                 List.of(new CrashRecord(), new CrashRecord(CrashRecord.CrashLocation.CrashInCommit, CrashRecord.CrashType.HeuristicHazard))
         );
 
-        Thread test = new Thread(() -> {
-            // This thread will call RecoveryManager.suspend() thus it will check if the object store is empty.
-            // As setTimeoutToWaitUntilNoTxns = 0, the checking loop will never end. To end the infinite loop,
-            // test.interrupt() will be called.
-            try {
-                runTest((x, y) -> x >= y, null, false, txns);
-            } catch (InterruptedException e) {
-                // Safe to ignore: we are only checking that the thread is no longer alive
-            }
-        });
-
-        test.start();
-        // Wait a random time
-        Thread.sleep(_timeout + 1000);
-        if (test.isAlive()) {
-            test.interrupt();
-            // success
-        } else {
-            fail("The thread used to run the test (and call RecoveryManager.suspend()) should have been alive.");
-        }
-
-        if (!test.isInterrupted()) {
-            fail("The thread used to run the test (and call RecoveryManager.suspend()) should have been interrupted.");
-        }
+        runTest((x, y) -> x >= y, null, false, txns);
     }
 
     @Test
