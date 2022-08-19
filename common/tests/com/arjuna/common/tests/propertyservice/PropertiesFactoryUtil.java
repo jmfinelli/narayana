@@ -22,9 +22,9 @@
 
 package com.arjuna.common.tests.propertyservice;
 
-import org.junit.Assert;
-
 import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class PropertiesFactoryUtil {
     static final String PROPERTIES_FILE_NAME = "properties-factory-test.xml";
@@ -50,7 +50,7 @@ public final class PropertiesFactoryUtil {
             if (key instanceof String) {
                 String expectedValue = expectedProperties.getProperty((String) key);
                 String actualValue = actualProperties.getProperty((String) key);
-                Assert.assertEquals("Testing value with key=" + key, expectedValue, actualValue);
+                assertEquals(expectedValue, actualValue, "Testing value with key=" + key);
             }
         }
     }

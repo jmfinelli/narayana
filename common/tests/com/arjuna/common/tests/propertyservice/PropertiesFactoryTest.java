@@ -23,12 +23,11 @@ package com.arjuna.common.tests.propertyservice;
 
 import java.util.Properties;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import com.arjuna.common.util.propertyservice.AbstractPropertiesFactory;
 import com.arjuna.common.util.propertyservice.PropertiesFactorySax;
 import com.arjuna.common.util.propertyservice.PropertiesFactoryStax;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.arjuna.common.tests.propertyservice.PropertiesFactoryUtil.assertProperties;
 
@@ -40,7 +39,7 @@ import static com.arjuna.common.tests.propertyservice.PropertiesFactoryUtil.asse
 public final class PropertiesFactoryTest {
     private Properties expectedProperties;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         expectedProperties = PropertiesFactoryUtil.getExpectedProperties();
 

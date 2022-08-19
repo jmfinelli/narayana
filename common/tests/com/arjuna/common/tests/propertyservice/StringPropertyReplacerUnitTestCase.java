@@ -27,15 +27,15 @@ package com.arjuna.common.tests.propertyservice;
 // original version is jboss-common-core 2.2.8.GA
 // svn.jboss.org/repos/common/common-core/tags/2.2.8.GA/src/test/java/org/jboss/test/util/test/StringPropertyReplacerUnitTestCase.java
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
 import static com.arjuna.common.util.propertyservice.StringPropertyReplacer.replaceProperties;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Properties;
-
-import org.junit.After;
-import org.junit.Test;
 
 /**
  * A StringPropertyReplacerUnitTestCase.
@@ -55,7 +55,7 @@ public class StringPropertyReplacerUnitTestCase
    private static final String VALUE = "VALUE";
    private static final String WRAPPER = "wrapper";
 
-   @After
+   @AfterEach
    public void tearDown() throws Exception
    {
       System.clearProperty(PROP_A);

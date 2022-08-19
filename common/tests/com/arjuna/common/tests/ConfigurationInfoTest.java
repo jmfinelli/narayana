@@ -1,13 +1,14 @@
 package com.arjuna.common.tests;
 
 import com.arjuna.common.util.ConfigurationInfo;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ConfigurationInfoTest {
 
-    @Before
+    @BeforeEach
     public void setUp() {
     }
 

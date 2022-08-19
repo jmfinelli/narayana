@@ -22,12 +22,11 @@
 
 package com.arjuna.common.tests.propertyservice;
 
-import com.arjuna.common.tests.propertyservice.PropertiesFactoryUtil;
 import com.arjuna.common.util.propertyservice.AbstractPropertiesFactory;
 import com.arjuna.common.util.propertyservice.PropertiesFactorySax;
 import com.arjuna.common.util.propertyservice.PropertiesFactoryStax;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
@@ -39,7 +38,7 @@ import static com.arjuna.common.tests.propertyservice.PropertiesFactoryUtil.asse
 public class EmptyPropertiesFactoryTest {
     private Properties expectedProperties;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Properties props = new Properties();
         // setup the empty system property
