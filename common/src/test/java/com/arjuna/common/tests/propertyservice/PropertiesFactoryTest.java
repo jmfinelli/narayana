@@ -32,9 +32,7 @@ import org.junit.jupiter.api.Test;
 import static com.arjuna.common.tests.propertyservice.PropertiesFactoryUtil.assertProperties;
 
 /**
- *
  * @author <a href="mailto:gytis@redhat.com">Gytis Trikleris</a>
- *
  */
 public final class PropertiesFactoryTest {
     private Properties expectedProperties;

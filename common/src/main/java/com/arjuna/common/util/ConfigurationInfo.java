@@ -21,6 +21,7 @@
 package com.arjuna.common.util;
 
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,16 +30,15 @@ import java.util.Properties;
 
 /**
  * Utility class providing access to build time and runtime configuration reporting functions.
- *
+ * <p>
  * Replaces the old per-module Info (and in some cases Configuration and report) classes.
- *
+ * <p>
  * The actual build information is injected during the build via the
  * Maven Resources Plugin
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com) 2009-10
  */
-public class ConfigurationInfo
-{
+public class ConfigurationInfo {
     private static final String SOURCE_ID;
     private static final String PROPERTIES_FILE_NAME;
     private static final String BUILD_ID;
@@ -64,8 +64,8 @@ public class ConfigurationInfo
     }
 
     /**
-     * @see getSourceId
      * @return the version, if known.
+     * @see getSourceId
      */
     public static String getVersion() {
         return getSourceId();
@@ -94,13 +94,13 @@ public class ConfigurationInfo
 
     /**
      * Print config info to stdout.
+     *
      * @param args unused
      */
-    public static void main (String[] args)
-    {
+    public static void main(String[] args) {
         // build time info:
-        System.out.println("sourceId: "+getSourceId());
-        System.out.println("propertiesFile: "+getPropertiesFile());
+        System.out.println("sourceId: " + getSourceId());
+        System.out.println("propertiesFile: " + getPropertiesFile());
 
         // run time info (probably empty as beans only load on demand):
         String beans = BeanPopulator.printState();

@@ -32,7 +32,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface PropertyPrefix
-{
+public @interface PropertyPrefix {
     String prefix();
 }

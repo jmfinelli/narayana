@@ -54,10 +54,11 @@ public abstract class AbstractPropertiesFactory {
 
     /**
      * Returns the systems default properties, as read from the configuration file.
+     *
      * @return the configuration Properties
      */
     public Properties getDefaultProperties() {
-        if(defaultProperties == null) {
+        if (defaultProperties == null) {
             // TODO: pick and document new standard for global config file name property. For now use 'common' module value.
             initDefaultProperties("com.arjuna.ats.arjuna.common.propertiesFile");
         }
@@ -69,42 +70,38 @@ public abstract class AbstractPropertiesFactory {
      * Returns the config properties read from a specified location.
      *
      * @param propertyFileName the file name. If relative, this is located using the FileLocator algorithm.
+     *
      * @return the Properties loaded from the specified source.
      */
     public Properties getPropertiesFromFile(String propertyFileName, ClassLoader classLoader) {
         String propertiesSourceUri = null;
-        try
-        {
+        try {
             // This is the point where the search path is applied - user.dir (pwd), user.home, java.home, classpath
             propertiesSourceUri = com.arjuna.common.util.propertyservice.FileLocator.locateFile(propertyFileName, classLoader);
-        }
-        catch(FileNotFoundException fileNotFoundException)
-        {
+        } catch (FileNotFoundException fileNotFoundException) {
             // try falling back to a default file built into the .jar
             // Note the default- prefix on the name, to avoid finding it from the .jar at the previous stage
             // in cases where the .jar comes before the etc dir on the classpath.
-            URL url = AbstractPropertiesFactory.class.getResource("/default-"+propertyFileName);
-            if(url == null) {
-            	commonLogger.i18NLogger.warn_could_not_find_config_file(url);
+            URL url = AbstractPropertiesFactory.class.getResource("/default-" + propertyFileName);
+            if (url == null) {
+                commonLogger.i18NLogger.warn_could_not_find_config_file(url);
             } else {
                 propertiesSourceUri = url.toString();
             }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("invalid property file "+propertiesSourceUri, e);
+        } catch (IOException e) {
+            throw new RuntimeException("invalid property file " + propertiesSourceUri, e);
         }
 
         Properties properties = null;
 
         try {
-        	if (propertiesSourceUri != null) {
-        		properties = loadFromFile(propertiesSourceUri);
-        	}
+            if (propertiesSourceUri != null) {
+                properties = loadFromFile(propertiesSourceUri);
+            }
             properties = applySystemProperties(properties);
 
-        } catch(Exception e) {
-            throw new RuntimeException("unable to load properties from "+propertiesSourceUri, e);
+        } catch (Exception e) {
+            throw new RuntimeException("unable to load properties from " + propertiesSourceUri, e);
         }
 
         return properties;
@@ -114,13 +111,14 @@ public abstract class AbstractPropertiesFactory {
      * System properties take precedence over ones from the file.
      *
      * @param inputProperties
+     *
      * @return
      */
     private Properties applySystemProperties(Properties inputProperties) {
         Properties outputProperties = new Properties(inputProperties);
         Enumeration enumeration = System.getProperties().propertyNames();
-        while(enumeration.hasMoreElements()) {
-            String key = (String)enumeration.nextElement();
+        while (enumeration.hasMoreElements()) {
+            String key = (String) enumeration.nextElement();
             if (key == null || key.isEmpty()) continue;
             outputProperties.setProperty(key, System.getProperty(key));
         }
@@ -131,6 +129,7 @@ public abstract class AbstractPropertiesFactory {
      * Standard java.util.Properties xml format, with JBossAS style substitution post-processing.
      *
      * @param uri
+     *
      * @return
      * @throws IOException
      */
@@ -139,7 +138,7 @@ public abstract class AbstractPropertiesFactory {
         Properties inputProperties = new Properties();
         Properties outputProperties = new Properties();
 
-        if( new File(uri).exists() ) {
+        if (new File(uri).exists()) {
             inputStream = new FileInputStream(uri);
         } else {
             // it's probably a file embedded in a .jar
@@ -147,15 +146,15 @@ public abstract class AbstractPropertiesFactory {
         }
 
         try {
-            loadFromXML(inputProperties,inputStream);
+            loadFromXML(inputProperties, inputStream);
         } finally {
             inputStream.close();
         }
 
 
         Enumeration namesEnumeration = inputProperties.propertyNames();
-        while(namesEnumeration.hasMoreElements()) {
-            String propertyName = (String)namesEnumeration.nextElement();
+        while (namesEnumeration.hasMoreElements()) {
+            String propertyName = (String) namesEnumeration.nextElement();
             String propertyValue = inputProperties.getProperty(propertyName);
 
             propertyValue = propertyValue.trim();
@@ -170,7 +169,7 @@ public abstract class AbstractPropertiesFactory {
     }
 
     private synchronized void initDefaultProperties(String fileNamePropertyKey) {
-        if(defaultProperties != null) {
+        if (defaultProperties != null) {
             return;
         }
 
@@ -189,7 +188,7 @@ public abstract class AbstractPropertiesFactory {
         }
 
         // Bail out if it has not been possible to get a file name by either of these method.
-        if(propertyFileName == null) {
+        if (propertyFileName == null) {
             throw new RuntimeException("Unable to resolve property file name");
         }
 

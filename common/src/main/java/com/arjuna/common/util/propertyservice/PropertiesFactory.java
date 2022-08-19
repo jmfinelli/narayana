@@ -24,9 +24,7 @@ package com.arjuna.common.util.propertyservice;
 import java.util.Properties;
 
 /**
- *
  * @author <a href="mailto:gytis@redhat.com">Gytis Trikleris</a>
- *
  */
 public final class PropertiesFactory {
 

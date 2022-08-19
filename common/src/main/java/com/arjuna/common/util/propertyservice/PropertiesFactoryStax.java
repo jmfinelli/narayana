@@ -33,10 +33,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 /**
- *
  * @author Richard A. Begg (richard.begg@arjuna.com)
  * @author <a href="mailto:gytis@redhat.com">Gytis Trikleris</a>
- *
  */
 public class PropertiesFactoryStax extends AbstractPropertiesFactory {
 

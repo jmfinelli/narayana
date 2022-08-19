@@ -59,63 +59,51 @@ public class DummyEnvironmentBean {
         return properties;
     }
 
-    public int getMyInt()
-    {
+    public int getMyInt() {
         return myInt;
     }
 
-    public void setMyInt(int myInt)
-    {
+    public void setMyInt(int myInt) {
         this.myInt = myInt;
     }
 
-    public long getMyLong()
-    {
+    public long getMyLong() {
         return myLong;
     }
 
-    public void setMyLong(long myLong)
-    {
+    public void setMyLong(long myLong) {
         this.myLong = myLong;
     }
 
-    public String getMyString()
-    {
+    public String getMyString() {
         return myString;
     }
 
-    public void setMyString(String myString)
-    {
+    public void setMyString(String myString) {
         this.myString = myString;
     }
 
-    public boolean isMyFirstBoolean()
-    {
+    public boolean isMyFirstBoolean() {
         return myFirstBoolean;
     }
 
-    public void setMyFirstBoolean(boolean myFirstBoolean)
-    {
+    public void setMyFirstBoolean(boolean myFirstBoolean) {
         this.myFirstBoolean = myFirstBoolean;
     }
 
-    public boolean isMySecondBoolean()
-    {
+    public boolean isMySecondBoolean() {
         return mySecondBoolean;
     }
 
-    public void setMySecondBoolean(boolean mySecondBoolean)
-    {
+    public void setMySecondBoolean(boolean mySecondBoolean) {
         this.mySecondBoolean = mySecondBoolean;
     }
 
-    public List<String> getMyList()
-    {
+    public List<String> getMyList() {
         return myList;
     }
 
-    public void setMyList(List<String> myList)
-    {
+    public void setMyList(List<String> myList) {
         this.myList = myList;
     }
 }

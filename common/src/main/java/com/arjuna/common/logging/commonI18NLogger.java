@@ -32,26 +32,26 @@ import org.jboss.logging.annotations.MessageLogger;
 
 /**
  * i18n log messages for the jta module.
- * 
+ *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com) 2010-06
  */
 @MessageLogger(projectCode = "ARJUNA")
 public interface commonI18NLogger {
 
-	/*
-	 * Message IDs are unique and non-recyclable. Don't change the purpose of
-	 * existing messages. (tweak the message text or params for clarification if
-	 * you like). Allocate new messages by following instructions at the bottom
-	 * of the file.
-	 */
-	
-	@Message(id = 48001, value = "Could not find manifest {0}", format = MESSAGE_FORMAT)
-	@LogMessage(level = WARN)
-	public void warn_could_not_find_manifest(String arg0, @Cause() Throwable arg1);
+    /*
+     * Message IDs are unique and non-recyclable. Don't change the purpose of
+     * existing messages. (tweak the message text or params for clarification if
+     * you like). Allocate new messages by following instructions at the bottom
+     * of the file.
+     */
 
-	@Message(id = 48002, value = "Could not find configuration file, URL was: {0}", format = MESSAGE_FORMAT)
-	@LogMessage(level = WARN)
-	public void warn_could_not_find_config_file(URL url);
+    @Message(id = 48001, value = "Could not find manifest {0}", format = MESSAGE_FORMAT)
+    @LogMessage(level = WARN)
+    public void warn_could_not_find_manifest(String arg0, @Cause() Throwable arg1);
+
+    @Message(id = 48002, value = "Could not find configuration file, URL was: {0}", format = MESSAGE_FORMAT)
+    @LogMessage(level = WARN)
+    public void warn_could_not_find_config_file(URL url);
 
     @Message(id = 48003, value = "className is null", format = MESSAGE_FORMAT)
     @LogMessage(level = WARN)

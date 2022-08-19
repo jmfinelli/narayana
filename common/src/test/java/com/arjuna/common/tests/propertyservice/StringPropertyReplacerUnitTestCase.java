@@ -43,375 +43,301 @@ import java.util.Properties;
  * @author Brian Stansberry
  * @author Jonathan Halliday - forked to create the com.arjuna version and updated for junit4
  * @version $Revision$
- *
  */
-public class StringPropertyReplacerUnitTestCase
-{
-   private static final String PROP_A = "string.prop.replace.test.a";
-   private static final String PROP_B = "string.prop.replace.test.b";
-   private static final String PROP_C = "string.prop.replace.test.c";
-   private static final String PROP_D = "string.prop.replace.test.d";
-   private static final String DEFAULT = "DEFAULT";
-   private static final String VALUE = "VALUE";
-   private static final String WRAPPER = "wrapper";
+public class StringPropertyReplacerUnitTestCase {
+    private static final String PROP_A = "string.prop.replace.test.a";
+    private static final String PROP_B = "string.prop.replace.test.b";
+    private static final String PROP_C = "string.prop.replace.test.c";
+    private static final String PROP_D = "string.prop.replace.test.d";
+    private static final String DEFAULT = "DEFAULT";
+    private static final String VALUE = "VALUE";
+    private static final String WRAPPER = "wrapper";
 
-   @AfterEach
-   public void tearDown() throws Exception
-   {
-      System.clearProperty(PROP_A);
-      System.clearProperty(PROP_B);
-      System.clearProperty(PROP_C);
-      System.clearProperty(PROP_D);
-   }
+    private static Properties setupProperties() {
+        Properties props = new Properties();
+        props.put(PROP_A, VALUE);
+        props.put(PROP_C, VALUE);
+        return props;
+    }
 
-   private static Properties setupProperties()
-   {
-      Properties props = new Properties();
-      props.put(PROP_A, VALUE);
-      props.put(PROP_C, VALUE);
-      return props;
-   }
+    private static void setupSystemProperties() {
+        System.setProperty(PROP_A, VALUE);
+        System.setProperty(PROP_C, VALUE);
+    }
 
-   private static void setupSystemProperties()
-   {
-      System.setProperty(PROP_A, VALUE);
-      System.setProperty(PROP_C, VALUE);
-   }
+    @AfterEach
+    public void tearDown() throws Exception {
+        System.clearProperty(PROP_A);
+        System.clearProperty(PROP_B);
+        System.clearProperty(PROP_C);
+        System.clearProperty(PROP_D);
+    }
 
     @Test
-   public void testNullInput()
-   {
-      try
-      {
-         assertNull(replaceProperties(null));
-         fail("NPE expected with null input");
-      }
-      catch (NullPointerException good) {}
+    public void testNullInput() {
+        try {
+            assertNull(replaceProperties(null));
+            fail("NPE expected with null input");
+        } catch (NullPointerException good) {
+        }
 
-      try
-      {
-         assertNull(replaceProperties(null, setupProperties()));
-         fail("NPE expected with null input");
-      }
-      catch (NullPointerException good) {}
-   }
+        try {
+            assertNull(replaceProperties(null, setupProperties()));
+            fail("NPE expected with null input");
+        } catch (NullPointerException good) {
+        }
+    }
 
     @Test
-   public void testBasicReplacement()
-   {
-      basicReplacementTest(false);
-   }
+    public void testBasicReplacement() {
+        basicReplacementTest(false);
+    }
 
     @Test
-   public void testBasicReplacementFromSystemProps()
-   {
-      basicReplacementTest(true);
-   }
+    public void testBasicReplacementFromSystemProps() {
+        basicReplacementTest(true);
+    }
 
-   private void basicReplacementTest(boolean useSysProps)
-   {
-      String input = "${"+PROP_A+"}";
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void basicReplacementTest(boolean useSysProps) {
+        String input = "${" + PROP_A + "}";
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(VALUE, output);
-   }
+        assertEquals(VALUE, output);
+    }
 
     @Test
-   public void testWrappedReplacement()
-   {
-      wrappedReplacementTest(false);
-   }
+    public void testWrappedReplacement() {
+        wrappedReplacementTest(false);
+    }
 
     @Test
-   public void testWrappedReplacementFromSystemProps()
-   {
-      wrappedReplacementTest(true);
-   }
+    public void testWrappedReplacementFromSystemProps() {
+        wrappedReplacementTest(true);
+    }
 
-   private void wrappedReplacementTest(boolean useSysProps)
-   {
-      String input = WRAPPER+"${"+PROP_A+"}";
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void wrappedReplacementTest(boolean useSysProps) {
+        String input = WRAPPER + "${" + PROP_A + "}";
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(WRAPPER+VALUE, output);
+        assertEquals(WRAPPER + VALUE, output);
 
-      input = "${"+PROP_A+"}"+WRAPPER;
-      output = null;
-      if (useSysProps)
-      {
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+        input = "${" + PROP_A + "}" + WRAPPER;
+        output = null;
+        if (useSysProps) {
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(VALUE+WRAPPER, output);
+        assertEquals(VALUE + WRAPPER, output);
 
-      input = WRAPPER+"${"+PROP_A+"}"+WRAPPER;
-      output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+        input = WRAPPER + "${" + PROP_A + "}" + WRAPPER;
+        output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(WRAPPER+VALUE+WRAPPER, output);
-   }
+        assertEquals(WRAPPER + VALUE + WRAPPER, output);
+    }
 
     @Test
-   public void testMissingProperty()
-   {
-      missingPropertyTest(false);
-   }
+    public void testMissingProperty() {
+        missingPropertyTest(false);
+    }
 
     @Test
-   public void testMissingPropertyFromSystemProps()
-   {
-      missingPropertyTest(true);
-   }
+    public void testMissingPropertyFromSystemProps() {
+        missingPropertyTest(true);
+    }
 
-   private void missingPropertyTest(boolean useSysProps)
-   {
-      String input = WRAPPER+"${"+PROP_B+"}"+WRAPPER;
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void missingPropertyTest(boolean useSysProps) {
+        String input = WRAPPER + "${" + PROP_B + "}" + WRAPPER;
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(input, output);
-   }
+        assertEquals(input, output);
+    }
 
     @Test
-   public void testWrappedMissingProperty()
-   {
-      wrappedMissingPropertyTest(false);
-   }
+    public void testWrappedMissingProperty() {
+        wrappedMissingPropertyTest(false);
+    }
 
     @Test
-   public void testWrappedMissingPropertyFromSystemProps()
-   {
-      wrappedMissingPropertyTest(true);
-   }
+    public void testWrappedMissingPropertyFromSystemProps() {
+        wrappedMissingPropertyTest(true);
+    }
 
-   private void wrappedMissingPropertyTest(boolean useSysProps)
-   {
-      String input = WRAPPER+"${"+PROP_B+"}"+WRAPPER;
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void wrappedMissingPropertyTest(boolean useSysProps) {
+        String input = WRAPPER + "${" + PROP_B + "}" + WRAPPER;
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(input, output);
-   }
+        assertEquals(input, output);
+    }
 
     @Test
-   public void testDefaultValue()
-   {
-      defaultValueTest(false);
-   }
+    public void testDefaultValue() {
+        defaultValueTest(false);
+    }
 
     @Test
-   public void testDefaultValueFromSystemProps()
-   {
-      defaultValueTest(true);
-   }
+    public void testDefaultValueFromSystemProps() {
+        defaultValueTest(true);
+    }
 
-   private void defaultValueTest(boolean useSysProps)
-   {
-      String input = "${"+PROP_B+":"+DEFAULT+"}";
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void defaultValueTest(boolean useSysProps) {
+        String input = "${" + PROP_B + ":" + DEFAULT + "}";
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(DEFAULT, output);
-   }
+        assertEquals(DEFAULT, output);
+    }
 
     @Test
-   public void testSecondaryProperty()
-   {
-      secondaryPropertyTest(false);
-   }
+    public void testSecondaryProperty() {
+        secondaryPropertyTest(false);
+    }
 
     @Test
-   public void testSecondaryPropertyFromSystemProps()
-   {
-      secondaryPropertyTest(true);
-   }
+    public void testSecondaryPropertyFromSystemProps() {
+        secondaryPropertyTest(true);
+    }
 
-   private void secondaryPropertyTest(boolean useSysProps)
-   {
-      String input = "${"+PROP_B+","+PROP_C+"}";
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void secondaryPropertyTest(boolean useSysProps) {
+        String input = "${" + PROP_B + "," + PROP_C + "}";
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(VALUE, output);
-   }
+        assertEquals(VALUE, output);
+    }
 
     @Test
-   public void testSecondaryPropertyAndDefault()
-   {
-      secondaryPropertyAndDefaultTest(false);
-   }
+    public void testSecondaryPropertyAndDefault() {
+        secondaryPropertyAndDefaultTest(false);
+    }
 
     @Test
-   public void testSecondaryPropertyAndDefaultFromSystemProps()
-   {
-      secondaryPropertyAndDefaultTest(true);
-   }
+    public void testSecondaryPropertyAndDefaultFromSystemProps() {
+        secondaryPropertyAndDefaultTest(true);
+    }
 
-   private void secondaryPropertyAndDefaultTest(boolean useSysProps)
-   {
-      String input = "${"+PROP_B+","+PROP_D+":"+DEFAULT+"}";
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void secondaryPropertyAndDefaultTest(boolean useSysProps) {
+        String input = "${" + PROP_B + "," + PROP_D + ":" + DEFAULT + "}";
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(DEFAULT, output);
-   }
+        assertEquals(DEFAULT, output);
+    }
 
     @Test
-   public void testSecondaryPropertyAndMissing()
-   {
-      secondaryPropertyAndMissingTest(false);
-   }
+    public void testSecondaryPropertyAndMissing() {
+        secondaryPropertyAndMissingTest(false);
+    }
 
     @Test
-   public void testSecondaryPropertyAndMissingFromSystemProps()
-   {
-      secondaryPropertyAndMissingTest(true);
-   }
+    public void testSecondaryPropertyAndMissingFromSystemProps() {
+        secondaryPropertyAndMissingTest(true);
+    }
 
-   private void secondaryPropertyAndMissingTest(boolean useSysProps)
-   {
-      String input = "${"+PROP_B+","+PROP_D+"}";
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void secondaryPropertyAndMissingTest(boolean useSysProps) {
+        String input = "${" + PROP_B + "," + PROP_D + "}";
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(input, output);
-   }
+        assertEquals(input, output);
+    }
 
     @Test
-   public void testMultipleReplacements()
-   {
-      multipleReplacementTest(false);
-   }
+    public void testMultipleReplacements() {
+        multipleReplacementTest(false);
+    }
 
     @Test
-   public void testMultipleReplacementsFromSystemProps()
-   {
-      multipleReplacementTest(true);
-   }
+    public void testMultipleReplacementsFromSystemProps() {
+        multipleReplacementTest(true);
+    }
 
-   private void multipleReplacementTest(boolean useSysProps)
-   {
-      String input = "${"+PROP_A+"}${"+PROP_C+"}";
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void multipleReplacementTest(boolean useSysProps) {
+        String input = "${" + PROP_A + "}${" + PROP_C + "}";
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(VALUE+VALUE, output);
-   }
+        assertEquals(VALUE + VALUE, output);
+    }
 
     @Test
-   public void testPartialMissing()
-   {
-      partialMissingTest(false);
-   }
+    public void testPartialMissing() {
+        partialMissingTest(false);
+    }
 
     @Test
-   public void testPartialMissingFromSystemProps()
-   {
-      partialMissingTest(true);
-   }
+    public void testPartialMissingFromSystemProps() {
+        partialMissingTest(true);
+    }
 
-   private void partialMissingTest(boolean useSysProps)
-   {
-      String badinput = "${"+PROP_B+"}";
-      String input = WRAPPER+"${"+PROP_A+"}"+badinput+"${"+PROP_C+"}"+WRAPPER;
-      String output = null;
-      if (useSysProps)
-      {
-         setupSystemProperties();
-         output = replaceProperties(input);
-      }
-      else
-      {
-         output = replaceProperties(input, setupProperties());
-      }
+    private void partialMissingTest(boolean useSysProps) {
+        String badinput = "${" + PROP_B + "}";
+        String input = WRAPPER + "${" + PROP_A + "}" + badinput + "${" + PROP_C + "}" + WRAPPER;
+        String output = null;
+        if (useSysProps) {
+            setupSystemProperties();
+            output = replaceProperties(input);
+        } else {
+            output = replaceProperties(input, setupProperties());
+        }
 
-      assertEquals(WRAPPER+VALUE+badinput+VALUE+WRAPPER, output);
-   }
+        assertEquals(WRAPPER + VALUE + badinput + VALUE + WRAPPER, output);
+    }
 
 }

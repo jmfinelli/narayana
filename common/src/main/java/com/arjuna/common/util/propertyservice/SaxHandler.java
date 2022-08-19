@@ -28,9 +28,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- *
  * @author <a href="mailto:gytis@redhat.com">Gytis Trikleris</a>
- *
  */
 public final class SaxHandler extends DefaultHandler {
 
@@ -92,7 +90,7 @@ public final class SaxHandler extends DefaultHandler {
      * Handles text content of the <code>entry</code> tag.
      */
     @Override
-    public void characters(char ch[], int start, int length) throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (isEntry) {
             currentBuffer.append(ch, start, length);
         }
@@ -103,6 +101,7 @@ public final class SaxHandler extends DefaultHandler {
      *
      * @param name
      * @param attributes
+     *
      * @return String value of the attribute if such attribute exists and null otherwise.
      */
     private String getAttributeValue(final String name, final Attributes attributes) {
