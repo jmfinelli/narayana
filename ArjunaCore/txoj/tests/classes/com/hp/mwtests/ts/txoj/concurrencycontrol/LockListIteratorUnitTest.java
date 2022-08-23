@@ -31,9 +31,9 @@
 
 package com.hp.mwtests.ts.txoj.concurrencycontrol;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.arjuna.ats.internal.txoj.LockList;
 import com.arjuna.ats.internal.txoj.LockListIterator;

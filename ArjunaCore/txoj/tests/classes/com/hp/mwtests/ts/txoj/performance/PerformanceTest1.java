@@ -31,9 +31,9 @@ package com.hp.mwtests.ts.txoj.performance;
  * $Id: PerformanceTest1.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.hp.mwtests.ts.txoj.common.exceptions.TestException;

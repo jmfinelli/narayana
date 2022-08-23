@@ -31,7 +31,7 @@
 
 package com.hp.mwtests.ts.txoj.concurrencycontrol;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.hp.mwtests.ts.txoj.common.resources.AtomicObject;
 import com.hp.mwtests.ts.txoj.common.resources.HammerThreadedObject;

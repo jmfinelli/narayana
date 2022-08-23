@@ -31,11 +31,11 @@
 
 package com.arjuna.ats.txoj;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.arjuna.ats.internal.txoj.LockConflictManager;
 
