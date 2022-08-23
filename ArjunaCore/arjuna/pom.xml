@@ -26,21 +26,6 @@
   <packaging>jar</packaging>
 
   <build>
-    <sourceDirectory>classes</sourceDirectory>
-    <resources>
-      <resource>
-        <directory>etc</directory>
-      </resource>
-    </resources>
-    <testSourceDirectory>tests/classes</testSourceDirectory>
-    <testResources>
-      <testResource>
-        <directory>src/test/resources</directory>
-      </testResource>
-      <testResource>
-        <directory>tests/byteman-scripts</directory>
-      </testResource>
-    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

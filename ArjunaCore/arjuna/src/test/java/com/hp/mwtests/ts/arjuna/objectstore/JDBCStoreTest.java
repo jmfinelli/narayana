@@ -47,7 +47,7 @@ public class JDBCStoreTest {
 	public void before() {
 		if (System.getProperty("com.arjuna.ats.arjuna.common.propertiesFile") == null) {
 			System.setProperty("com.arjuna.ats.arjuna.common.propertiesFile",
-					"h2jbossts-properties.xml");
+                    "h2jbossts-properties.xml");
 			resetPropertiesFile = true;
 		}
 	}

@@ -192,7 +192,7 @@
 			<fileMode>0644</fileMode>
 		</file>
 		<file>
-			<source>../common/etc/log4j.properties</source>
+			<source>../common/src/main/resources/log4j.properties</source>
 			<fileMode>0644</fileMode>
 			<outputDirectory>etc</outputDirectory>
 		</file>
