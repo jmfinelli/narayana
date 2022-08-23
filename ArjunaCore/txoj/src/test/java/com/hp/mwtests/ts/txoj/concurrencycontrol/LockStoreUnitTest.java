@@ -34,17 +34,12 @@ package com.hp.mwtests.ts.txoj.concurrencycontrol;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-
 import org.junit.jupiter.api.Test;
 
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.ObjectModel;
-import com.arjuna.ats.arjuna.ObjectType;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.internal.txoj.lockstore.BasicPersistentLockStore;
-import com.arjuna.ats.txoj.LockResult;
 import com.arjuna.ats.txoj.common.txojPropertyManager;
 import com.hp.mwtests.ts.txoj.common.resources.AtomicObjectLockStore;
 
