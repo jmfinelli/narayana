@@ -33,8 +33,8 @@ package com.hp.mwtests.ts.arjuna.performance;
 
 import io.narayana.perf.Measurement;
 import io.narayana.perf.WorkerWorkload;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
@@ -57,8 +57,8 @@ public class Performance2
                 .numberOfThreads(threads).batchSize(work)
                 .numberOfWarmupCalls(warmUpCount).build().measure(worker);
 
-        Assert.assertEquals(0, measurement.getNumberOfErrors());
-        Assert.assertFalse(measurement.getInfo(), measurement.shouldFail());
+        Assertions.assertEquals(0, measurement.getNumberOfErrors());
+        Assertions.assertFalse(measurement.shouldFail(), measurement.getInfo());
 
         System.out.printf("%s%n", measurement.getInfo());
 

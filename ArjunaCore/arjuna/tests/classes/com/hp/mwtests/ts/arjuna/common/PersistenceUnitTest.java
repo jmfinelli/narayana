@@ -20,9 +20,9 @@
  */
 package com.hp.mwtests.ts.arjuna.common;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.hp.mwtests.ts.arjuna.resources.BasicObject;

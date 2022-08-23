@@ -31,8 +31,8 @@ package com.hp.mwtests.ts.arjuna.recovery;
  * $Id: TransactionStatusConnectorTest.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,7 +45,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.ActionStatus;

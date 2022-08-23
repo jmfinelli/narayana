@@ -31,12 +31,12 @@ package com.hp.mwtests.ts.arjuna.recovery;
  * $Id: TransactionStatusManagerItemTest.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetAddress;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.utils.Utility;
 import com.arjuna.ats.internal.arjuna.recovery.TransactionStatusManagerItem;

@@ -31,12 +31,11 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
@@ -48,7 +47,7 @@ import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.arjuna.objectstore.LogStore;
 
-@RunWith(BMUnitRunner.class)
+@WithByteman
 @BMScript("objectstore")
 public class LogStoreTest2
 {

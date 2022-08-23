@@ -29,8 +29,9 @@ import com.arjuna.ats.arjuna.coordinator.AddOutcome;
 import com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome;
 import com.arjuna.ats.internal.arjuna.abstractrecords.LastResourceRecord;
 import com.hp.mwtests.ts.arjuna.resources.*;
-import org.junit.Test;
-import org.junit.Assert;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AtomicActionTestBase
 {
@@ -61,7 +62,7 @@ public class AtomicActionTestBase
 
         executeTest(true, ActionStatus.COMMITTED, null, basicRecord, lastResourceRecord);
 
-        Assert.assertEquals(OnePhase.COMMITTED, onePhase.status());
+        assertEquals(OnePhase.COMMITTED, onePhase.status());
     }
 
     protected void testPrepareWithLRRFailOn2PCAwareResourcePrepare()
@@ -72,7 +73,7 @@ public class AtomicActionTestBase
 
         executeTest(true, ActionStatus.ABORTED, null, shutdownRecord, lastResourceRecord);
 
-        Assert.assertEquals(OnePhase.ROLLEDBACK, onePhase.status());
+        assertEquals(OnePhase.ROLLEDBACK, onePhase.status());
     }
 
     protected void testPrepareWithLRRFailOn2PCUnawareResourcePrepare()
@@ -83,7 +84,7 @@ public class AtomicActionTestBase
 
         executeTest(true, ActionStatus.ABORTED, null, lastResourceRecord, basicRecord);
 
-        Assert.assertEquals(OnePhase.ROLLEDBACK, onePhase.status());
+        assertEquals(OnePhase.ROLLEDBACK, onePhase.status());
     }
 
     protected void testPrepareWithLRRFailOn2PCAwareResourceCommit()
@@ -94,7 +95,7 @@ public class AtomicActionTestBase
 
         executeTest(true, ActionStatus.COMMITTED, null, lastResourceRecord, shutdownRecord);
 
-        Assert.assertEquals(OnePhase.COMMITTED, onePhase.status());
+        assertEquals(OnePhase.COMMITTED, onePhase.status());
     }
 
     /**
@@ -112,14 +113,14 @@ public class AtomicActionTestBase
 
         for (SyncRecord sync : syncs) {
             // assert that both before and after synchronisation callbacks were triggered
-            Assert.assertTrue(sync.getBeforeTimeStamp() != 0);
-            Assert.assertTrue(sync.getAfterTimeStamp() != 0);
+            assertTrue(sync.getBeforeTimeStamp() != 0);
+            assertTrue(sync.getAfterTimeStamp() != 0);
         }
 
         // assert that beforeCompletion was called on the non interposed synchronisation first
-        Assert.assertTrue(syncs[0].getBeforeTimeStamp() <= syncs[1].getBeforeTimeStamp());
+        assertTrue(syncs[0].getBeforeTimeStamp() <= syncs[1].getBeforeTimeStamp());
         // assert that beforeCompletion was called on the non interposed synchronisation last
-        Assert.assertTrue(syncs[0].getAfterTimeStamp() >= syncs[1].getAfterTimeStamp());
+        assertTrue(syncs[0].getAfterTimeStamp() >= syncs[1].getAfterTimeStamp());
     }
 
     /**
@@ -142,11 +143,11 @@ public class AtomicActionTestBase
          * - afterCompletion should be called on all synchronisations
          * - the final status of the action should be aborted
          */
-        Assert.assertTrue(syncs[0].getBeforeTimeStamp() != 0);
-        Assert.assertTrue(syncs[1].getBeforeTimeStamp() == 0);
-        Assert.assertTrue(syncs[0].getAfterTimeStamp() != 0);
-        Assert.assertTrue(syncs[1].getAfterTimeStamp() != 0);
-        Assert.assertTrue(syncs[1].getStatus() == ActionStatus.ABORTED);
+        assertTrue(syncs[0].getBeforeTimeStamp() != 0);
+        assertTrue(syncs[1].getBeforeTimeStamp() == 0);
+        assertTrue(syncs[0].getAfterTimeStamp() != 0);
+        assertTrue(syncs[1].getAfterTimeStamp() != 0);
+        assertTrue(syncs[1].getStatus() == ActionStatus.ABORTED);
 
     }
 
@@ -173,12 +174,12 @@ public class AtomicActionTestBase
          * - the synchronization should have throw the runtime exception
          * - the final status of the action should be aborted
          */
-        Assert.assertTrue(syncs[0].getBeforeTimeStamp() != 0);
-        Assert.assertTrue(syncs[1].getBeforeTimeStamp() == 0);
-        Assert.assertTrue(syncs[0].getAfterTimeStamp() != 0);
-        Assert.assertTrue(syncs[1].getAfterTimeStamp() != 0);
-        Assert.assertEquals(exception, a.getDeferredThrowable());
-        Assert.assertTrue(syncs[1].getStatus() == ActionStatus.ABORTED);
+        assertTrue(syncs[0].getBeforeTimeStamp() != 0);
+        assertTrue(syncs[1].getBeforeTimeStamp() == 0);
+        assertTrue(syncs[0].getAfterTimeStamp() != 0);
+        assertTrue(syncs[1].getAfterTimeStamp() != 0);
+        assertEquals(exception, a.getDeferredThrowable());
+        assertTrue(syncs[1].getStatus() == ActionStatus.ABORTED);
 
     }
 
@@ -308,17 +309,17 @@ public class AtomicActionTestBase
         int status = A.commit(reportHeuristics);
 
         if (reportHeuristics)
-            Assert.assertEquals(ActionStatus.H_MIXED, status);
+            assertEquals(ActionStatus.H_MIXED, status);
         else if (!arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncCommit())
-            Assert.assertEquals(ActionStatus.COMMITTED, status);
+            assertEquals(ActionStatus.COMMITTED, status);
         else
-            Assert.assertTrue(status == ActionStatus.COMMITTED || status == ActionStatus.COMMITTING);
+            assertTrue(status == ActionStatus.COMMITTED || status == ActionStatus.COMMITTING);
 
         // we only inform synchronisations of the outcome if report_heuristics is false
         int expect = reportHeuristics ? -1 : TwoPhaseOutcome.HEURISTIC_MIXED;
 
         for (DummyHeuristic dh : dha)
-            Assert.assertEquals(expect, dh.getStatus());
+            assertEquals(expect, dh.getStatus());
     }
 
     protected AtomicAction executeTest(boolean isCommit, int expectedResult, SyncRecord[] syncs, AbstractRecord... records) {
@@ -332,15 +333,15 @@ public class AtomicActionTestBase
 
         if (syncs != null) {
             for (SyncRecord sync : syncs)
-                Assert.assertEquals(AddOutcome.AR_ADDED, A.addSynchronization(sync));
+                assertEquals(AddOutcome.AR_ADDED, A.addSynchronization(sync));
 
-            Assert.assertEquals(syncs.length, A.getSynchronizations().size());
+            assertEquals(syncs.length, A.getSynchronizations().size());
         }
 
         if (isCommit) {
-            Assert.assertEquals(expectedResult, A.commit());
+            assertEquals(expectedResult, A.commit());
         } else {
-            Assert.assertEquals(expectedResult, A.abort());
+            assertEquals(expectedResult, A.abort());
         }
 
         return A;

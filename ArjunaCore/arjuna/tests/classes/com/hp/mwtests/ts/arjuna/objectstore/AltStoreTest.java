@@ -20,11 +20,11 @@
  */
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
@@ -42,7 +42,7 @@ public class AltStoreTest
 {
     String defaultStoreDir = null;
 
-    @Before
+    @BeforeEach
     public void setPropertiesFileAndRemoveStore() {
         // set up a different properties file specific to this test
         // (the properties change the store type to one that does not touch the filesystem)

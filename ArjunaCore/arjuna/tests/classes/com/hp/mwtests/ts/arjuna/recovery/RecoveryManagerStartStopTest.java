@@ -21,8 +21,8 @@
 
 package com.hp.mwtests.ts.arjuna.recovery;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,10 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
-import org.junit.Test;
-import org.junit.Before;
-import org.junit.runner.RunWith;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
@@ -46,11 +45,11 @@ import com.arjuna.ats.arjuna.recovery.RecoveryManager;
  * test to ensure that the recovery manager cleans up all its threads when terminated
  */
 
-@RunWith(BMUnitRunner.class)
+@WithByteman
 @BMScript("recovery")
 public class RecoveryManagerStartStopTest
 {
-    @Before
+    @BeforeEach
     public void enableSocketBasedRecovery()
     {
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryListener(true);

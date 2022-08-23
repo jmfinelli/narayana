@@ -20,13 +20,12 @@
  */
 package com.hp.mwtests.ts.arjuna.reaper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
@@ -39,7 +38,7 @@ import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
  * @author Andrew Dinn (adinn@redhat.com), 2007-07-09
  */
 
-@RunWith(BMUnitRunner.class)
+@WithByteman
 @BMScript("reaper")
 public class ReaperTestCase2  extends ReaperTestCaseControl
 {

@@ -22,8 +22,8 @@ package com.hp.mwtests.ts.arjuna.resources;
 
 import java.io.File;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 
@@ -32,13 +32,13 @@ import com.arjuna.ats.arjuna.common.arjPropertyManager;
  */
 public class TestBase
 {
-    @Before
+    @BeforeEach
     public void setUp()
 	{
         emptyObjectStore();
 	}
 
-	@After
+	@AfterEach
     public void tearDown()
 	{
         emptyObjectStore();

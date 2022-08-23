@@ -31,19 +31,19 @@ import com.arjuna.ats.arjuna.coordinator.TxStats;
 import com.arjuna.ats.arjuna.objectstore.ParticipantStore;
 import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TxStatsSystemErrorUnitTest {
     private static final String storeClassName = com.arjuna.ats.internal.arjuna.objectstore.VolatileStore.class.getName();
 
-    @BeforeClass
+    @BeforeAll
     public static void setupStore() throws Exception {
         String storeType = UnreliableTestStore.class.getName();
         BeanPopulator.getDefaultInstance(ObjectStoreEnvironmentBean.class).setObjectStoreType(storeType);

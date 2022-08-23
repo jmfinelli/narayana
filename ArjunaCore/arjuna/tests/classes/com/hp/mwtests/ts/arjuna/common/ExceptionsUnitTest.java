@@ -20,7 +20,7 @@
  */
 package com.hp.mwtests.ts.arjuna.common;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.exceptions.FatalError;
 import com.arjuna.ats.arjuna.exceptions.ObjectStoreError;

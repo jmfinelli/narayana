@@ -20,15 +20,15 @@
  */
 package com.hp.mwtests.ts.arjuna.threadaction;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Hashtable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.CoordinatorEnvironmentBean;
@@ -43,13 +43,13 @@ public class ThreadUtilTest {
 
     private boolean allowCheckedActionFactoryOverride;
 
-    @Before
+    @BeforeEach
     public void setup() {
         CoordinatorEnvironmentBean coordinatorEnvironmentBean = arjPropertyManager.getCoordinatorEnvironmentBean();
         allowCheckedActionFactoryOverride = coordinatorEnvironmentBean.isAllowCheckedActionFactoryOverride();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         CoordinatorEnvironmentBean coordinatorEnvironmentBean = arjPropertyManager.getCoordinatorEnvironmentBean();
         coordinatorEnvironmentBean.setAllowCheckedActionFactoryOverride(allowCheckedActionFactoryOverride);

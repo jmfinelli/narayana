@@ -26,12 +26,11 @@ import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryDriver;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import org.jboss.logging.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,9 +43,8 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test cases which work with a direct connection to socket where RecoveryManager listens at.
@@ -61,21 +59,21 @@ public class RecoverySocketUnitTest {
     private int recoveryManagerPort = 0;
     private RecoveryManager recoveryManager;
 
-    @BeforeClass
+    @BeforeAll
     public static void getInitialState() {
         socketRecoveryListenerInitialState = recoveryPropertyManager.getRecoveryEnvironmentBean().isRecoveryListener();
         periodicRecoveryPeriodInitialState =  recoveryPropertyManager.getRecoveryEnvironmentBean().getPeriodicRecoveryPeriod();
         recoveryBackoffPeriodInitialState = recoveryPropertyManager.getRecoveryEnvironmentBean().getRecoveryBackoffPeriod();
     }
 
-    @AfterClass
+    @AfterAll
     public static void resetInitialState() {
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryListener(socketRecoveryListenerInitialState);
         recoveryPropertyManager.getRecoveryEnvironmentBean().setPeriodicRecoveryPeriod(periodicRecoveryPeriodInitialState);
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryBackoffPeriod(recoveryBackoffPeriodInitialState);
     }
 
-    @Before
+    @BeforeEach
     public void enableRecoveryListener() throws InterruptedException{
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryListener(true);
         recoveryPropertyManager.getRecoveryEnvironmentBean().setPeriodicRecoveryPeriod(1);
@@ -83,7 +81,7 @@ public class RecoverySocketUnitTest {
         recoveryManager = RecoveryManager.manager();
     }
 
-    @After
+    @AfterEach
     public void terminateRecoveryListener() {
         try {
             recoveryManager.terminate();
@@ -130,7 +128,7 @@ public class RecoverySocketUnitTest {
             toServer.println(RecoveryDriver.PING);
             toServer.flush();
             String stringResponse = fromServer.readLine();
-            assertEquals("Expecting the correct response string for command " + RecoveryDriver.PING, RecoveryDriver.PONG, stringResponse);
+            assertEquals(RecoveryDriver.PONG, stringResponse, "Expecting the correct response string for command " + RecoveryDriver.PING);
         } catch (final SocketTimeoutException stex) {
             failOnSocketTimeout(stex, RecoveryDriver.PING);
         }
@@ -146,7 +144,7 @@ public class RecoverySocketUnitTest {
             toServer.println(RecoveryDriver.SCAN);
             toServer.flush();
             String stringResponse = fromServer.readLine();
-            assertEquals("Expecting SCAN to be processed correctly", "DONE", stringResponse);
+            assertEquals("DONE", stringResponse, "Expecting SCAN to be processed correctly");
         } catch (final SocketTimeoutException stex) {
             failOnSocketTimeout(stex, RecoveryDriver.SCAN);
         }
@@ -162,7 +160,7 @@ public class RecoverySocketUnitTest {
             toServer.println(RecoveryDriver.VERBOSE_SCAN);
             toServer.flush();
             String stringResponse = fromServer.readLine();
-            assertEquals("Expecting VERBOSE SCAN to be processed correctly", "DONE", stringResponse);
+            assertEquals("DONE", stringResponse, "Expecting VERBOSE SCAN to be processed correctly");
         } catch (final SocketTimeoutException stex) {
             failOnSocketTimeout(stex, RecoveryDriver.VERBOSE_SCAN);
         }
@@ -201,6 +199,6 @@ public class RecoverySocketUnitTest {
     private void failOnSocketTimeout(SocketTimeoutException stex, String failedSocketCommand) {
         log.errorf(stex, "Cannot finish with the socket operation at %s:%d because of a timeout%n",
                 recoveryManagerHost, recoveryManagerPort);
-        Assert.fail(String.format("Socket operation '%s' timed out", failedSocketCommand));
+        fail(String.format("Socket operation '%s' timed out", failedSocketCommand));
     }
 }

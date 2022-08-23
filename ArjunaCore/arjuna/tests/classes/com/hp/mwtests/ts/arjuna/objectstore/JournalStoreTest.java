@@ -13,19 +13,19 @@ import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.objectstore.hornetq.HornetqJournalEnvironmentBean;
 import com.arjuna.ats.internal.arjuna.objectstore.hornetq.HornetqObjectStoreAdaptor;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JournalStoreTest {
     private static HornetqJournalEnvironmentBean hornetqJournalEnvironmentBean;
     private final String typeName = "/StateManager/junit";
 
-    @BeforeClass
+    @BeforeAll
     public static void before() {
         BeanPopulator.getDefaultInstance(ObjectStoreEnvironmentBean.class).
                 setObjectStoreType(HornetqObjectStoreAdaptor.class.getName());
@@ -33,7 +33,7 @@ public class JournalStoreTest {
         hornetqJournalEnvironmentBean = BeanPopulator.getDefaultInstance(HornetqJournalEnvironmentBean.class);
     }
 
-    @AfterClass
+    @AfterAll
     public static void after() {
         hornetqJournalEnvironmentBean.setMaxIO(2);
         hornetqJournalEnvironmentBean.setAsyncIO(false);

@@ -20,7 +20,7 @@
  */
 package com.hp.mwtests.ts.arjuna.atomicaction;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.internal.arjuna.coordinator.AppendLogTransaction;
 

@@ -20,10 +20,10 @@
  */
 package com.hp.mwtests.ts.arjuna.atomicaction;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.hp.mwtests.ts.arjuna.resources.DummyHeuristic;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome;

@@ -31,9 +31,9 @@ package com.hp.mwtests.ts.arjuna.objectstore;
  * $Id: ObjectStoreTest.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
@@ -730,8 +730,8 @@ public class ObjectStoreTest
             }
             listOfUids.append("1:"+uid.toString());
         }
-        assertTrue("U1 search " + listOfUids.toString(), foundU1);
-        assertTrue("U2 search " + listOfUids.toString(), foundU2);
+        assertTrue(foundU1, "U1 search " + listOfUids.toString());
+        assertTrue(foundU2, "U2 search " + listOfUids.toString());
     }
 
     private static final boolean validate(ObjectStore objStore)

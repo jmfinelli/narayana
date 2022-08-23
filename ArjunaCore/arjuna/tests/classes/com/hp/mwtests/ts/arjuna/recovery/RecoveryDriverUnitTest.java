@@ -20,11 +20,11 @@
  */
 package com.hp.mwtests.ts.arjuna.recovery;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Test;
-import org.junit.Before;
+import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryDriver;
@@ -32,7 +32,7 @@ import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 
 public class RecoveryDriverUnitTest
 {
-    @Before
+    @BeforeEach
     public void enableSocketBasedRecovery()
     {
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryListener(true);

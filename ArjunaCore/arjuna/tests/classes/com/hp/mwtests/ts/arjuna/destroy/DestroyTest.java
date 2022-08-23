@@ -31,7 +31,7 @@
 
 package com.hp.mwtests.ts.arjuna.destroy;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.hp.mwtests.ts.arjuna.resources.BasicObject;

@@ -20,10 +20,10 @@
  */
 package com.hp.mwtests.ts.arjuna.tools;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
@@ -66,7 +66,7 @@ public class OtherObjectStoreAPIJMXTest {
         psProxy = StoreManagerProxy.getParticipantStore(null);
     }
 
-    @After
+    @AfterEach
     public void tearDown () throws Exception
     {
         // Unregister MBeans

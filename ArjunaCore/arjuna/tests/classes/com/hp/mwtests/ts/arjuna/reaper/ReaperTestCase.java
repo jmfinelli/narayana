@@ -20,16 +20,15 @@
  */
 package com.hp.mwtests.ts.arjuna.reaper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.Reapable;
@@ -42,7 +41,7 @@ import com.arjuna.ats.internal.arjuna.coordinator.ReaperElement;
  * @author jonathan.halliday@redhat.com, 2007-04-30
  */
 
-@RunWith(BMUnitRunner.class)
+@WithByteman
 @BMScript("reaper")
 public class ReaperTestCase extends ReaperTestCaseControl
 {

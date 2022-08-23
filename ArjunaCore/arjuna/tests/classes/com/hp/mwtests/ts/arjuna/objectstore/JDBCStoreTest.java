@@ -20,15 +20,15 @@
  */
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
@@ -43,7 +43,7 @@ import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
 public class JDBCStoreTest {
 	private boolean resetPropertiesFile;
 
-	@Before
+	@BeforeEach
 	public void before() {
 		if (System.getProperty("com.arjuna.ats.arjuna.common.propertiesFile") == null) {
 			System.setProperty("com.arjuna.ats.arjuna.common.propertiesFile",
@@ -52,7 +52,7 @@ public class JDBCStoreTest {
 		}
 	}
 
-	@After
+	@AfterEach
 	public void after() {
 		if (resetPropertiesFile) {
 			System.clearProperty("com.arjuna.ats.arjuna.common.propertiesFile");
@@ -106,7 +106,7 @@ public class JDBCStoreTest {
 
 		InputObjectState read_state = api.read_committed(uid, "typeName");
 		assertTrue(new String(read_state.unpackBytes()).equals(toTest));
-		assertTrue(read_state.type(), read_state.type().equals("typeName"));
+		assertTrue(read_state.type().equals("typeName"), read_state.type());
 
 		states = new InputObjectState();
 		api.allObjUids("typeName", states);

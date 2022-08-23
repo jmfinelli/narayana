@@ -30,8 +30,8 @@ import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.objectstore.FileSystemStore;
 import com.arjuna.ats.internal.arjuna.objectstore.ShadowNoFileLockStore;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,10 +40,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Verify that a log created by the code prior to the fix for JBTM-3262 can be read by later code
@@ -54,13 +54,13 @@ public class TestBackwardsCompatibilityForSha0b511d470f7a {
     // define a system property for controlling a code path that will generate a log record
     private static final String CREATE_RECORD_SYS_PROP = "JBTM3262";
 
-    @Before
+    @BeforeEach
     public void beforeMethod() {
         // this test only applies to filesystem based stores
         arjPropertyManager.getObjectStoreEnvironmentBean().setObjectStoreType(ShadowNoFileLockStore.class.getName());
 
-        assumeTrue("Skipping test since it only applies to stores of type FileSystemStore",
-                StoreManager.getCommunicationStore() instanceof FileSystemStore);
+        assumeTrue(StoreManager.getCommunicationStore() instanceof FileSystemStore,
+                "Skipping test since it only applies to stores of type FileSystemStore");
     }
 
     @Test
@@ -91,10 +91,10 @@ public class TestBackwardsCompatibilityForSha0b511d470f7a {
                 // read the log record
                 InputObjectState ios = StoreManager.getCommunicationStore().read_committed(uid, RECORD_TYPE);
 
-                assertNotNull("could not read back JBTM-3262 record", ios);
-                assertEquals("read back a different state", intData, ios.unpackInt());
-                assertEquals("read back a different state", stringData, ios.unpackString());
-                assertEquals("read back a different state", intData, ios.unpackInt());
+                assertNotNull(ios, "could not read back JBTM-3262 record");
+                assertEquals(intData, ios.unpackInt(), "read back a different state");
+                assertEquals(stringData, ios.unpackString(), "read back a different state");
+                assertEquals(intData, ios.unpackInt(), "read back a different state");
             }
         } catch (Exception e) {
             fail(e.getMessage());

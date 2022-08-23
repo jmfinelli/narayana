@@ -22,12 +22,12 @@
 package com.hp.mwtests.ts.arjuna.atomicaction;
 
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;;
 
 public class AtomicActionAsyncHeuristicTest extends AtomicActionTestBase
 {
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         AtomicActionTestBase.init(true);
         // heuristic tests rely on synchronous commits

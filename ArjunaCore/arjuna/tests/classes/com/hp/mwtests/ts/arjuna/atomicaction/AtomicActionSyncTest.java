@@ -21,13 +21,13 @@
  */
 package com.hp.mwtests.ts.arjuna.atomicaction;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;;
 
 public class AtomicActionSyncTest extends AtomicActionTestBase
 {
     // NOTE: The following bean properties can only be set once (because TxControl takes a static copy of them)
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         AtomicActionTestBase.init(false);
     }

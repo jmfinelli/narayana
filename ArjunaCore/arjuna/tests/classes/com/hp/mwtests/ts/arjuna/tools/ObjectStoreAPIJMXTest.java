@@ -20,15 +20,15 @@
  */
 package com.hp.mwtests.ts.arjuna.tools;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.management.Notification;
 import javax.management.NotificationListener;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.objectstore.ObjectStoreIterator;
@@ -55,7 +55,7 @@ public class ObjectStoreAPIJMXTest {
         }
     };
 
-	@Before
+	@BeforeEach
 	public void setUp () throws Exception
 	{
         notified = false;
@@ -73,7 +73,7 @@ public class ObjectStoreAPIJMXTest {
 		pps = StoreManagerProxy.getParticipantStore(listener);
 	}
 
-	@After
+	@AfterEach
 	public void tearDown () throws Exception
 	{
 		// Unregister MBeans
