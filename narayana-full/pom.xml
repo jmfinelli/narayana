@@ -25,6 +25,11 @@
   <description>Narayana: narayana-full</description>
   <dependencies>
     <dependency>
+      <groupId>org.jboss.narayana</groupId>
+      <artifactId>common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.jboss.narayana.arjunacore</groupId>
       <artifactId>arjunacore-services</artifactId>
       <version>${project.version}</version>

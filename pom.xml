@@ -207,6 +207,7 @@
     <version.hamcrest>2.2</version.hamcrest>
     <version.io.mashona>1.0.0.Beta1</version.io.mashona>
     <version.io.narayana.checkstyle-config>1.0.1.Final</version.io.narayana.checkstyle-config>
+    <version.jakarta.annotation>2.1.1</version.jakarta.annotation>
     <version.jakarta.json-api>2.0.1</version.jakarta.json-api>
     <version.javadoc.plugin>3.0.1</version.javadoc.plugin>
     <version.javax.annotation>1.2</version.javax.annotation>
@@ -221,7 +222,8 @@
     <version.junit>4.13.1</version.junit>
     <version.junit.jupiter>5.9.0</version.junit.jupiter>
     <version.mariadb>1.2.2</version.mariadb>
-    <version.maven-failsafe-plugin>2.22.0</version.maven-failsafe-plugin>
+    <version.maven-failsafe-plugin>3.0.0-M7</version.maven-failsafe-plugin>
+    <version.maven-surefire-plugin>3.0.0-M7</version.maven-surefire-plugin>
     <version.maven.checkstyle-plugin>3.1.2</version.maven.checkstyle-plugin>
     <version.maven.jandex-plugin>1.0.6</version.maven.jandex-plugin>
     <version.mysql>8.0.25</version.mysql>
@@ -243,7 +245,7 @@
     <version.org.jboss.jboss-transaction-spi>7.6.1.Final</version.org.jboss.jboss-transaction-spi>
     <version.org.jboss.jboss-transaction-spi-jakarta>7.6.1.Final</version.org.jboss.jboss-transaction-spi-jakarta>
     <version.org.jboss.logging.jboss-logging>3.2.1.Final</version.org.jboss.logging.jboss-logging>
-    <version.org.jboss.logging.jboss-logging-processor>2.0.0.Final</version.org.jboss.logging.jboss-logging-processor>
+    <version.org.jboss.logging.jboss-logging-processor>2.2.1.Final</version.org.jboss.logging.jboss-logging-processor>
     <version.org.jboss.logmanager>1.5.1.Final</version.org.jboss.logmanager>
     <version.org.jboss.openjdk-orb>8.1.9.Final</version.org.jboss.openjdk-orb>
     <version.org.jboss.resteasy>4.7.4.Final</version.org.jboss.resteasy>
@@ -271,22 +273,38 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging</artifactId>
+        <version>${version.org.jboss.logging.jboss-logging}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging-annotations</artifactId>
+        <version>${version.org.jboss.logging.jboss-logging-processor}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging-processor</artifactId>
+        <version>${version.org.jboss.logging.jboss-logging-processor}</version>
+      </dependency>
+      <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
-	<version>${version.junit.jupiter}</version>
-        <scope>test</scope>
+        <version>${version.junit.jupiter}</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <version>${version.jakarta.annotation}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.annotation</groupId>
+        <artifactId>javax.annotation-api</artifactId>
+        <version>${version.javax.annotation}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
-  <dependencies>
-    <dependency>
-      <groupId>javax.annotation</groupId>
-      <artifactId>javax.annotation-api</artifactId>
-      <version>${version.javax.annotation}</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
   <repositories>
     <repository>
       <id>jbossThirdParty</id>
@@ -553,6 +571,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <version>${version.maven-surefire-plugin}</version>
         <configuration combine.self="append">
           <forkMode>pertest</forkMode>
           <childDelegation>true</childDelegation>
