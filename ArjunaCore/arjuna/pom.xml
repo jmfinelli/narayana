@@ -11,52 +11,18 @@
   should have received a copy of the GNU Lesser General Public License, v.2.1 
   along with this distribution; if not, write to the Free Software Foundation, 
   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.jboss.narayana.arjunacore</groupId>
     <artifactId>arjunacore-all</artifactId>
     <version>5.13.1.Final-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>arjuna</artifactId>
+  <packaging>jar</packaging>
   <name>Narayana: ArjunaCore arjuna</name>
   <description>Narayana: ArjunaCore Arjuna</description>
-  <packaging>jar</packaging>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- exclude everything by default then the not-ibmorb and ibmorb profiles can
-               selectively include/exclude specific tests -->
-          <excludes>
-            <exclude>**/*.java</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <inherited>false</inherited>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>com/arjuna/ats/arjuna/tools/stats/TxPerfGraph.java</exclude>
-            <exclude>com/arjuna/ats/arjuna/tools/stats/TxPerfPlugin.java</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <inherited>false</inherited>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
   <dependencies>
     <dependency>
       <groupId>org.jboss.narayana</groupId>
@@ -130,6 +96,39 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- exclude everything by default then the not-ibmorb and ibmorb profiles can
+               selectively include/exclude specific tests -->
+          <excludes>
+            <exclude>**/*.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <inherited>false</inherited>
+        <configuration>
+          <excludes>
+            <exclude>com/arjuna/ats/arjuna/tools/stats/TxPerfGraph.java</exclude>
+            <exclude>com/arjuna/ats/arjuna/tools/stats/TxPerfPlugin.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <inherited>false</inherited>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <profile>
@@ -218,13 +217,13 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-install-plugin</artifactId>
+            <inherited>false</inherited>
             <executions>
               <execution>
                 <id>default-install</id>
                 <phase>install</phase>
               </execution>
             </executions>
-            <inherited>false</inherited>
           </plugin>
         </plugins>
       </build>
@@ -444,12 +443,11 @@
       <build>
         <plugins>
           <plugin>
-            <inherited>false</inherited>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
+            <inherited>false</inherited>
             <configuration combine.children="append">
-              <excludes>
-              </excludes>
+              <excludes></excludes>
             </configuration>
 
           </plugin>
@@ -495,10 +493,10 @@
             <executions>
               <execution>
                 <id>surefire-ibmorb</id>
-                <phase>test</phase>
                 <goals>
                   <goal>test</goal>
                 </goals>
+                <phase>test</phase>
                 <configuration>
                   <excludes>
                     <!--
