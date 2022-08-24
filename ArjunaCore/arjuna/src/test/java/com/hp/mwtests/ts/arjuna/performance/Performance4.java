@@ -31,44 +31,18 @@
 
 package com.hp.mwtests.ts.arjuna.performance;
 
-import io.narayana.perf.Measurement;
-import io.narayana.perf.WorkerWorkload;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.internal.arjuna.objectstore.TwoPhaseVolatileStore;
 import com.hp.mwtests.ts.arjuna.resources.BasicRecord;
+import io.narayana.perf.Measurement;
+import io.narayana.perf.WorkerWorkload;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class Performance4
-{
-    @Test
-    public void test()
-    {
-        int threadCount = 10;
-        int batchSize = 100;
-        int warmUpCount = 0;
-        int numberOfTransactions = threadCount * batchSize;
+;
 
-        arjPropertyManager.getCoordinatorEnvironmentBean().setCommitOnePhase(false);
-        arjPropertyManager.getObjectStoreEnvironmentBean().setObjectStoreType(TwoPhaseVolatileStore.class.getName());
-
-         Measurement measurement = new Measurement.Builder(getClass().getName() + "_test1")
-                .maxTestTime(0L).numberOfCalls(numberOfTransactions)
-                .numberOfThreads(threadCount).batchSize(batchSize)
-                .numberOfWarmupCalls(warmUpCount).build().measure(worker);
-
-        Assertions.assertEquals(0, measurement.getNumberOfErrors());
-        Assertions.assertFalse(measurement.shouldFail(), measurement.getInfo());
-
-        System.out.printf("%s%n", measurement.getInfo());
-
-        System.out.println("time for " + numberOfTransactions + " write transactions is " + measurement.getTotalMillis());
-        System.out.println("number of transactions: " + numberOfTransactions);
-        System.out.println("throughput: " + (float) (numberOfTransactions / (measurement.getTotalMillis() / 1000.0)));
-    }
-
+public class Performance4 {
     WorkerWorkload<Void> worker = new WorkerWorkload<Void>() {
         @Override
         public Void doWork(Void context, int batchSize, Measurement<Void> config) {
@@ -82,8 +56,7 @@ public class Performance4
                     A.add(new BasicRecord());
 
                     A.commit();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     if (config.getNumberOfErrors() == 0)
                         e.printStackTrace();
 
@@ -98,4 +71,29 @@ public class Performance4
         public void finishWork(Measurement<Void> measurement) {
         }
     };
+
+    @Test
+    public void test() {
+        int threadCount = 10;
+        int batchSize = 100;
+        int warmUpCount = 0;
+        int numberOfTransactions = threadCount * batchSize;
+
+        arjPropertyManager.getCoordinatorEnvironmentBean().setCommitOnePhase(false);
+        arjPropertyManager.getObjectStoreEnvironmentBean().setObjectStoreType(TwoPhaseVolatileStore.class.getName());
+
+        Measurement measurement = new Measurement.Builder(getClass().getName() + "_test1")
+                .maxTestTime(0L).numberOfCalls(numberOfTransactions)
+                .numberOfThreads(threadCount).batchSize(batchSize)
+                .numberOfWarmupCalls(warmUpCount).build().measure(worker);
+
+        Assertions.assertEquals(0, measurement.getNumberOfErrors());
+        Assertions.assertFalse(measurement.shouldFail(), measurement.getInfo());
+
+        System.out.printf("%s%n", measurement.getInfo());
+
+        System.out.println("time for " + numberOfTransactions + " write transactions is " + measurement.getTotalMillis());
+        System.out.println("number of transactions: " + numberOfTransactions);
+        System.out.println("throughput: " + (float) (numberOfTransactions / (measurement.getTotalMillis() / 1000.0)));
+    }
 }

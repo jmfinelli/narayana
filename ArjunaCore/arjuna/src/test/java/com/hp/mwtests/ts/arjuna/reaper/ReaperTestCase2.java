@@ -20,15 +20,16 @@
  */
 package com.hp.mwtests.ts.arjuna.reaper;
 
+import com.arjuna.ats.arjuna.common.Uid;
+import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
+import org.jboss.byteman.contrib.bmunit.BMScript;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.WithByteman;
-import org.junit.jupiter.api.Test;;
-
-import com.arjuna.ats.arjuna.common.Uid;
-import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
+;
 
 /**
  * Exercise cancellation behaviour of TransactionReaper with resources
@@ -40,11 +41,9 @@ import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 
 @WithByteman
 @BMScript("reaper")
-public class ReaperTestCase2  extends ReaperTestCaseControl
-{
+public class ReaperTestCase2 extends ReaperTestCaseControl {
     @Test
-    public void testReaper() throws Exception
-    {
+    public void testReaper() throws Exception {
         TransactionReaper reaper = TransactionReaper.transactionReaper();
 
         // create slow reapables some of which will not respond immediately
@@ -429,8 +428,8 @@ public class ReaperTestCase2  extends ReaperTestCaseControl
 
         triggerRendezvous("reaper1");
 
-        // the reaper should have marked the thread as a zombie 
-        
+        // the reaper should have marked the thread as a zombie
+
         assertTrue(checkAndClearFlag("zombied"));
 
         // the transactions queue should be

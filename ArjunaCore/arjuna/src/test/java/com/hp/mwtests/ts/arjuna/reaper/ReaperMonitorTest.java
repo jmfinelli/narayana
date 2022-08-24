@@ -20,62 +20,30 @@
  */
 package com.hp.mwtests.ts.arjuna.reaper;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.WithByteman;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 import com.arjuna.ats.arjuna.coordinator.listener.ReaperMonitor;
+import org.jboss.byteman.contrib.bmunit.BMScript;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 @WithByteman
 @BMScript("reaper")
-public class ReaperMonitorTest
-{
-    class DummyMonitor implements ReaperMonitor
-    {
-        public synchronized void rolledBack (Uid txId)
-        {
-            success = true;
-            notify();
-            notified = true;
-        }
-        
-        public synchronized void markedRollbackOnly (Uid txId)
-        {
-            success = false;
-            notify();
-            notified = true;
-        }
-        
-        public boolean success = false;
-        public boolean notified = false;
+public class ReaperMonitorTest {
+    public static boolean success = false;
 
-        public synchronized boolean checkSucceeded(int msecsTimeout)
-        {
-            if (!notified) {
-                try {
-                    wait(msecsTimeout);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-            }
-
-            return success;
-        }
-    }
-    
     @Test
-    public void test()
-    {
+    public void test() {
         TransactionReaper reaper = TransactionReaper.transactionReaper();
         DummyMonitor listener = new DummyMonitor();
-       
+
         reaper.addListener(listener);
-        
+
         AtomicAction A = new AtomicAction();
 
         A.begin();
@@ -107,5 +75,32 @@ public class ReaperMonitorTest
 
     }
 
-    public static boolean success = false;
+    class DummyMonitor implements ReaperMonitor {
+        public boolean success = false;
+        public boolean notified = false;
+
+        public synchronized void rolledBack(Uid txId) {
+            success = true;
+            notify();
+            notified = true;
+        }
+
+        public synchronized void markedRollbackOnly(Uid txId) {
+            success = false;
+            notify();
+            notified = true;
+        }
+
+        public synchronized boolean checkSucceeded(int msecsTimeout) {
+            if (!notified) {
+                try {
+                    wait(msecsTimeout);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+
+            return success;
+        }
+    }
 }

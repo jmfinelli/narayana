@@ -31,13 +31,6 @@
 
 package com.arjuna.ats.internal.arjuna.objectstore.jdbc;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
@@ -50,142 +43,37 @@ import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputBuffer;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
+
 /**
  * An object store implementation which uses a JDBC database for maintaining
  * object states. All states are maintained within a single table.
- * 
+ * <p>
  * It is assumed that only one object will use a given instance of the
  * JDBCStore. Hence, there is no need for synchronizations.
  */
 
 public class JDBCStore implements ObjectStoreAPI {
-    protected JDBCImple_driver _theImple;
     private static final String DEFAULT_TABLE_NAME = "JBossTSTxTable";
-    protected String tableName;
-    protected final ObjectStoreEnvironmentBean jdbcStoreEnvironmentBean;
-    private String _storeName;
     private static Map<String, JDBCImple_driver> imples = new HashMap<String, JDBCImple_driver>();
     private static Map<String, String> storeNames = new HashMap<String, String>();
-
-    @Override
-    public void start() {
-    }
-
-    @Override
-    public void stop() {
-    }
-
-    /**
-     * Does this store need to do the full write_uncommitted/commit protocol?
-     * 
-     * @return <code>true</code> if full commit is needed, <code>false</code>
-     *         otherwise.
-     */
-
-    public boolean fullCommitNeeded() {
-        return true;
-    }
-
-    /**
-     * Some object store implementations may be running with automatic sync
-     * disabled. Calling this method will ensure that any states are flushed to
-     * disk.
-     */
-
-    public void sync() throws java.io.SyncFailedException, ObjectStoreException {
-    }
-
-    /**
-     * Is the current state of the object the same as that provided as the last
-     * parameter?
-     * 
-     * @param u
-     *            The object to work on.
-     * @param tn
-     *            The type of the object.
-     * @param st
-     *            The expected type of the object.
-     * 
-     * @return <code>true</code> if the current state is as expected,
-     *         <code>false</code> otherwise.
-     */
-
-    public boolean isType(Uid u, String tn, int st) throws ObjectStoreException {
-        return (currentState(u, tn) == st);
-    }
-
-    public String getStoreName() {
-        return _storeName;
-    }
-
-    public boolean allObjUids(String s, InputObjectState buff) throws ObjectStoreException {
-        return allObjUids(s, buff, StateStatus.OS_UNKNOWN);
-    }
-
-    public boolean commit_state(Uid objUid, String tName) throws ObjectStoreException {
-        return _theImple.commit_state(objUid, tName);
-    }
-
-    public boolean hide_state(Uid objUid, String tName) throws ObjectStoreException {
-        return _theImple.hide_state(objUid, tName);
-    }
-
-    public boolean reveal_state(Uid objUid, String tName) throws ObjectStoreException {
-        return _theImple.reveal_state(objUid, tName);
-    }
-
-    public int currentState(Uid objUid, String tName) throws ObjectStoreException {
-        return _theImple.currentState(objUid, tName);
-    }
-
-    public InputObjectState read_committed(Uid storeUid, String tName) throws ObjectStoreException {
-        return _theImple.read_state(storeUid, tName, StateStatus.OS_COMMITTED);
-    }
-
-    public InputObjectState read_uncommitted(Uid storeUid, String tName) throws ObjectStoreException {
-        return _theImple.read_state(storeUid, tName, StateStatus.OS_UNCOMMITTED);
-    }
-
-    public boolean remove_committed(Uid storeUid, String tName) throws ObjectStoreException {
-        return _theImple.remove_state(storeUid, tName, StateStatus.OS_COMMITTED);
-    }
-
-    public boolean remove_uncommitted(Uid storeUid, String tName) throws ObjectStoreException {
-        return _theImple.remove_state(storeUid, tName, StateStatus.OS_UNCOMMITTED);
-    }
-
-    public boolean write_committed(Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException {
-        return _theImple.write_state(storeUid, tName, state, StateStatus.OS_COMMITTED);
-    }
-
-    public boolean write_uncommitted(Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException {
-        return _theImple.write_state(storeUid, tName, state, StateStatus.OS_UNCOMMITTED);
-    }
-
-    public boolean allObjUids(String tName, InputObjectState state, int match) throws ObjectStoreException {
-        return _theImple.allObjUids(tName, state, match);
-    }
-
-    public boolean allTypes(InputObjectState foundTypes) throws ObjectStoreException {
-        return _theImple.allTypes(foundTypes);
-    }
-
-    public synchronized void packInto(OutputBuffer buff) throws IOException {
-        buff.packString(tableName);
-    }
-
-    public synchronized void unpackFrom(InputBuffer buff) throws IOException {
-        this.tableName = buff.unpackString();
-    }
+    protected final ObjectStoreEnvironmentBean jdbcStoreEnvironmentBean;
+    protected JDBCImple_driver _theImple;
+    protected String tableName;
+    private String _storeName;
 
     /**
      * Create a new JDBCStore
-     * 
-     * @param jdbcStoreEnvironmentBean
-     *            The environment bean containing the configuration
-     * @throws ObjectStoreException
-     *             In case the store environment bean was not correctly
-     *             configured
+     *
+     * @param jdbcStoreEnvironmentBean The environment bean containing the configuration
+     *
+     * @throws ObjectStoreException In case the store environment bean was not correctly
+     *                              configured
      */
     public JDBCStore(ObjectStoreEnvironmentBean jdbcStoreEnvironmentBean) throws ObjectStoreException {
         this.jdbcStoreEnvironmentBean = jdbcStoreEnvironmentBean;
@@ -261,5 +149,113 @@ public class JDBCStore implements ObjectStoreAPI {
                 throw new ObjectStoreException(e);
             }
         }
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
+    }
+
+    /**
+     * Does this store need to do the full write_uncommitted/commit protocol?
+     *
+     * @return <code>true</code> if full commit is needed, <code>false</code>
+     *         otherwise.
+     */
+
+    public boolean fullCommitNeeded() {
+        return true;
+    }
+
+    /**
+     * Some object store implementations may be running with automatic sync
+     * disabled. Calling this method will ensure that any states are flushed to
+     * disk.
+     */
+
+    public void sync() throws java.io.SyncFailedException, ObjectStoreException {
+    }
+
+    /**
+     * Is the current state of the object the same as that provided as the last
+     * parameter?
+     *
+     * @param u  The object to work on.
+     * @param tn The type of the object.
+     * @param st The expected type of the object.
+     *
+     * @return <code>true</code> if the current state is as expected,
+     *         <code>false</code> otherwise.
+     */
+
+    public boolean isType(Uid u, String tn, int st) throws ObjectStoreException {
+        return (currentState(u, tn) == st);
+    }
+
+    public String getStoreName() {
+        return _storeName;
+    }
+
+    public boolean allObjUids(String s, InputObjectState buff) throws ObjectStoreException {
+        return allObjUids(s, buff, StateStatus.OS_UNKNOWN);
+    }
+
+    public boolean commit_state(Uid objUid, String tName) throws ObjectStoreException {
+        return _theImple.commit_state(objUid, tName);
+    }
+
+    public boolean hide_state(Uid objUid, String tName) throws ObjectStoreException {
+        return _theImple.hide_state(objUid, tName);
+    }
+
+    public boolean reveal_state(Uid objUid, String tName) throws ObjectStoreException {
+        return _theImple.reveal_state(objUid, tName);
+    }
+
+    public int currentState(Uid objUid, String tName) throws ObjectStoreException {
+        return _theImple.currentState(objUid, tName);
+    }
+
+    public InputObjectState read_committed(Uid storeUid, String tName) throws ObjectStoreException {
+        return _theImple.read_state(storeUid, tName, StateStatus.OS_COMMITTED);
+    }
+
+    public InputObjectState read_uncommitted(Uid storeUid, String tName) throws ObjectStoreException {
+        return _theImple.read_state(storeUid, tName, StateStatus.OS_UNCOMMITTED);
+    }
+
+    public boolean remove_committed(Uid storeUid, String tName) throws ObjectStoreException {
+        return _theImple.remove_state(storeUid, tName, StateStatus.OS_COMMITTED);
+    }
+
+    public boolean remove_uncommitted(Uid storeUid, String tName) throws ObjectStoreException {
+        return _theImple.remove_state(storeUid, tName, StateStatus.OS_UNCOMMITTED);
+    }
+
+    public boolean write_committed(Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException {
+        return _theImple.write_state(storeUid, tName, state, StateStatus.OS_COMMITTED);
+    }
+
+    public boolean write_uncommitted(Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException {
+        return _theImple.write_state(storeUid, tName, state, StateStatus.OS_UNCOMMITTED);
+    }
+
+    public boolean allObjUids(String tName, InputObjectState state, int match) throws ObjectStoreException {
+        return _theImple.allObjUids(tName, state, match);
+    }
+
+    public boolean allTypes(InputObjectState foundTypes) throws ObjectStoreException {
+        return _theImple.allTypes(foundTypes);
+    }
+
+    public synchronized void packInto(OutputBuffer buff) throws IOException {
+        buff.packString(tableName);
+    }
+
+    public synchronized void unpackFrom(InputBuffer buff) throws IOException {
+        this.tableName = buff.unpackString();
     }
 }

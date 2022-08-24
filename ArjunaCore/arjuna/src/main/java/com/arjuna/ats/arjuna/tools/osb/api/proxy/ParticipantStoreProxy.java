@@ -32,12 +32,12 @@ import com.arjuna.ats.arjuna.tools.osb.api.mbeans.ParticipantStoreBeanMBean;
  * Remote proxy to a ParticipantStore
  */
 public class ParticipantStoreProxy extends TxLogProxy implements ParticipantStore {
-    private ParticipantStoreBeanMBean psProxy;	// proxy for the participant store
+    private ParticipantStoreBeanMBean psProxy;    // proxy for the participant store
 
     public ParticipantStoreProxy(ParticipantStoreBeanMBean rsProxy) {
         super(rsProxy);
-		this.psProxy = rsProxy;
-	}
+        this.psProxy = rsProxy;
+    }
 
     public boolean commit_state(Uid u, String tn) throws ObjectStoreException {
         return psProxy.commit_state(u, tn);

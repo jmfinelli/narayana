@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,14 +24,12 @@
  * Arjuna Technologies Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: ShutdownRecord.java 2342 2006-03-30 13:06:17Z  $
  */
 
 package com.hp.mwtests.ts.arjuna.resources;
-
-import java.io.PrintWriter;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.AbstractRecord;
@@ -40,123 +38,103 @@ import com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 
-public class ShutdownRecord extends AbstractRecord
-{
+import java.io.PrintWriter;
+
+public class ShutdownRecord extends AbstractRecord {
 
     public static final int FAIL_IN_PREPARE = 0;
     public static final int FAIL_IN_COMMIT = 1;
+    private int _failurePoint = -1;
 
-    public ShutdownRecord(int failurePoint)
-    {
+    public ShutdownRecord(int failurePoint) {
         super(new Uid());
 
         _failurePoint = failurePoint;
     }
 
-    public int typeIs()
-    {
+    public int typeIs() {
         return RecordType.USER_DEF_FIRST0;
     }
 
-    public int nestedAbort()
-    {
+    public int nestedAbort() {
         return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int nestedCommit()
-    {
+    public int nestedCommit() {
         return TwoPhaseOutcome.FINISH_ERROR;
     }
 
-    public int nestedPrepare()
-    {
+    public int nestedPrepare() {
         return TwoPhaseOutcome.PREPARE_NOTOK;
     }
 
-    public int topLevelAbort()
-    {
+    public int topLevelAbort() {
         return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int topLevelCommit()
-    {
+    public int topLevelCommit() {
         if (_failurePoint == FAIL_IN_COMMIT)
             return TwoPhaseOutcome.FINISH_ERROR;
         else
             return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int topLevelPrepare()
-    {
+    public int topLevelPrepare() {
         if (_failurePoint == FAIL_IN_PREPARE)
             return TwoPhaseOutcome.PREPARE_NOTOK;
         else
             return TwoPhaseOutcome.PREPARE_OK;
     }
 
-    public void print(PrintWriter strm)
-    {
+    public void print(PrintWriter strm) {
         strm.println("Shutdown for:");
         super.print(strm);
     }
 
-    public boolean save_state(OutputObjectState os, int ot)
-    {
+    public boolean save_state(OutputObjectState os, int ot) {
         return false;
     }
 
-    public boolean restore_state(InputObjectState os, int ot)
-    {
+    public boolean restore_state(InputObjectState os, int ot) {
         return false;
     }
 
-    public String type()
-    {
+    public String type() {
         return "/StateManager/AbstractRecord/ShutdownRecord";
     }
 
-    public boolean shouldAdd(AbstractRecord a)
-    {
+    public boolean shouldAdd(AbstractRecord a) {
         return false;
     }
 
-    public boolean shouldMerge(AbstractRecord a)
-    {
+    public boolean shouldMerge(AbstractRecord a) {
         return false;
     }
 
-    public boolean shouldReplace(AbstractRecord a)
-    {
+    public boolean shouldReplace(AbstractRecord a) {
         return false;
     }
 
-    public boolean shouldAlter(AbstractRecord a)
-    {
+    public boolean shouldAlter(AbstractRecord a) {
         return false;
     }
 
-    public void merge(AbstractRecord a)
-    {
+    public void merge(AbstractRecord a) {
     }
 
-    public void alter(AbstractRecord a)
-    {
+    public void alter(AbstractRecord a) {
     }
 
     /**
      * @return <code>Object</code> to be used to order.
      */
 
-    public Object value()
-    {
+    public Object value() {
         return null;
     }
 
-    public void setValue(Object o)
-    {
+    public void setValue(Object o) {
     }
-
-    private int _failurePoint = -1;
 
 }
 

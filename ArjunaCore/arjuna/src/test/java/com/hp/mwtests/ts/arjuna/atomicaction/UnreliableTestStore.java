@@ -10,10 +10,6 @@ import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
 public class UnreliableTestStore extends VolatileStore {
     private boolean writeError;
 
-    public void setWriteError(boolean writeError) {
-        this.writeError = writeError;
-    }
-
     public UnreliableTestStore() throws ObjectStoreException {
         this(BeanPopulator.getDefaultInstance(ObjectStoreEnvironmentBean.class));
 
@@ -21,6 +17,10 @@ public class UnreliableTestStore extends VolatileStore {
 
     public UnreliableTestStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException {
         super(objectStoreEnvironmentBean);
+    }
+
+    public void setWriteError(boolean writeError) {
+        this.writeError = writeError;
     }
 
     @Override

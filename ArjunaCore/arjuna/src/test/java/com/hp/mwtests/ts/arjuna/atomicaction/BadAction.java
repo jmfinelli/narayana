@@ -31,16 +31,15 @@ package com.hp.mwtests.ts.arjuna.atomicaction;
  * $Id: BadAction.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.coordinator.BasicAction;
+import org.junit.jupiter.api.Test;
 
-public class BadAction
-{
+;
+
+public class BadAction {
     @Test
-    public void test()
-    {
+    public void test() {
         AtomicAction A = new AtomicAction();
         AtomicAction B = new AtomicAction();
 

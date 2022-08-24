@@ -32,12 +32,12 @@ import com.arjuna.ats.arjuna.tools.osb.api.mbeans.RecoveryStoreBeanMBean;
  * Remote proxy to a RecoveryStore
  */
 public class RecoveryStoreProxy extends TxLogProxy implements RecoveryStore {
-    private RecoveryStoreBeanMBean rsProxy;	// proxy for the recovery store
+    private RecoveryStoreBeanMBean rsProxy;    // proxy for the recovery store
 
     public RecoveryStoreProxy(RecoveryStoreBeanMBean rsProxy) {
         super(rsProxy);
-		this.rsProxy = rsProxy;
-	}
+        this.rsProxy = rsProxy;
+    }
 
 
     public boolean allObjUids(String type, InputObjectState buff, int match) throws ObjectStoreException {

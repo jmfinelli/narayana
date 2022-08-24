@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,7 +24,7 @@
  * Arjuna Solutions Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: Implementations.java 2342 2006-03-30 13:06:17Z  $
  */
@@ -39,54 +39,45 @@ import com.arjuna.ats.internal.txoj.abstractrecords.LockRecord;
 /**
  * Module specific class that is responsible for adding any implementations to
  * the inventory.
- * 
+ *
  * @author Mark Little (mark@arjuna.com)
  * @version $Id: Implementations.java 2342 2006-03-30 13:06:17Z $
  * @since JTS 1.0.
  */
 
-class LockRecordTypeMap implements RecordTypeMap
-{
+class LockRecordTypeMap implements RecordTypeMap {
     @SuppressWarnings("unchecked")
-    public Class getRecordClass ()
-    {
+    public Class getRecordClass() {
         return LockRecord.class;
     }
-    
-    public int getType ()
-    {
+
+    public int getType() {
         return RecordType.LOCK;
     }
 }
 
-public class Implementations
-{
-    public static synchronized boolean added ()
-    {
-        return _added;
-    }
-
-    public static synchronized void initialise ()
-    {
-        if (!_added)
-        {
-            RecordTypeManager.manager().add(new LockRecordTypeMap());
-            _added = true;
-        }
-    }
-
-    private Implementations()
-    {
-    }
-
+public class Implementations {
     private static boolean _added = false;
 
     /**
      * Static block triggers initialisation of lock record type map.
      */
-    static
-    {
+    static {
         initialise();
+    }
+
+    private Implementations() {
+    }
+
+    public static synchronized boolean added() {
+        return _added;
+    }
+
+    public static synchronized void initialise() {
+        if (!_added) {
+            RecordTypeManager.manager().add(new LockRecordTypeMap());
+            _added = true;
+        }
     }
 
 }

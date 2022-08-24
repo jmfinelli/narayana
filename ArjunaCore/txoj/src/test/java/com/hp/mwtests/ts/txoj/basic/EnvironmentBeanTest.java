@@ -20,19 +20,17 @@
  */
 package com.hp.mwtests.ts.txoj.basic;
 
-import java.util.HashMap;
-
+import com.arjuna.ats.txoj.common.TxojEnvironmentBean;
 import org.junit.jupiter.api.Test;
 
-import com.arjuna.ats.txoj.common.TxojEnvironmentBean;
+import java.util.HashMap;
 
 /**
  * Unit tests for EnvironmentBean classes.
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
-public class EnvironmentBeanTest
-{
+public class EnvironmentBeanTest {
     @Test
     public void testTxojEnvironmentBean() throws Exception {
         HashMap map;

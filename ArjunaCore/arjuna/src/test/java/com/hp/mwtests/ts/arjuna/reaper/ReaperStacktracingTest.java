@@ -20,12 +20,14 @@ import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.arjuna.coordinator.ActionStatus;
 import com.arjuna.ats.arjuna.coordinator.Reapable;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+;
 
 /**
  * Exercises TransactionReaper periodic stack tracing functionality.
@@ -53,17 +55,17 @@ public class ReaperStacktracingTest {
         // check the stacktrace calls took place as expected
         assertEquals(4, reapable.recordStackTracesCallTimes.size());
         long interval = arjPropertyManager.getCoordinatorEnvironmentBean().getTxReaperTraceInterval();
-        long first = startTime+arjPropertyManager.getCoordinatorEnvironmentBean().getTxReaperTraceGracePeriod();
-        assertWithinTolerance(first,  reapable.recordStackTracesCallTimes.get(0));
-        assertWithinTolerance(first+(interval), reapable.recordStackTracesCallTimes.get(1));
-        assertWithinTolerance(first+(interval*2), reapable.recordStackTracesCallTimes.get(2));
-        assertWithinTolerance(first+(interval*3), reapable.recordStackTracesCallTimes.get(3));
+        long first = startTime + arjPropertyManager.getCoordinatorEnvironmentBean().getTxReaperTraceGracePeriod();
+        assertWithinTolerance(first, reapable.recordStackTracesCallTimes.get(0));
+        assertWithinTolerance(first + (interval), reapable.recordStackTracesCallTimes.get(1));
+        assertWithinTolerance(first + (interval * 2), reapable.recordStackTracesCallTimes.get(2));
+        assertWithinTolerance(first + (interval * 3), reapable.recordStackTracesCallTimes.get(3));
 
         // we should be asked to dump the captured traces once, right before being cancelled
         assertEquals(1, reapable.outputCapturedStackTracesCallTimes.size());
-        assertWithinTolerance(startTime+1000, reapable.outputCapturedStackTracesCallTimes.get(0));
+        assertWithinTolerance(startTime + 1000, reapable.outputCapturedStackTracesCallTimes.get(0));
         assertEquals(1, reapable.cancelCallTimes.size());
-        assertWithinTolerance(startTime+1000, reapable.cancelCallTimes.get(0));
+        assertWithinTolerance(startTime + 1000, reapable.cancelCallTimes.get(0));
     }
 
     @Test
@@ -92,48 +94,43 @@ public class ReaperStacktracingTest {
     }
 
     public void assertWithinTolerance(long a, long b) {
-        long diff = Math.abs(a-b);
+        long diff = Math.abs(a - b);
         // 100ms should be enough to give us some wiggle room with startup overhead and thread scheduling
         assertTrue(diff < 100);
     }
 
-    public class MockReapable implements Reapable
-    {
-        private Uid uid;
+    public class MockReapable implements Reapable {
         private final int wedgeTime;
         public List<Long> cancelCallTimes = new ArrayList<>();
         public List<Long> recordStackTracesCallTimes = new ArrayList<>();
         public List<Long> outputCapturedStackTracesCallTimes = new ArrayList<>();
+        private Uid uid;
 
-        public MockReapable(Uid uid, int wedgeTime)
-        {
+        public MockReapable(Uid uid, int wedgeTime) {
             this.uid = uid;
             this.wedgeTime = wedgeTime;
         }
 
-        public boolean running()
-        {
+        public boolean running() {
             return true;
         }
 
-        public boolean preventCommit()
-        {
+        public boolean preventCommit() {
             return false;
         }
 
-        public Uid get_uid()
-        {
+        public Uid get_uid() {
             return uid;
         }
 
-        public int cancel()
-        {
+        public int cancel() {
             cancelCallTimes.add(System.currentTimeMillis());
             try {
-                if(wedgeTime > 0) {
+                if (wedgeTime > 0) {
                     Thread.sleep(wedgeTime);
                 }
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+            }
             return ActionStatus.ABORTED;
         }
 

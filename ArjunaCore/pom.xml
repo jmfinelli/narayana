@@ -24,12 +24,17 @@
   <packaging>pom</packaging>
   <name>Narayana: Arjunacore</name>
   <description>Narayana: Arjunacore All</description>
+
   <modules>
     <module>arjuna</module>
     <module>txoj</module>
     <module>arjunacore</module>
     <module>arjuna/services</module>
   </modules>
+
+  <properties>
+    <checkstyle.skip>false</checkstyle.skip>
+  </properties>
 
   <build>
     <plugins>

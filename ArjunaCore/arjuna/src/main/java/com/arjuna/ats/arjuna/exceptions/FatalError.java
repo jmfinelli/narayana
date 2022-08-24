@@ -41,8 +41,7 @@ package com.arjuna.ats.arjuna.exceptions;
  * @since JTS 2.1.
  */
 
-public class FatalError extends Error
-{
+public class FatalError extends Error {
     static final long serialVersionUID = -3878263281474052106L;
 
     /**
@@ -78,6 +77,7 @@ public class FatalError extends Error
      *                {@link #getCause()} method).  (A <code>null</code> value is
      *                permitted, and indicates that the cause is nonexistent or
      *                unknown.)
+     *
      * @since 1.4
      */
     public FatalError(String message, Throwable cause) {
@@ -95,6 +95,7 @@ public class FatalError extends Error
      *              {@link #getCause()} method).  (A <code>null</code> value is
      *              permitted, and indicates that the cause is nonexistent or
      *              unknown.)
+     *
      * @since 1.4
      */
     public FatalError(Throwable cause) {

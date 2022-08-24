@@ -31,23 +31,20 @@
 
 package com.hp.mwtests.ts.txoj.concurrencycontrol;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.Test;
-
 import com.arjuna.ats.internal.txoj.LockList;
 import com.arjuna.ats.internal.txoj.LockListIterator;
+import org.junit.jupiter.api.Test;
 
-public class LockListIteratorUnitTest
-{
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class LockListIteratorUnitTest {
     @Test
-    public void test () throws Exception
-    {
+    public void test() throws Exception {
         LockList list = new LockList();
         LockListIterator iter = new LockListIterator(list);
-        
+
         assertEquals(iter.iterate(), null);
-        
+
         iter.reset();
     }
 }

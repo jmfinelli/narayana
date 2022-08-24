@@ -31,18 +31,15 @@ package com.hp.mwtests.ts.txoj.basic;
  * $Id: RecoverableTest.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.Test;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.hp.mwtests.ts.txoj.common.resources.RecoverableObject;
+import org.junit.jupiter.api.Test;
 
-public class RecoverableTest
-{
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class RecoverableTest {
     @Test
-    public void test()
-    {
+    public void test() {
         RecoverableObject foo = new RecoverableObject();
 
         AtomicAction A = new AtomicAction();

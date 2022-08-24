@@ -30,24 +30,24 @@
         <product id="ATJ2">
 
             <test_group id="AtomicAction">
-                <test id="actionscope" selected="true" />
-                <test id="badaction" selected="true" />
+                <test id="actionscope" selected="true"/>
+                <test id="badaction" selected="true"/>
             </test_group>
 
             <test_group id="File">
-                <test id="filelocking" selected="true" />
+                <test id="filelocking" selected="true"/>
             </test_group>
 
             <test_group id="ObjectStore">
-                <test id="ObjectStoreTest1" selected="true" />
+                <test id="ObjectStoreTest1" selected="true"/>
             </test_group>
 
             <test_group id="PerformanceTests">
-                <test id="Performance1" selected="true" />
+                <test id="Performance1" selected="true"/>
             </test_group>
 
             <test_group id="RecoveryTests">
-                <test id="ActionStatusServiceTest" selected="true" />
+                <test id="ActionStatusServiceTest" selected="true"/>
             </test_group>
 
         </product>
@@ -60,24 +60,24 @@
         <product id="ATJ2">
 
             <test_group id="AtomicAction">
-                <test id="actionscope" selected="true" />
-                <test id="badaction" selected="true" />
+                <test id="actionscope" selected="true"/>
+                <test id="badaction" selected="true"/>
             </test_group>
 
             <test_group id="File">
-                <test id="filelocking" selected="true" />
+                <test id="filelocking" selected="true"/>
             </test_group>
 
             <test_group id="ObjectStore">
-                <test id="ObjectStoreTest1" selected="true" />
+                <test id="ObjectStoreTest1" selected="true"/>
             </test_group>
 
             <test_group id="PerformanceTests">
-                <test id="Performance1" selected="true" />
+                <test id="Performance1" selected="true"/>
             </test_group>
 
             <test_group id="RecoveryTests">
-                <test id="ActionStatusServiceTest" selected="true" />
+                <test id="ActionStatusServiceTest" selected="true"/>
             </test_group>
 
         </product>

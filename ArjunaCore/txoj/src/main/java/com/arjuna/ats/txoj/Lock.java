@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,16 +24,12 @@
  * Arjuna Solutions Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: Lock.java 2342 2006-03-30 13:06:17Z  $
  */
 
 package com.arjuna.ats.txoj;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import com.arjuna.ats.arjuna.ObjectType;
 import com.arjuna.ats.arjuna.StateManager;
@@ -45,26 +41,43 @@ import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.arjuna.utils.Utility;
 import com.arjuna.ats.txoj.logging.txojLogger;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 /**
  * Instances of this class (or derived user classes) are used when trying to set
  * a lock. The default implementation provides a single-write/multiple-reader
  * policy. However, by overridding the appropriate methods, other, type-specific
  * concurrency control locks can be implemented.
- * 
+ *
  * @author Mark Little (mark@arjuna.com)
  * @version $Id: Lock.java 2342 2006-03-30 13:06:17Z $
  * @since JTS 1.0.
  */
 
-public class Lock extends StateManager
-{
+public class Lock extends StateManager {
+
+    private static Uid applicUid = null; /* In case lock set outside AA */
+    private static int applicPid = com.arjuna.ats.arjuna.utils.Utility.getpid(); /*
+     * process
+     * id
+     */
+    private int currentStatus;/* Current status of lock */
+    private Lock nextLock;
+
+    /*
+     * Public utility operations. Most are sufficiently simple as to be self
+     * explanatory!
+     */
+    private int lMode; /* Typically READ or WRITE */
+    private ActionHierarchy owners; /* Uid of owner action (faked if none) */
 
     /**
      * Create a new lock.
      */
 
-    public Lock()
-    {
+    public Lock() {
         super(ObjectType.NEITHER);
 
         currentStatus = LockStatus.LOCKFREE;
@@ -80,8 +93,7 @@ public class Lock extends StateManager
      * the application uid created when the application starts.
      */
 
-    public Lock(int lm)
-    {
+    public Lock(int lm) {
         super(ObjectType.NEITHER);
 
         if (txojLogger.logger.isTraceEnabled()) {
@@ -96,18 +108,15 @@ public class Lock extends StateManager
 
         BasicAction curr = BasicAction.Current();
 
-        if (curr == null)
-        {
+        if (curr == null) {
             int currentPid = Utility.getpid(); // ::getpid();
             ActionHierarchy ah = new ActionHierarchy(1); /* max depth of 1 */
 
-            if (applicUid == null)
-            {
+            if (applicUid == null) {
                 applicUid = new Uid();
             }
 
-            if (applicPid != currentPid)
-            {
+            if (applicPid != currentPid) {
                 /*
                  * Process id change probably due to a fork(). Get new pid and
                  * generate a new Applic_Uid
@@ -119,9 +128,7 @@ public class Lock extends StateManager
 
             ah.add(applicUid);
             owners.copy(ah);
-        }
-        else
-        {
+        } else {
             owners.copy(curr.getHierarchy());
         }
     }
@@ -131,8 +138,7 @@ public class Lock extends StateManager
      * store.
      */
 
-    public Lock(Uid storeUid)
-    {
+    public Lock(Uid storeUid) {
         super(storeUid, ObjectType.NEITHER);
 
         if (txojLogger.logger.isTraceEnabled()) {
@@ -150,8 +156,7 @@ public class Lock extends StateManager
      * General clean up as Lock is deleted.
      */
 
-    public void finalize () throws Throwable
-    {
+    public void finalize() throws Throwable {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock.finalize()");
         }
@@ -159,18 +164,12 @@ public class Lock extends StateManager
         super.terminate();
     }
 
-    /*
-     * Public utility operations. Most are sufficiently simple as to be self
-     * explanatory!
-     */
-
     /**
      * @return the mode this lock is currently in, e.g.,
      *         <code>LockMode.READ</code>.
      */
 
-    public final int getLockMode ()
-    {
+    public final int getLockMode() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::getLockMode()");
         }
@@ -182,8 +181,7 @@ public class Lock extends StateManager
      * @return the identity of the lock's current owner (the transaction id).
      */
 
-    public final Uid getCurrentOwner ()
-    {
+    public final Uid getCurrentOwner() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::getCurrentOwner()");
         }
@@ -195,8 +193,7 @@ public class Lock extends StateManager
      * @return the transaction hierarchy associated with this lock.
      */
 
-    public final ActionHierarchy getAllOwners ()
-    {
+    public final ActionHierarchy getAllOwners() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::getAllOwners()");
         }
@@ -208,8 +205,7 @@ public class Lock extends StateManager
      * @return the lock's current status.
      */
 
-    public final int getCurrentStatus ()
-    {
+    public final int getCurrentStatus() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::getCurrentStatus()");
         }
@@ -222,8 +218,7 @@ public class Lock extends StateManager
      * provided.
      */
 
-    public final void changeHierarchy (ActionHierarchy newOwner)
-    {
+    public final void changeHierarchy(ActionHierarchy newOwner) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::getCurrentOwner()");
         }
@@ -238,8 +233,7 @@ public class Lock extends StateManager
      * Propagate the lock.
      */
 
-    public final void propagate ()
-    {
+    public final void propagate() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::propagate()");
         }
@@ -253,13 +247,12 @@ public class Lock extends StateManager
      * Does this lock imply a modification of the object it is applied to? For
      * example, a READ lock would return false, but a WRITE lock would return
      * true.
-     * 
+     *
      * @return <code>true</code> if this lock implies the object's state will be
      *         modified, <code>false</code> otherwise.
      */
 
-    public boolean modifiesObject ()
-    {
+    public boolean modifiesObject() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::modifiesObject()");
         }
@@ -271,28 +264,25 @@ public class Lock extends StateManager
      * Implementation of Lock conflict check. Returns TRUE if there is conflict
      * FALSE otherwise. Does not take account of relationship in the atomic
      * action hierarchy since this is a function of LockManager.
-     * 
+     *
      * @return <code>true</code> if this lock conflicts with the parameter,
      *         <code>false</code> otherwise.
      */
 
-    public boolean conflictsWith (Lock otherLock)
-    {
+    public boolean conflictsWith(Lock otherLock) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::conflictsWith(" + otherLock + ")\n" + "\tLock 1:\n"
                     + this + "\n" + "\tLock 2:\n" + otherLock);
         }
 
-        if (!(getCurrentOwner().equals(otherLock.getCurrentOwner())))
-        {
-            switch (lMode)
-            {
-            case LockMode.WRITE:
-                return true; /* WRITE conflicts always */
-            case LockMode.READ:
-                if (otherLock.getLockMode() != LockMode.READ)
-                    return true;
-                break;
+        if (!(getCurrentOwner().equals(otherLock.getCurrentOwner()))) {
+            switch (lMode) {
+                case LockMode.WRITE:
+                    return true; /* WRITE conflicts always */
+                case LockMode.READ:
+                    if (otherLock.getLockMode() != LockMode.READ)
+                        return true;
+                    break;
             }
         }
 
@@ -303,8 +293,7 @@ public class Lock extends StateManager
      * Overrides Object.equals()
      */
 
-    public boolean equals (Object otherLock)
-    {
+    public boolean equals(Object otherLock) {
         if (otherLock instanceof Lock)
             return equals((Lock) otherLock);
         else
@@ -313,13 +302,12 @@ public class Lock extends StateManager
 
     /**
      * Are the two locks equal?
-     * 
+     *
      * @return <code>true</code> if the locks are equal, <code>false</code>
      *         otherwise.
      */
 
-    public boolean equals (Lock otherLock)
-    {
+    public boolean equals(Lock otherLock) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::equals("
                     + otherLock + ")\n" + "\tLock 1:\n" + this + "\n"
@@ -330,8 +318,7 @@ public class Lock extends StateManager
             return true;
 
         if ((lMode == otherLock.lMode) && (owners.equals(otherLock.owners))
-                && (currentStatus == otherLock.currentStatus))
-        {
+                && (currentStatus == otherLock.currentStatus)) {
             return true;
         }
 
@@ -342,12 +329,11 @@ public class Lock extends StateManager
      * Overrides Object.toString()
      */
 
-    public String toString ()
-    {
+    public String toString() {
         StringWriter strm = new StringWriter();
 
         strm.write("Lock object : \n");
-        strm.write("\ttype : "+type()+ "\n");
+        strm.write("\ttype : " + type() + "\n");
         strm.write("\tunique id is : " + get_uid() + "\n");
 
         strm.write("\tcurrent_status : "
@@ -365,63 +351,54 @@ public class Lock extends StateManager
      * functions inherited from StateManager
      */
 
-    public void print (PrintWriter strm)
-    {
+    public void print(PrintWriter strm) {
         strm.print(toString());
     }
 
     /**
      * Carefully restore the state of a Lock.
-     * 
+     *
      * @return <code>true</code> if successful, <code>false</code> otherwise.
      */
 
-    public boolean restore_state (InputObjectState os, int ot)
-    {
+    public boolean restore_state(InputObjectState os, int ot) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::restore_state(" + os + ", " + ot + ")");
         }
 
         ActionHierarchy ah = new ActionHierarchy(0);
 
-        try
-        {
+        try {
             currentStatus = os.unpackInt();
             lMode = os.unpackInt();
             ah.unpack(os);
             owners = ah;
 
             return true;
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             return false;
         }
     }
 
     /**
      * Save the state of a lock object.
-     * 
+     *
      * @return <code>true</code> if successful, <code>false</code> otherwise.
      */
 
-    public boolean save_state (OutputObjectState os, int ot)
-    {
+    public boolean save_state(OutputObjectState os, int ot) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("Lock::save_state("
                     + os + ", " + ot + ")");
         }
 
-        try
-        {
+        try {
             os.packInt(currentStatus);
             os.packInt(lMode);
             owners.pack(os);
 
             return os.valid();
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             return false;
         }
     }
@@ -430,8 +407,7 @@ public class Lock extends StateManager
      * Overrides StateManager.type()
      */
 
-    public String type ()
-    {
+    public String type() {
         return "/StateManager/Lock";
     }
 
@@ -439,8 +415,7 @@ public class Lock extends StateManager
      * Get the next lock in the chain.
      */
 
-    protected Lock getLink ()
-    {
+    protected Lock getLink() {
         return nextLock;
     }
 
@@ -448,24 +423,8 @@ public class Lock extends StateManager
      * Set the next lock in the chain.
      */
 
-    protected void setLink (Lock pointTo)
-    {
+    protected void setLink(Lock pointTo) {
         nextLock = pointTo;
     }
-
-    private int currentStatus;/* Current status of lock */
-
-    private Lock nextLock;
-
-    private int lMode; /* Typically READ or WRITE */
-
-    private ActionHierarchy owners; /* Uid of owner action (faked if none) */
-
-    private static Uid applicUid = null; /* In case lock set outside AA */
-
-    private static int applicPid = com.arjuna.ats.arjuna.utils.Utility.getpid(); /*
-                                                                                  * process
-                                                                                  * id
-                                                                                  */
 
 }

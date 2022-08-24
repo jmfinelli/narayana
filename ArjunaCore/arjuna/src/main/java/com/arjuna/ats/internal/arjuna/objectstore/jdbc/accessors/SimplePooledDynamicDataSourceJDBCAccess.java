@@ -119,13 +119,13 @@ public class SimplePooledDynamicDataSourceJDBCAccess extends DynamicDataSourceJD
         }
 
         @Override
-        public void setAutoCommit(boolean autoCommit) throws SQLException {
-            connectionImpl.setAutoCommit(autoCommit);
+        public boolean getAutoCommit() throws SQLException {
+            return connectionImpl.getAutoCommit();
         }
 
         @Override
-        public boolean getAutoCommit() throws SQLException {
-            return connectionImpl.getAutoCommit();
+        public void setAutoCommit(boolean autoCommit) throws SQLException {
+            connectionImpl.setAutoCommit(autoCommit);
         }
 
         @Override
@@ -155,18 +155,13 @@ public class SimplePooledDynamicDataSourceJDBCAccess extends DynamicDataSourceJD
         }
 
         @Override
-        public void setReadOnly(boolean readOnly) throws SQLException {
-            connectionImpl.setReadOnly(readOnly);
-        }
-
-        @Override
         public boolean isReadOnly() throws SQLException {
             return connectionImpl.isReadOnly();
         }
 
         @Override
-        public void setCatalog(String catalog) throws SQLException {
-            connectionImpl.setCatalog(catalog);
+        public void setReadOnly(boolean readOnly) throws SQLException {
+            connectionImpl.setReadOnly(readOnly);
         }
 
         @Override
@@ -175,13 +170,18 @@ public class SimplePooledDynamicDataSourceJDBCAccess extends DynamicDataSourceJD
         }
 
         @Override
-        public void setTransactionIsolation(int level) throws SQLException {
-            connectionImpl.setTransactionIsolation(level);
+        public void setCatalog(String catalog) throws SQLException {
+            connectionImpl.setCatalog(catalog);
         }
 
         @Override
         public int getTransactionIsolation() throws SQLException {
             return connectionImpl.getTransactionIsolation();
+        }
+
+        @Override
+        public void setTransactionIsolation(int level) throws SQLException {
+            connectionImpl.setTransactionIsolation(level);
         }
 
         @Override
@@ -220,13 +220,13 @@ public class SimplePooledDynamicDataSourceJDBCAccess extends DynamicDataSourceJD
         }
 
         @Override
-        public void setHoldability(int holdability) throws SQLException {
-            connectionImpl.setHoldability(holdability);
+        public int getHoldability() throws SQLException {
+            return connectionImpl.getHoldability();
         }
 
         @Override
-        public int getHoldability() throws SQLException {
-            return connectionImpl.getHoldability();
+        public void setHoldability(int holdability) throws SQLException {
+            connectionImpl.setHoldability(holdability);
         }
 
         @Override
@@ -310,11 +310,6 @@ public class SimplePooledDynamicDataSourceJDBCAccess extends DynamicDataSourceJD
         }
 
         @Override
-        public void setClientInfo(Properties properties) throws SQLClientInfoException {
-            connectionImpl.setClientInfo(properties);
-        }
-
-        @Override
         public String getClientInfo(String name) throws SQLException {
             return connectionImpl.getClientInfo(name);
         }
@@ -322,6 +317,11 @@ public class SimplePooledDynamicDataSourceJDBCAccess extends DynamicDataSourceJD
         @Override
         public Properties getClientInfo() throws SQLException {
             return connectionImpl.getClientInfo();
+        }
+
+        @Override
+        public void setClientInfo(Properties properties) throws SQLClientInfoException {
+            connectionImpl.setClientInfo(properties);
         }
 
         @Override
@@ -335,13 +335,13 @@ public class SimplePooledDynamicDataSourceJDBCAccess extends DynamicDataSourceJD
         }
 
         @Override
-        public void setSchema(String schema) throws SQLException {
-            connectionImpl.setSchema(schema);
+        public String getSchema() throws SQLException {
+            return connectionImpl.getSchema();
         }
 
         @Override
-        public String getSchema() throws SQLException {
-            return connectionImpl.getSchema();
+        public void setSchema(String schema) throws SQLException {
+            connectionImpl.setSchema(schema);
         }
 
         @Override

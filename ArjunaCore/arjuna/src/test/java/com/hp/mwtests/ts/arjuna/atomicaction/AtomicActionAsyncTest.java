@@ -21,15 +21,13 @@
  */
 package com.hp.mwtests.ts.arjuna.atomicaction;
 
-import com.hp.mwtests.ts.arjuna.resources.TestBase;
-import org.junit.jupiter.api.Test;;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-public class AtomicActionAsyncTest extends AtomicActionTestBase
-{
+;
+
+public class AtomicActionAsyncTest extends AtomicActionTestBase {
     // NOTE: The following bean properties can only be set once (because TxControl takes a static copy of them)
     @BeforeAll
     public static void init() {

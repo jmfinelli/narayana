@@ -31,13 +31,6 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.IOException;
-import java.util.Calendar;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
@@ -45,12 +38,18 @@ import com.arjuna.ats.arjuna.objectstore.ParticipantStore;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.objectstore.CacheStore;
 import com.arjuna.ats.internal.arjuna.objectstore.ShadowingStore;
+import org.junit.jupiter.api.Test;
 
-public class PersistenceTest
-{
+import java.io.IOException;
+import java.util.Calendar;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
+
+public class PersistenceTest {
     @Test
-    public void test()
-    {
+    public void test() {
         boolean passed = false;
         boolean threaded = false;
         long stime = Calendar.getInstance().getTime().getTime();
@@ -76,13 +75,11 @@ public class PersistenceTest
                     passed = true;
                 } else
                     passed = false;
-            }
-            catch (ObjectStoreException e) {
+            } catch (ObjectStoreException e) {
                 System.out.println(e.getMessage());
 
                 passed = false;
-            }
-            catch (IOException ex) {
+            } catch (IOException ex) {
                 ex.printStackTrace();
 
                 passed = false;
@@ -91,8 +88,7 @@ public class PersistenceTest
 
         try {
             Thread.currentThread().sleep(1000);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
         }
 
         long ftime = Calendar.getInstance().getTime().getTime();
@@ -102,8 +98,7 @@ public class PersistenceTest
 
         try {
             Thread.currentThread().sleep(1000);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
         }
 
         assertTrue(passed);

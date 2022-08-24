@@ -31,20 +31,47 @@
 
 package com.hp.mwtests.ts.arjuna.performance;
 
-import io.narayana.perf.Measurement;
-import io.narayana.perf.WorkerWorkload;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.hp.mwtests.ts.arjuna.resources.BasicRecord;
+import io.narayana.perf.Measurement;
+import io.narayana.perf.WorkerWorkload;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class Performance2
-{
+;
+
+public class Performance2 {
+    WorkerWorkload<Void> worker = new WorkerWorkload<Void>() {
+        @Override
+        public Void doWork(Void context, int batchSize, Measurement<Void> config) {
+            for (int i = 0; i < batchSize; i++) {
+                try {
+                    AtomicAction A = new AtomicAction();
+
+                    A.begin();
+
+                    A.add(new BasicRecord());
+
+                    A.commit();
+                } catch (Exception e) {
+                    if (config.getNumberOfErrors() == 0)
+                        e.printStackTrace();
+
+                    config.incrementErrorCount();
+                }
+            }
+
+            return context;
+        }
+
+        @Override
+        public void finishWork(Measurement<Void> measurement) {
+        }
+    };
+
     @Test
-    public void test()
-    {
+    public void test() {
         int numberOfTransactions = 1000;
         int threads = 10;
         int work = 100;
@@ -67,33 +94,4 @@ public class Performance2
         System.out.println("number of transactions: " + numberOfTransactions);
         System.out.println("throughput: " + measurement.getThroughput());
     }
-
-    WorkerWorkload<Void> worker = new WorkerWorkload<Void>() {
-        @Override
-        public Void doWork(Void context, int batchSize, Measurement<Void> config) {
-            for (int i = 0; i < batchSize; i++) {
-                try {
-                    AtomicAction A = new AtomicAction();
-
-                    A.begin();
-
-                    A.add(new BasicRecord());
-
-                    A.commit();
-                }
-                catch (Exception e) {
-                    if (config.getNumberOfErrors() == 0)
-                        e.printStackTrace();
-
-                    config.incrementErrorCount();
-                }
-            }
-
-            return context;
-        }
-
-        @Override
-        public void finishWork(Measurement<Void> measurement) {
-        }
-    };
 }

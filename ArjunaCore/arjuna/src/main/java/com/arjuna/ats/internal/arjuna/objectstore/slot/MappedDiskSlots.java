@@ -52,7 +52,7 @@ public class MappedDiskSlots implements BackingSlots {
         }
 
         this.config = config;
-        slotSize = config.getBytesPerSlot()+(2*Integer.BYTES); // overhead for size+checksum fields
+        slotSize = config.getBytesPerSlot() + (2 * Integer.BYTES); // overhead for size+checksum fields
 
         File storeDir = new File(config.getStoreDir());
         if (!storeDir.exists() && !storeDir.mkdirs()) {
@@ -98,7 +98,7 @@ public class MappedDiskSlots implements BackingSlots {
         synchronized (mappedByteBuffer) {
 
             mappedByteBuffer.position(0);
-            if(mappedByteBuffer.remaining() < 8) {
+            if (mappedByteBuffer.remaining() < 8) {
                 return null;
             }
 

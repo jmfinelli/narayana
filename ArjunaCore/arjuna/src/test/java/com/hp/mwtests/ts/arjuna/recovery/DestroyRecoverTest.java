@@ -31,22 +31,21 @@
 
 package com.hp.mwtests.ts.arjuna.recovery;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.hp.mwtests.ts.arjuna.resources.BasicObject;
+import org.junit.jupiter.api.Test;
 
-public class DestroyRecoverTest
-{
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
+
+public class DestroyRecoverTest {
     @Test
-    public void test()
-    {
+    public void test() {
         arjPropertyManager.getCoordinatorEnvironmentBean().setAlternativeRecordOrdering(true);
-        
+
         AtomicAction A = new AtomicAction();
         BasicObject bo = null;
         Uid txId = null;
@@ -62,8 +61,7 @@ public class DestroyRecoverTest
             A.removeThread();
 
             A.commit();
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
 
             passed = false;
@@ -72,7 +70,7 @@ public class DestroyRecoverTest
         if (passed) {
             try {
                 A = new AtomicAction();
-                
+
                 txId = A.get_uid();
 
                 A.begin();
@@ -86,11 +84,9 @@ public class DestroyRecoverTest
                 A.removeThread();
 
                 A.commit();
-            }
-            catch (com.arjuna.ats.arjuna.exceptions.FatalError ex) {
+            } catch (com.arjuna.ats.arjuna.exceptions.FatalError ex) {
                 // ignore
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
 
                 passed = false;
@@ -110,17 +106,16 @@ public class DestroyRecoverTest
                  * user object, meaning activation will fail. Which for this test
                  * is a successful outcome!
                  */
-                
+
                 BasicObject recoveredObject = new BasicObject(objId);
 
                 if (recoveredObject.get() == -1)
                     passed = true;
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
-        
+
         assertTrue(passed);
     }
 

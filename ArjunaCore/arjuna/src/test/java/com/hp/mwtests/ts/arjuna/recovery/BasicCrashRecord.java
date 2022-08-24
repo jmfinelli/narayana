@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -38,105 +38,84 @@ import com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 
-public class BasicCrashRecord extends AbstractRecord
-{
+public class BasicCrashRecord extends AbstractRecord {
 
-    public BasicCrashRecord()
-    {
+    private Uid _id = new Uid();
+
+    public BasicCrashRecord() {
     }
 
-    public int typeIs()
-    {
+    public int typeIs() {
         return RecordType.USER_DEF_FIRST0;
     }
 
-    public boolean doSave()
-    {
+    public boolean doSave() {
         return false;
     }
 
-    public String type()
-    {
+    public String type() {
         return "/StateManager/AbstractRecord/com.hp.mwtests.ts.arjuna.recovery.BasicCrashRecord";
     }
 
-    public boolean save_state(OutputObjectState os, int i)
-    {
+    public boolean save_state(OutputObjectState os, int i) {
         return false;
     }
 
-    public boolean restore_state(InputObjectState os, int i)
-    {
+    public boolean restore_state(InputObjectState os, int i) {
         return false;
     }
 
-    public Object value()
-    {
+    public Object value() {
         return _id;
     }
 
-    public void setValue(Object object)
-    {
+    public void setValue(Object object) {
     }
 
-    public int nestedAbort()
-    {
+    public int nestedAbort() {
         return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int nestedCommit()
-    {
+    public int nestedCommit() {
         return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int nestedPrepare()
-    {
+    public int nestedPrepare() {
         return TwoPhaseOutcome.PREPARE_OK;
     }
 
-    public int topLevelAbort()
-    {
+    public int topLevelAbort() {
         return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int topLevelCommit()
-    {
+    public int topLevelCommit() {
         throw new com.arjuna.ats.arjuna.exceptions.FatalError();
     }
 
-    public int topLevelPrepare()
-    {
+    public int topLevelPrepare() {
         return TwoPhaseOutcome.PREPARE_OK;
     }
 
-    public void alter(AbstractRecord abstractRecord)
-    {
+    public void alter(AbstractRecord abstractRecord) {
     }
 
-    public void merge(AbstractRecord abstractRecord)
-    {
+    public void merge(AbstractRecord abstractRecord) {
     }
 
-    public boolean shouldAdd(AbstractRecord abstractRecord)
-    {
+    public boolean shouldAdd(AbstractRecord abstractRecord) {
         return false;
     }
 
-    public boolean shouldAlter(AbstractRecord abstractRecord)
-    {
+    public boolean shouldAlter(AbstractRecord abstractRecord) {
         return false;
     }
 
-    public boolean shouldMerge(AbstractRecord abstractRecord)
-    {
+    public boolean shouldMerge(AbstractRecord abstractRecord) {
         return false;
     }
 
-    public boolean shouldReplace(AbstractRecord abstractRecord)
-    {
+    public boolean shouldReplace(AbstractRecord abstractRecord) {
         return false;
     }
-
-    private Uid _id = new Uid();
 
 }

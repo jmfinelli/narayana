@@ -30,33 +30,33 @@
         <product id="ATJ2">
 
             <test_group id="PerformanceTests">
-                <test id="PerformanceTest1" selected="true" />
+                <test id="PerformanceTest1" selected="true"/>
             </test_group>
 
-			<test_group id="hammer">
-				<test id="HammerTest" selected="true" />
-			</test_group>
+            <test_group id="hammer">
+                <test id="HammerTest" selected="true"/>
+            </test_group>
 
-			<test_group id="destroy">
-				<test id="DestroyTest" selected="true" />
-			</test_group>
+            <test_group id="destroy">
+                <test id="DestroyTest" selected="true"/>
+            </test_group>
 
-			<test_group id="concurrencycontrol">
-				<test id="ConcurrencyTest" selected="true" />
-			</test_group>
+            <test_group id="concurrencycontrol">
+                <test id="ConcurrencyTest" selected="true"/>
+            </test_group>
 
-			<test_group id="basic">
-				<test id="AtomicTest" selected="true" />
-				<test id="PersistenceTest" selected="true" />
-				<test id="BasicActionTest" selected="true" />
-				<test id="BasicRecoverableTest" selected="true" />
-			</test_group>
+            <test_group id="basic">
+                <test id="AtomicTest" selected="true"/>
+                <test id="PersistenceTest" selected="true"/>
+                <test id="BasicActionTest" selected="true"/>
+                <test id="BasicRecoverableTest" selected="true"/>
+            </test_group>
 
-			<test_group id="atomicobject">
-				<test id="AtomicObjectTest1" selected="true" />
-				<test id="AtomicObjectTest2" selected="true" />
-				<test id="AtomicObjectTest3" selected="true" />
-			</test_group>
+            <test_group id="atomicobject">
+                <test id="AtomicObjectTest1" selected="true"/>
+                <test id="AtomicObjectTest2" selected="true"/>
+                <test id="AtomicObjectTest3" selected="true"/>
+            </test_group>
 
         </product>
 
@@ -67,33 +67,33 @@
         <product id="ATJ2">
 
             <test_group id="PerformanceTests">
-                <test id="PerformanceTest1" selected="true" />
+                <test id="PerformanceTest1" selected="true"/>
             </test_group>
 
-			<test_group id="hammer">
-				<test id="HammerTest" selected="true" />
-			</test_group>
+            <test_group id="hammer">
+                <test id="HammerTest" selected="true"/>
+            </test_group>
 
-			<test_group id="destroy">
-				<test id="DestroyTest" selected="true" />
-			</test_group>
+            <test_group id="destroy">
+                <test id="DestroyTest" selected="true"/>
+            </test_group>
 
-			<test_group id="concurrencycontrol">
-				<test id="ConcurrencyTest" selected="true" />
-			</test_group>
+            <test_group id="concurrencycontrol">
+                <test id="ConcurrencyTest" selected="true"/>
+            </test_group>
 
-			<test_group id="basic">
-				<test id="AtomicTest" selected="true" />
-				<test id="PersistenceTest" selected="true" />
-				<test id="BasicActionTest" selected="true" />
-				<test id="BasicRecoverableTest" selected="true" />
-			</test_group>
+            <test_group id="basic">
+                <test id="AtomicTest" selected="true"/>
+                <test id="PersistenceTest" selected="true"/>
+                <test id="BasicActionTest" selected="true"/>
+                <test id="BasicRecoverableTest" selected="true"/>
+            </test_group>
 
-			<test_group id="atomicobject">
-				<test id="AtomicObjectTest1" selected="true" />
-				<test id="AtomicObjectTest2" selected="true" />
-				<test id="AtomicObjectTest3" selected="true" />
-			</test_group>
+            <test_group id="atomicobject">
+                <test id="AtomicObjectTest1" selected="true"/>
+                <test id="AtomicObjectTest2" selected="true"/>
+                <test id="AtomicObjectTest3" selected="true"/>
+            </test_group>
 
         </product>
 

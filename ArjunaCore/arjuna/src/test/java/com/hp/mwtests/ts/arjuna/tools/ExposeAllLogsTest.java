@@ -21,21 +21,6 @@
  */
 package com.hp.mwtests.ts.arjuna.tools;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.management.AttributeNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.objectstore.RecoveryStore;
@@ -46,33 +31,59 @@ import com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowser;
 import com.arjuna.ats.arjuna.tools.osb.util.JMXServer;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
+import org.junit.jupiter.api.Test;
+
+import javax.management.AttributeNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 /**
  * Test that the tooling can exposed all log record types
  *
  * @author Mike Musgrove
  * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to
- * provide a better separation between public and internal classes.
+ *         provide a better separation between public and internal classes.
  */
 @Deprecated // in order to provide a better separation between public and internal classes.
 public class ExposeAllLogsTest {
     private static final String FOO_TYPE = "StateManager/LockManager/foo";
     private final String osMBeanName = com.arjuna.ats.arjuna.common.arjPropertyManager.getObjectStoreEnvironmentBean().getJmxToolingMBeanName();
 
+    // look up an MBean property
+    private static Object getProperty(MBeanServer mbs, ObjectName name, String id) {
+        try {
+            return mbs.getAttribute(name, id);
+        } catch (AttributeNotFoundException e) {
+            // ok
+        } catch (Exception e) {
+            System.out.println("Exception looking up attribute " + id + " for object name " + name);
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     @Test
-    public void test1() throws Exception
-    {
+    public void test1() throws Exception {
         test(true);
     }
 
     @Test
-    public void test2() throws Exception
-    {
+    public void test2() throws Exception {
         test(false);
     }
 
-    private void test(boolean exposeAllLogsViaJMX) throws Exception
-    {
+    private void test(boolean exposeAllLogsViaJMX) throws Exception {
         RecoveryStore store = StoreManager.getRecoveryStore();
         Set<Uid> uids;
         Map<Uid, ObjectName> uids2 = new HashMap<Uid, ObjectName>();
@@ -150,20 +161,6 @@ public class ExposeAllLogsTest {
         }
 
         return uids;
-    }
-
-    // look up an MBean property
-    private static Object getProperty(MBeanServer mbs, ObjectName name, String id) {
-        try {
-            return mbs.getAttribute(name, id);
-        } catch (AttributeNotFoundException e) {
-            // ok
-        } catch (Exception e) {
-            System.out.println("Exception looking up attribute " + id + " for object name " + name);
-            e.printStackTrace();
-        }
-
-        return null;
     }
 
     // lookup all log records of a given type

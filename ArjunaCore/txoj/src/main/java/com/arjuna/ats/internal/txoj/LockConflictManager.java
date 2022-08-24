@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,18 +24,18 @@
  * Arjuna Solutions Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: LockConflictManager.java 2342 2006-03-30 13:06:17Z  $
  */
 
 package com.arjuna.ats.internal.txoj;
 
+import com.arjuna.ats.txoj.LockManager;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.arjuna.ats.txoj.LockManager;
 
 /**
  * An instance of this class is used to determine what to do in the event of a
@@ -46,10 +46,11 @@ import com.arjuna.ats.txoj.LockManager;
  * or when the lock is actually released.
  */
 
-public class LockConflictManager
-{
-    public LockConflictManager (ReentrantLock instance)
-    {
+public class LockConflictManager {
+    private Object _lock;
+    private ReentrantLock _instance;
+
+    public LockConflictManager(ReentrantLock instance) {
         _lock = new Object();
         _instance = instance;
     }
@@ -66,49 +67,36 @@ public class LockConflictManager
      *
      * This routine *must* only be called after having acquired the mutex!
      */
-    
-    public int wait (int retry, int waitTime)
-    {
+    public int wait(int retry, int waitTime) {
         /*
          * Release the mutex on the LockManager instance.
          */
-        
+
         boolean lock = false;
-        
-        if (_instance.isHeldByCurrentThread())
-        {
+
+        if (_instance.isHeldByCurrentThread()) {
             _instance.unlock();
             lock = true;
         }
-            
+
         Date d1 = Calendar.getInstance().getTime();
-        
-        if (retry == LockManager.waitTotalTimeout)
-        {
-            try
-            {
+
+        if (retry == LockManager.waitTotalTimeout) {
+            try {
                 Thread.sleep(waitTime);
+            } catch (final Throwable ex) {
             }
-            catch (final Throwable ex)
-            {
-            }
-        }
-        else
-        {
-            synchronized (_lock)
-            {
-                try
-                {
+        } else {
+            synchronized (_lock) {
+                try {
                     _lock.wait(waitTime);
-                }
-                catch (InterruptedException e)
-                {
+                } catch (InterruptedException e) {
                 }
             }
         }
 
         Date d2 = Calendar.getInstance().getTime();
-        
+
         if (lock)
             _instance.lock();
 
@@ -119,14 +107,9 @@ public class LockConflictManager
      * Signal that the lock has been released.
      */
 
-    public void signal ()
-    {
-        synchronized (_lock)
-        {
+    public void signal() {
+        synchronized (_lock) {
             _lock.notifyAll();
         }
     }
-
-    private Object _lock;
-    private ReentrantLock _instance;
 }

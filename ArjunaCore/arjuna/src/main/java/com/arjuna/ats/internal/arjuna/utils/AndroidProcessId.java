@@ -42,52 +42,44 @@ import java.lang.reflect.Method;
  * @since HPTS 3.0.
  */
 
-public class AndroidProcessId implements com.arjuna.ats.arjuna.utils.Process
-{
+public class AndroidProcessId implements com.arjuna.ats.arjuna.utils.Process {
+    private static final String _className = "android.os.Process";
+    private static final String _methodName = "myPid";
+    private int _thePort;
+
     /**
      * Use the Android Process instance to get myPid.
      */
-    
-    public AndroidProcessId()
-    {
-        try
-        {
+
+    public AndroidProcessId() {
+        try {
             /*
              * Use reflection so we can build this in an environment that does
              * not have the various Android libraries available.
              */
-                 
+
             Class<?> instance = Class.forName(_className);
             Method[] mthds = instance.getDeclaredMethods();
             Method m = null;
-            
-            for (int i = 0; (i < mthds.length) && (m == null); i++)
-            {
+
+            for (int i = 0; (i < mthds.length) && (m == null); i++) {
                 if (_methodName.equals(mthds[i].getName()))
                     m = mthds[i];
             }
-            
+
             _thePort = ((Integer) m.invoke(null)).intValue();
-        }
-        catch (final Throwable ex)
-        {
+        } catch (final Throwable ex) {
             ex.printStackTrace();
-            
+
             _thePort = -1;
         }
     }
 
     /**
      * @return the process id. This had better be unique between processes
-     * on the same machine. If not we're in trouble!
+     *         on the same machine. If not we're in trouble!
      */
-    public int getpid ()
-    {
-    	return _thePort;
+    public int getpid() {
+        return _thePort;
     }
-
-    private int _thePort;
-    
-    private static final String _className = "android.os.Process";
-    private static final String _methodName = "myPid";
 }

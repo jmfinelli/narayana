@@ -42,8 +42,8 @@ public final class FormatConstants {
      */
     public static boolean isNarayanaFormatId(int xidFormatId) {
         return xidFormatId == JTA_FORMAT_ID
-            || xidFormatId == JTS_FORMAT_ID
-            || xidFormatId == XTS_BRIDGE_FORMAT_ID
-            || xidFormatId == RTS_BRIDGE_FORMAT_ID;
+                || xidFormatId == JTS_FORMAT_ID
+                || xidFormatId == XTS_BRIDGE_FORMAT_ID
+                || xidFormatId == RTS_BRIDGE_FORMAT_ID;
     }
 }

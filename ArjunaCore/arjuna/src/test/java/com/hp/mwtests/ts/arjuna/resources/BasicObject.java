@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -37,11 +37,12 @@ import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 
-public class BasicObject extends StateManager
-{
+public class BasicObject extends StateManager {
 
-    public BasicObject()
-    {
+    private int state;
+    private byte[] moreState = {'a', 'b', 'c', 'd'};
+
+    public BasicObject() {
         super(ObjectType.ANDPERSISTENT);
 
         state = 0;
@@ -53,8 +54,7 @@ public class BasicObject extends StateManager
         deactivate();
     }
 
-    public BasicObject(Uid u)
-    {
+    public BasicObject(Uid u) {
         super(u, ObjectType.ANDPERSISTENT);
 
         state = -1;
@@ -62,67 +62,55 @@ public class BasicObject extends StateManager
         activate();
     }
 
-    public void incr(int value)
-    {
+    public void incr(int value) {
         modified();
 
         state += value;
     }
 
-    public void set(int value)
-    {
+    public void set(int value) {
         modified();
 
         state = value;
     }
 
-    public int get()
-    {
-        try
-        {
+    public int get() {
+        try {
             lockMutex();
-            
+
             if (activate())
                 return state;
             else
                 return -1;
-        }
-        finally
-        {
+        } finally {
             getMutex().unlock();
         }
     }
 
-    public String type()
-    {
-        return super.type()+"/BasicObject";
+    public String type() {
+        return super.type() + "/BasicObject";
     }
 
-    public boolean deactivate()
-    {
+    public boolean deactivate() {
         return super.deactivate();
     }
 
-    public boolean activate()
-    {
+    public boolean activate() {
         return super.activate();
     }
 
-    public boolean save_state(OutputObjectState os, int type)
-    {
+    public boolean save_state(OutputObjectState os, int type) {
         try {
             os.packInt(state);
             os.packBytes(moreState);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             return false;
         }
 
         return super.save_state(os, type);
     }
 
-    public boolean restore_state(InputObjectState os, int type)
-    {
+    public boolean restore_state(InputObjectState os, int type) {
         try {
             state = -1;
             moreState = null;
@@ -135,14 +123,10 @@ public class BasicObject extends StateManager
                 // ok
             } else
                 return false;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             return false;
         }
 
         return super.restore_state(os, type);
     }
-
-    private int state;
-    private byte[] moreState = {'a', 'b', 'c', 'd'};
 }

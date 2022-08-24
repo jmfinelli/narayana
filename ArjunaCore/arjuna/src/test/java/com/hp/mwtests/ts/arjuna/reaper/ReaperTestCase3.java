@@ -20,25 +20,24 @@
  */
 package com.hp.mwtests.ts.arjuna.reaper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.WithByteman;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.ActionStatus;
 import com.arjuna.ats.arjuna.coordinator.Reapable;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
+import org.jboss.byteman.contrib.bmunit.BMScript;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 @WithByteman
 @BMScript("reaper")
-public class ReaperTestCase3  extends ReaperTestCaseControl
-{
+public class ReaperTestCase3 extends ReaperTestCaseControl {
     @Test
-    public void testReaperWait() throws Exception
-    {
+    public void testReaperWait() throws Exception {
         TransactionReaper reaper = TransactionReaper.transactionReaper();
 
         // give the reaper worker time to start too
@@ -147,8 +146,7 @@ public class ReaperTestCase3  extends ReaperTestCaseControl
     }
 
     @Test
-    public void testReaperForce() throws Exception
-    {
+    public void testReaperForce() throws Exception {
         TransactionReaper reaper = TransactionReaper.transactionReaper();
 
         // give the reaper worker time to start too
@@ -253,15 +251,22 @@ public class ReaperTestCase3  extends ReaperTestCaseControl
         assertTrue(reapable3.getCancelTried());
 
         /*
-        * Since we've (hopefully) just run two tests with new reapers in the same VM
-        * we've also shown that it's possible to start/terminate/start again!
-        */
+         * Since we've (hopefully) just run two tests with new reapers in the same VM
+         * we've also shown that it's possible to start/terminate/start again!
+         */
     }
 
-    public class SlowReapable implements Reapable
-    {
-        public SlowReapable(Uid uid, int callDelay, int interruptDelay, boolean doCancel, boolean doRollback)
-        {
+    public class SlowReapable implements Reapable {
+        private Uid uid;
+        private int callDelay; // in milliseconds
+        private int interruptDelay; // in milliseconds
+        private boolean doCancel;
+        private boolean doRollback;
+        private boolean cancelTried;
+        private boolean rollbackTried;
+        private boolean running;
+        private Thread cancelThread;
+        public SlowReapable(Uid uid, int callDelay, int interruptDelay, boolean doCancel, boolean doRollback) {
             this.uid = uid;
             this.callDelay = callDelay;
             this.interruptDelay = interruptDelay;
@@ -272,20 +277,17 @@ public class ReaperTestCase3  extends ReaperTestCaseControl
             running = true;
         }
 
-        public boolean running()
-        {
+        public boolean running() {
             return getRunning();
         }
 
-        public boolean preventCommit()
-        {
+        public boolean preventCommit() {
             setRollbackTried();
             clearRunning();
             return doRollback;
         }
 
-        public int cancel()
-        {
+        public int cancel() {
             boolean interrupted = false;
 
             setCancelTried();
@@ -317,58 +319,39 @@ public class ReaperTestCase3  extends ReaperTestCaseControl
             }
         }
 
-        public Uid get_uid()
-        {
+        public Uid get_uid() {
             return uid;
         }
 
-        private Uid uid;
-        private int callDelay; // in milliseconds
-        private int interruptDelay; // in milliseconds
-        private boolean doCancel;
-        private boolean doRollback;
-        private boolean cancelTried;
-        private boolean rollbackTried;
-        private boolean running;
-        private Thread cancelThread;
-
-        public synchronized void setCancelTried()
-        {
+        public synchronized void setCancelTried() {
             cancelTried = true;
         }
 
-        public synchronized boolean getCancelTried()
-        {
+        public synchronized boolean getCancelTried() {
             return cancelTried;
         }
 
-        public synchronized void setCancelThread(Thread cancelThread)
-        {
-            this.cancelThread = cancelThread;
-        }
-
-        public synchronized Thread getCancelThread()
-        {
+        public synchronized Thread getCancelThread() {
             return cancelThread;
         }
 
-        public synchronized void setRollbackTried()
-        {
+        public synchronized void setCancelThread(Thread cancelThread) {
+            this.cancelThread = cancelThread;
+        }
+
+        public synchronized void setRollbackTried() {
             rollbackTried = true;
         }
 
-        public synchronized boolean getRollbackTried()
-        {
+        public synchronized boolean getRollbackTried() {
             return rollbackTried;
         }
 
-        public synchronized void clearRunning()
-        {
+        public synchronized void clearRunning() {
             running = false;
         }
 
-        public synchronized boolean getRunning()
-        {
+        public synchronized boolean getRunning() {
             return running;
         }
     }

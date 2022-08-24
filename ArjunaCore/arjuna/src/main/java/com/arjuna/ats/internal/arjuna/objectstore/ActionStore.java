@@ -50,17 +50,22 @@ import com.arjuna.ats.arjuna.state.OutputObjectState;
  * @since JTS 1.0.
  */
 
-public class ActionStore extends ShadowNoFileLockStore
-{
+public class ActionStore extends ShadowNoFileLockStore {
+    public ActionStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException {
+        super(objectStoreEnvironmentBean);
+
+        // overrides parents use of isObjectStoreSync
+        doSync = objectStoreEnvironmentBean.isTransactionSync();
+    }
+
     /**
      * @return current state of object. Assumes that genPathName allocates
      *         enough extra space to allow extra chars to be added. Action
      *         stores only store committed objects
      */
 
-    public int currentState (Uid objUid, String tName)
-            throws ObjectStoreException
-    {
+    public int currentState(Uid objUid, String tName)
+            throws ObjectStoreException {
         int theState = StateStatus.OS_UNKNOWN;
 
         String path = genPathName(objUid, tName, StateType.OS_ORIGINAL);
@@ -71,7 +76,7 @@ public class ActionStore extends ShadowNoFileLockStore
         path = null;
 
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("ActionStore.currentState("+objUid+", "+tName+") - returning "+
+            tsLogger.logger.trace("ActionStore.currentState(" + objUid + ", " + tName + ") - returning " +
                     StateStatus.stateStatusString(theState));
         }
 
@@ -84,9 +89,8 @@ public class ActionStore extends ShadowNoFileLockStore
      * the hidden version.
      */
 
-    public boolean commit_state (Uid objUid, String tName)
-            throws ObjectStoreException
-    {
+    public boolean commit_state(Uid objUid, String tName)
+            throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.commit_state(" + objUid + ", " + tName + ")");
         }
@@ -99,8 +103,7 @@ public class ActionStore extends ShadowNoFileLockStore
         return result;
     }
 
-    public boolean hide_state (Uid u, String tn) throws ObjectStoreException
-    {
+    public boolean hide_state(Uid u, String tn) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.hide_state(" + u + ", " + tn + ")");
         }
@@ -108,8 +111,7 @@ public class ActionStore extends ShadowNoFileLockStore
         return false;
     }
 
-    public boolean reveal_state (Uid u, String tn) throws ObjectStoreException
-    {
+    public boolean reveal_state(Uid u, String tn) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.reveal_state(" + u + ", " + tn + ")");
         }
@@ -117,9 +119,8 @@ public class ActionStore extends ShadowNoFileLockStore
         return false;
     }
 
-    public InputObjectState read_committed (Uid storeUid, String tName)
-            throws ObjectStoreException
-    {
+    public InputObjectState read_committed(Uid storeUid, String tName)
+            throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.read_committed(" + storeUid + ", " + tName
                     + ")");
@@ -128,9 +129,8 @@ public class ActionStore extends ShadowNoFileLockStore
         return super.read_committed(storeUid, tName);
     }
 
-    public InputObjectState read_uncommitted (Uid u, String tn)
-            throws ObjectStoreException
-    {
+    public InputObjectState read_uncommitted(Uid u, String tn)
+            throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.read_uncommitted(" + u + ", " + tn + ")");
         }
@@ -138,9 +138,8 @@ public class ActionStore extends ShadowNoFileLockStore
         return null;
     }
 
-    public boolean remove_committed (Uid storeUid, String tName)
-            throws ObjectStoreException
-    {
+    public boolean remove_committed(Uid storeUid, String tName)
+            throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.remove_committed(" + storeUid + ", " + tName
                     + ")");
@@ -149,9 +148,8 @@ public class ActionStore extends ShadowNoFileLockStore
         return super.remove_committed(storeUid, tName);
     }
 
-    public boolean remove_uncommitted (Uid u, String tn)
-            throws ObjectStoreException
-    {
+    public boolean remove_uncommitted(Uid u, String tn)
+            throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.remove_uncommitted(" + u + ", " + tn + ")");
         }
@@ -159,9 +157,8 @@ public class ActionStore extends ShadowNoFileLockStore
         return false;
     }
 
-    public boolean write_committed (Uid storeUid, String tName,
-                                    OutputObjectState state) throws ObjectStoreException
-    {
+    public boolean write_committed(Uid storeUid, String tName,
+                                   OutputObjectState state) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.write_committed(" + storeUid + ", " + tName
                     + ")");
@@ -170,22 +167,13 @@ public class ActionStore extends ShadowNoFileLockStore
         return super.write_committed(storeUid, tName, state);
     }
 
-    public boolean write_uncommitted (Uid u, String tn, OutputObjectState s)
-            throws ObjectStoreException
-    {
+    public boolean write_uncommitted(Uid u, String tn, OutputObjectState s)
+            throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActionStore.write_uncommitted(" + u + ", " + tn + ", " + s
                     + ")");
         }
 
         return false;
-    }
-
-    public ActionStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException
-    {
-        super(objectStoreEnvironmentBean);
-
-        // overrides parents use of isObjectStoreSync
-        doSync = objectStoreEnvironmentBean.isTransactionSync();
     }
 }

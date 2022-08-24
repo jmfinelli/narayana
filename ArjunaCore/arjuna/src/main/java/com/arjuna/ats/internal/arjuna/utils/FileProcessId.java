@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,19 +24,19 @@
  * Hewlett-Packard Arjuna Labs,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: FileProcessId.java 2342 2006-03-30 13:06:17Z  $
  */
 
 package com.arjuna.ats.internal.arjuna.utils;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.arjuna.exceptions.FatalError;
 import com.arjuna.ats.arjuna.logging.tsLogger;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Obtains a unique value to represent the process id via the filesystem.
@@ -46,84 +46,70 @@ import com.arjuna.ats.arjuna.logging.tsLogger;
  * @since JTS 1.0.
  */
 
-public class FileProcessId implements com.arjuna.ats.arjuna.utils.Process
-{
+public class FileProcessId implements com.arjuna.ats.arjuna.utils.Process {
+
+    private static final String hexStart = "0x";
+    private static final Object lock = new Object();
+    private static int processId = 0;
 
     /**
      * @return the process id. This had better be unique between processes
-     * on the same machine. If not we're in trouble!
-     *
+     *         on the same machine. If not we're in trouble!
      * @since JTS 2.1.
      */
 
-public int getpid ()
-    {
-	if (FileProcessId.processId == 0)
-	{
-	    synchronized (FileProcessId.lock)
-	    {
-		/*
-		 * All of this is just to ensure uniqueness!
-		 */
+    public int getpid() {
+        if (FileProcessId.processId == 0) {
+            synchronized (FileProcessId.lock) {
+                /*
+                 * All of this is just to ensure uniqueness!
+                 */
 
-		if (FileProcessId.processId == 0)	
-		{
-		    int retry = 1000;
-		    int pid = (int) System.currentTimeMillis();
+                if (FileProcessId.processId == 0) {
+                    int retry = 1000;
+                    int pid = (int) System.currentTimeMillis();
 
-		    pid = Math.abs(pid);
+                    pid = Math.abs(pid);
 
-		    /*
-		     * Use the "var" directory location from the property file.
-		     * If it is not set, create "./var/tmp".
-		     */
-		    String dir = arjPropertyManager.getCoreEnvironmentBean().getVarDir();
-		    
-		    if (dir == null || dir.length() == 0)
-			dir = System.getProperty("user.dir") + File.separator + "var" + File.separator + "tmp";
-		    else
-			dir = dir + File.separator + "tmp";
+                    /*
+                     * Use the "var" directory location from the property file.
+                     * If it is not set, create "./var/tmp".
+                     */
+                    String dir = arjPropertyManager.getCoreEnvironmentBean().getVarDir();
 
-		    File tmpDir = new File(dir);
+                    if (dir == null || dir.length() == 0)
+                        dir = System.getProperty("user.dir") + File.separator + "var" + File.separator + "tmp";
+                    else
+                        dir = dir + File.separator + "tmp";
 
-		    if (tmpDir.isDirectory() == false && tmpDir.mkdirs() == false)
-			throw new FatalError(tsLogger.i18NLogger.get_utils_FileProcessId_1());
+                    File tmpDir = new File(dir);
 
-		    for (int i = 0; i < retry; i++)
-		    {
-			try
-			{
-			    File f = new File(dir + File.separator+ "pid " + pid);
+                    if (tmpDir.isDirectory() == false && tmpDir.mkdirs() == false)
+                        throw new FatalError(tsLogger.i18NLogger.get_utils_FileProcessId_1());
 
-			    if (f.createNewFile())
-			    {
-				f.deleteOnExit();  // problem if we crash?
+                    for (int i = 0; i < retry; i++) {
+                        try {
+                            File f = new File(dir + File.separator + "pid " + pid);
 
-				processId = pid;
-		    
-				break;
-			    }
-			    else
-				pid++;
-			}
-			catch (IOException e)
-		        {
-			}
-		    }
+                            if (f.createNewFile()) {
+                                f.deleteOnExit();  // problem if we crash?
 
-		    if (processId == 0)
-			throw new FatalError(tsLogger.i18NLogger.get_utils_FileProcessId_2());
-		}
-	    }
-	}
+                                processId = pid;
 
-	return processId;
+                                break;
+                            } else
+                                pid++;
+                        } catch (IOException e) {
+                        }
+                    }
+
+                    if (processId == 0)
+                        throw new FatalError(tsLogger.i18NLogger.get_utils_FileProcessId_2());
+                }
+            }
+        }
+
+        return processId;
     }
 
-private static int processId = 0;
-    
-private static final String hexStart = "0x";
-
-private static final Object lock = new Object();
-    
 }

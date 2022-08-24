@@ -3,10 +3,12 @@ package com.hp.mwtests.ts.arjuna.common;
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 public class ArjPropertyManagerTest {
     @Test

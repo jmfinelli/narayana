@@ -41,10 +41,9 @@ package com.arjuna.ats.txoj.exceptions;
  * @since JTS 1.0.
  */
 
-public class LockStoreException extends Exception
-{
+public class LockStoreException extends Exception {
     static final long serialVersionUID = -2279290201672202208L;
-    
+
     /**
      * Constructs a new exception with <code>null</code> as its detail message.
      * The cause is not initialized, and may subsequently be initialized by a
@@ -78,6 +77,7 @@ public class LockStoreException extends Exception
      *                {@link #getCause()} method).  (A <code>null</code> value is
      *                permitted, and indicates that the cause is nonexistent or
      *                unknown.)
+     *
      * @since 1.4
      */
     public LockStoreException(String message, Throwable cause) {
@@ -96,6 +96,7 @@ public class LockStoreException extends Exception
      *              {@link #getCause()} method).  (A <code>null</code> value is
      *              permitted, and indicates that the cause is nonexistent or
      *              unknown.)
+     *
      * @since 1.4
      */
     public LockStoreException(Throwable cause) {

@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2007, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2007, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2007,
  * @author JBoss Inc.
  */
@@ -44,52 +44,49 @@ import com.arjuna.ats.arjuna.logging.tsLogger;
  * @since JTS 1.0.
  */
 
-public class ReaperThread extends Thread
-{
+public class ReaperThread extends Thread {
 
-public ReaperThread (TransactionReaper arg)
-    {
+    private TransactionReaper reaperObject;
+    private long sleepPeriod;
+    private boolean _shutdown;
+
+    public ReaperThread(TransactionReaper arg) {
         super("Transaction Reaper");
-	reaperObject = arg;
-	sleepPeriod = reaperObject.checkingPeriod();
-	_shutdown = false;
+        reaperObject = arg;
+        sleepPeriod = reaperObject.checkingPeriod();
+        _shutdown = false;
     }
 
-public void run ()
-    {
-    	if (tsLogger.logger.isTraceEnabled()) {
+    public void run() {
+        if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ReaperThread.run ()");
         }
 
-    	for (;;)
-    	{
-    	    /*
-    	     * Cannot assume we sleep for the entire period. We may
-    	     * be interrupted. If we are, just run a check anyway and
-    	     * ignore.
-    	     */
-    
-            synchronized(reaperObject)
-            {
+        for (; ; ) {
+            /*
+             * Cannot assume we sleep for the entire period. We may
+             * be interrupted. If we are, just run a check anyway and
+             * ignore.
+             */
+
+            synchronized (reaperObject) {
                 // test our condition -- things may have changed while we were checking
 
                 if (_shutdown) {
                     return;
                 }
 
-		sleepPeriod = reaperObject.checkingPeriod();
-        
-                if (sleepPeriod > 0)
-                {
-                     try
-                     {
-                          if (tsLogger.logger.isTraceEnabled()) {
-                              tsLogger.logger.trace("Thread "+Thread.currentThread()+" sleeping for "+Long.toString(sleepPeriod));
-                          }
+                sleepPeriod = reaperObject.checkingPeriod();
 
-                          reaperObject.wait(sleepPeriod);
-                     }
-                     catch (InterruptedException e1) {}
+                if (sleepPeriod > 0) {
+                    try {
+                        if (tsLogger.logger.isTraceEnabled()) {
+                            tsLogger.logger.trace("Thread " + Thread.currentThread() + " sleeping for " + Long.toString(sleepPeriod));
+                        }
+
+                        reaperObject.wait(sleepPeriod);
+                    } catch (InterruptedException e1) {
+                    }
 
                     // test our condition -- things may have changed while we were waiting
 
@@ -98,23 +95,18 @@ public void run ()
                     }
                 }
             }
-    
+
             if (tsLogger.logger.isTraceEnabled()) {
                 tsLogger.logger.trace("ReaperThread.run ()");
             }
 
-    	    reaperObject.check();
-    	}
+            reaperObject.check();
+        }
     }
 
-    public void shutdown ()
-    {
-	_shutdown = true;
+    public void shutdown() {
+        _shutdown = true;
     }
 
-    private TransactionReaper reaperObject;
-    private long              sleepPeriod;
-    private boolean           _shutdown;
 
-    
 }

@@ -15,11 +15,11 @@ import com.arjuna.ats.internal.arjuna.objectstore.hornetq.HornetqObjectStoreAdap
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
+;
 
 public class JournalStoreTest {
     private static HornetqJournalEnvironmentBean hornetqJournalEnvironmentBean;

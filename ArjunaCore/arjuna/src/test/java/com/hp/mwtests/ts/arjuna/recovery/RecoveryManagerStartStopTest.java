@@ -1,28 +1,32 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2009,
  * @author JBoss Inc.
  */
 
 package com.hp.mwtests.ts.arjuna.recovery;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
+import com.arjuna.ats.arjuna.recovery.RecoveryManager;
+import org.jboss.byteman.contrib.bmunit.BMScript;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,13 +37,10 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.WithByteman;
-import org.junit.jupiter.api.Test;;
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
-import com.arjuna.ats.arjuna.recovery.RecoveryManager;
+;
 
 /**
  * test to ensure that the recovery manager cleans up all its threads when terminated
@@ -47,17 +48,16 @@ import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 
 @WithByteman
 @BMScript("recovery")
-public class RecoveryManagerStartStopTest
-{
+public class RecoveryManagerStartStopTest {
+    private List<RecoveryManagerStartStopTestThread> clients = new ArrayList<RecoveryManagerStartStopTestThread>();
+
     @BeforeEach
-    public void enableSocketBasedRecovery()
-    {
+    public void enableSocketBasedRecovery() {
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryListener(true);
     }
 
     @Test
-    public void testStartStop() throws Exception
-    {
+    public void testStartStop() throws Exception {
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryPort(4712);
 
         // check how many threads there are running
@@ -103,8 +103,7 @@ public class RecoveryManagerStartStopTest
         assertEquals(activeCount, newActiveCount);
     }
 
-    private void ensureRecoveryClientsTerminated()
-    {
+    private void ensureRecoveryClientsTerminated() {
         // check that any threads added to talk to the recovery listener get their sockets closed
 
         for (RecoveryManagerStartStopTestThread client : clients) {
@@ -117,8 +116,7 @@ public class RecoveryManagerStartStopTest
         }
     }
 
-    private void addRecoveryClient()
-    {
+    private void addRecoveryClient() {
         // open a connection to the recovery listener service in a new thread and ensure that the
         // thread is terminated by having its socket closed.
 
@@ -128,8 +126,7 @@ public class RecoveryManagerStartStopTest
         client.ensureStarted();
     }
 
-    private void dumpThreadGroup(ThreadGroup thg, String header)
-    {
+    private void dumpThreadGroup(ThreadGroup thg, String header) {
         int activeCount = thg.activeCount();
         Thread[] threads = new Thread[activeCount];
         int reported = thg.enumerate(threads);
@@ -143,26 +140,20 @@ public class RecoveryManagerStartStopTest
         System.out.flush();
     }
 
-    private List<RecoveryManagerStartStopTestThread> clients = new ArrayList<RecoveryManagerStartStopTestThread>();
-
-    private static class RecoveryManagerStartStopTestThread extends Thread
-    {
+    private static class RecoveryManagerStartStopTestThread extends Thread {
         private boolean failed = true;
         private boolean started = false;
         private boolean stopped = false;
 
-        public RecoveryManagerStartStopTestThread()
-        {
+        public RecoveryManagerStartStopTestThread() {
             super("Recovery Listener Client");
         }
 
-        public boolean failed()
-        {
+        public boolean failed() {
             return failed;
         }
 
-        public void run()
-        {
+        public void run() {
             BufferedReader fromServer = null;
             Socket connectorSocket = null;
             // get a socket connected to the listener
@@ -172,18 +163,15 @@ public class RecoveryManagerStartStopTest
                 int port;
 
                 host = InetAddress.getLocalHost().getHostName();
-                
+
                 port = recoveryPropertyManager.getRecoveryEnvironmentBean().getRecoveryPort();
 
                 System.out.println("client attempting to connect to host " + host + " port " + port);
                 System.out.flush();
 
-                try
-                {
+                try {
                     connectorSocket = new Socket(host, port);
-                }
-                catch (final Exception ex)
-                {
+                } catch (final Exception ex) {
                     // in case local host name bind fails (e.g., on Mac OS)
                     System.out.println("caught exception " + ex.getMessage() + " trying IPv4 loopback connection instead");
                     try {
@@ -249,8 +237,7 @@ public class RecoveryManagerStartStopTest
             }
         }
 
-        public synchronized void notifyStarted()
-        {
+        public synchronized void notifyStarted() {
             started = true;
             notify();
         }

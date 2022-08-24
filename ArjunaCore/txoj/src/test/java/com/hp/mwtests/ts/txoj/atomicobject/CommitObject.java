@@ -33,35 +33,32 @@ import com.arjuna.ats.arjuna.AtomicAction;
  * $Id: AtomicObjectTest3.java 2342 2006-03-30 13:06:17Z  $
  */
 
-public class CommitObject extends Thread
-{
+public class CommitObject extends Thread {
 
-	public CommitObject ()
-	    {
-	    }
+    private static int nextThreadId = 3;
 
-	public void run ()
-	    {
-		int thr = nextThreadId;
+    public CommitObject() {
+    }
 
-		nextThreadId++;
+    public void run() {
+        int thr = nextThreadId;
 
-		AtomicAction a = new AtomicAction();
+        nextThreadId++;
 
-		a.begin();
+        AtomicAction a = new AtomicAction();
 
-		AtomicObjectTest3.indent(thr, 0);
-		System.out.println("begin");
+        a.begin();
 
-		AtomicObjectTest3.randomOperation(thr, 0);
-		AtomicObjectTest3.randomOperation(thr, 0);
+        AtomicObjectTest3.indent(thr, 0);
+        System.out.println("begin");
 
-		a.commit();
+        AtomicObjectTest3.randomOperation(thr, 0);
+        AtomicObjectTest3.randomOperation(thr, 0);
 
-		AtomicObjectTest3.indent(thr, 0);
-		System.out.println("commit");
-	    }
+        a.commit();
 
-	private static int nextThreadId = 3;
+        AtomicObjectTest3.indent(thr, 0);
+        System.out.println("commit");
+    }
 
-	}
+}

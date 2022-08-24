@@ -37,6 +37,7 @@ public class AsyncBeforeSynchronization implements Callable<Boolean> {
 
     /**
      * Run the call
+     *
      * @return true if the call was successful and false otherwise
      * @throws Exception if the wrapped synchronisation throws an exception
      */
@@ -45,7 +46,7 @@ public class AsyncBeforeSynchronization implements Callable<Boolean> {
         ThreadActionData.pushAction(coordinator, false);
 
         try {
-           return synchronization.beforeCompletion();
+            return synchronization.beforeCompletion();
         } catch (Exception e) {
             tsLogger.i18NLogger.warn_coordinator_TwoPhaseCoordinator_2(synchronization.toString(), e);
             throw e;

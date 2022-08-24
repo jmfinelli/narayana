@@ -20,16 +20,6 @@
  */
 package com.hp.mwtests.ts.arjuna.tools;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import javax.management.Notification;
-import javax.management.NotificationListener;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.objectstore.ObjectStoreIterator;
 import com.arjuna.ats.arjuna.objectstore.StateStatus;
@@ -40,13 +30,24 @@ import com.arjuna.ats.arjuna.tools.osb.api.mbeans.RecoveryStoreBean;
 import com.arjuna.ats.arjuna.tools.osb.api.proxy.ParticipantStoreProxy;
 import com.arjuna.ats.arjuna.tools.osb.api.proxy.RecoveryStoreProxy;
 import com.arjuna.ats.arjuna.tools.osb.api.proxy.StoreManagerProxy;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import javax.management.Notification;
+import javax.management.NotificationListener;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 public class ObjectStoreAPIJMXTest {
-	private RecoveryStoreBean rsb;
-	private ParticipantStoreBean psb;
+    private RecoveryStoreBean rsb;
+    private ParticipantStoreBean psb;
 
-	private RecoveryStoreProxy prs;
-	private ParticipantStoreProxy pps;
+    private RecoveryStoreProxy prs;
+    private ParticipantStoreProxy pps;
     private boolean notified;
 
     private NotificationListener listener = new NotificationListener() {
@@ -55,53 +56,49 @@ public class ObjectStoreAPIJMXTest {
         }
     };
 
-	@BeforeEach
-	public void setUp () throws Exception
-	{
+    @BeforeEach
+    public void setUp() throws Exception {
         notified = false;
 
-		// create MBeans representing the ObjectStore
-		rsb = new RecoveryStoreBean();
-		psb = new ParticipantStoreBean();
+        // create MBeans representing the ObjectStore
+        rsb = new RecoveryStoreBean();
+        psb = new ParticipantStoreBean();
 
-		// and register them with the local MBean Server
-		rsb.start();
-		psb.start();
+        // and register them with the local MBean Server
+        rsb.start();
+        psb.start();
 
-		// obtain (JMX) proxies for the recovery and participant stores
-		prs = StoreManagerProxy.getRecoveryStore(listener);
-		pps = StoreManagerProxy.getParticipantStore(listener);
-	}
+        // obtain (JMX) proxies for the recovery and participant stores
+        prs = StoreManagerProxy.getRecoveryStore(listener);
+        pps = StoreManagerProxy.getParticipantStore(listener);
+    }
 
-	@AfterEach
-	public void tearDown () throws Exception
-	{
-		// Unregister MBeans
-		rsb.stop();
-		psb.stop();
+    @AfterEach
+    public void tearDown() throws Exception {
+        // Unregister MBeans
+        rsb.stop();
+        psb.stop();
         StoreManagerProxy.releaseProxy();
-	}
+    }
 
-	@Test
-	public void testRecoveryStoreBean() throws Exception {
-		com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new RecoveryStoreBean());
-	}
+    @Test
+    public void testRecoveryStoreBean() throws Exception {
+        com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new RecoveryStoreBean());
+    }
 
-	@Test
-	public void testParticipantStoreBean() throws Exception {
-		com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new ParticipantStoreBean());
-	}
+    @Test
+    public void testParticipantStoreBean() throws Exception {
+        com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new ParticipantStoreBean());
+    }
 
-	@Test
-	public void testShadowNoFileLockStore () throws Exception
-	{
+    @Test
+    public void testShadowNoFileLockStore() throws Exception {
         final OutputObjectState buff = new OutputObjectState();
         final String tn = "/StateManager/junit";
 
         System.out.println("Testing shadow file store");
 
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             Uid u = new Uid();
 
             pps.write_uncommitted(u, tn, buff);
@@ -131,8 +128,7 @@ public class ObjectStoreAPIJMXTest {
 
     //@Test
     //TODO this test only works on an initially empty store
-    public void testIterator () throws Exception
-    {
+    public void testIterator() throws Exception {
         Uid u1 = new Uid();
         Uid u2 = new Uid();
 
@@ -155,11 +151,11 @@ public class ObjectStoreAPIJMXTest {
     }
 
     @Test
-	public void testNotification() throws Exception {
+    public void testNotification() throws Exception {
         // calling stop on the MBean should generate a notification
         rsb.stop();
 
-        // make sure we wait long enough for it to be sent        
+        // make sure we wait long enough for it to be sent
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {

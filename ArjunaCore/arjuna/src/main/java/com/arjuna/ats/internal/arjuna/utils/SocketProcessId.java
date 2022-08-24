@@ -31,14 +31,14 @@
 
 package com.arjuna.ats.internal.arjuna.utils;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.arjuna.exceptions.FatalError;
 import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.utils.Utility;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 
 /**
  * Obtains a unique value to represent the process id via sockets and
@@ -49,25 +49,21 @@ import com.arjuna.ats.arjuna.utils.Utility;
  * @since HPTS 3.0.
  */
 
-public class SocketProcessId implements com.arjuna.ats.arjuna.utils.Process
-{
-    public SocketProcessId()
-    {
+public class SocketProcessId implements com.arjuna.ats.arjuna.utils.Process {
+    private final int _thePort;
+    private ServerSocket _theSocket;
+
+    public SocketProcessId() {
         int port = arjPropertyManager.getCoreEnvironmentBean().getSocketProcessIdPort();
         int maxPorts = arjPropertyManager.getCoreEnvironmentBean().getSocketProcessIdMaxPorts();
 
         int maxPort;
 
-        if (maxPorts <= 1)
-        {
+        if (maxPorts <= 1) {
             maxPort = port;
-        }
-        else if (Utility.MAX_PORT - maxPorts < port)
-        {
+        } else if (Utility.MAX_PORT - maxPorts < port) {
             maxPort = Utility.MAX_PORT;
-        }
-        else
-        {
+        } else {
             maxPort = port + maxPorts;
         }
 
@@ -82,27 +78,19 @@ public class SocketProcessId implements com.arjuna.ats.arjuna.utils.Process
         }
     }
 
-    /**
-     * @return the process id. This had better be unique between processes
-     * on the same machine. If not we're in trouble!
-     */
-    public int getpid ()
-    {
-    	return _thePort;
-    }
-
-    private static ServerSocket createSocket(int port)
-    {
-        try
-        {
+    private static ServerSocket createSocket(int port) {
+        try {
             return new ServerSocket(port, 0, InetAddress.getByName(null));
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             return null;
         }
     }
 
-    private final int _thePort;
-    private ServerSocket _theSocket;
+    /**
+     * @return the process id. This had better be unique between processes
+     *         on the same machine. If not we're in trouble!
+     */
+    public int getpid() {
+        return _thePort;
+    }
 }

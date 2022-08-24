@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,14 +24,12 @@
  * Arjuna Solutions Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: RecoveryRecord.java 2342 2006-03-30 13:06:17Z  $
  */
 
 package com.arjuna.ats.internal.arjuna.abstractrecords;
-
-import java.io.PrintWriter;
 
 import com.arjuna.ats.arjuna.ObjectType;
 import com.arjuna.ats.arjuna.StateManager;
@@ -43,15 +41,19 @@ import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 
-public class RecoveryRecord extends AbstractRecord
-{
+import java.io.PrintWriter;
+
+public class RecoveryRecord extends AbstractRecord {
+
+    protected StateManager objectAddr;
+    protected OutputObjectState state;
+    private BasicAction actionHandle;
 
     /**
      * This constructor is used to create a new instance of a RecoveryRecord.
      */
 
-    public RecoveryRecord(OutputObjectState os, StateManager sm)
-    {
+    public RecoveryRecord(OutputObjectState os, StateManager sm) {
         super(sm.get_uid(), sm.type(), ObjectType.ANDPERSISTENT);
 
         if (tsLogger.logger.isDebugEnabled()) {
@@ -64,18 +66,28 @@ public class RecoveryRecord extends AbstractRecord
         actionHandle = BasicAction.Current();
     }
 
-    public int typeIs ()
-    {
+    public RecoveryRecord() {
+        super();
+
+        if (tsLogger.logger.isDebugEnabled()) {
+            tsLogger.logger.debug("RecoveryRecord::RecoveryRecord()"
+                    + " - crash recovery constructor");
+        }
+
+        objectAddr = null;
+        state = null;
+        actionHandle = null;
+    }
+
+    public int typeIs() {
         return RecordType.RECOVERY;
     }
 
-    public Object value ()
-    {
+    public Object value() {
         return state;
     }
 
-    public void setValue (Object newState)
-    {
+    public void setValue(Object newState) {
         if (newState instanceof OutputObjectState)
             state = (OutputObjectState) newState;
         else {
@@ -88,8 +100,7 @@ public class RecoveryRecord extends AbstractRecord
      * passing it the saved ObjectState.
      */
 
-    public int nestedAbort ()
-    {
+    public int nestedAbort() {
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("RecoveryRecord::nestedAbort() for " + order());
         }
@@ -101,10 +112,8 @@ public class RecoveryRecord extends AbstractRecord
 
         forgetAction(false);
 
-        if (state != null)
-        {
-            if (state.notempty()) /* anything to restore ? */
-            {
+        if (state != null) {
+            if (state.notempty()) /* anything to restore ? */ {
                 InputObjectState oldState = new InputObjectState(state);
 
                 int result = objectAddr.restore_state(oldState,
@@ -129,8 +138,7 @@ public class RecoveryRecord extends AbstractRecord
      * actually be called
      */
 
-    public int nestedCommit ()
-    {
+    public int nestedCommit() {
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("RecoveryRecord::nestedCommit() for " + order());
         }
@@ -138,8 +146,15 @@ public class RecoveryRecord extends AbstractRecord
         return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int nestedPrepare ()
-    {
+    /*
+     * Saving of RecoveryRecords is only undertaken during the Prepare phase of
+     * the top level 2PC. Since the managed objects are only recoverable (not
+     * persistent) there is no need to save any information (or restore any
+     * either). However, persistence records (derived from recovery records)
+     * need to be saved for crash recovery purposes.
+     */
+
+    public int nestedPrepare() {
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("RecoveryRecord::nestedPrepare() for " + order());
         }
@@ -154,8 +169,7 @@ public class RecoveryRecord extends AbstractRecord
      * restored to the saved state exactly like a nested abort.
      */
 
-    public int topLevelAbort ()
-    {
+    public int topLevelAbort() {
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("RecoveryRecord::topLevelAbort() for " + order());
         }
@@ -169,8 +183,7 @@ public class RecoveryRecord extends AbstractRecord
      * PREPARE_READONLY this function should never actually be called
      */
 
-    public int topLevelCommit ()
-    {
+    public int topLevelCommit() {
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("RecoveryRecord::topLevelCommit() for " + order());
         }
@@ -185,8 +198,7 @@ public class RecoveryRecord extends AbstractRecord
      * called in the action commit case
      */
 
-    public int topLevelPrepare ()
-    {
+    public int topLevelPrepare() {
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("RecoveryRecord::topLevelPrepare() for " + order());
         }
@@ -194,46 +206,16 @@ public class RecoveryRecord extends AbstractRecord
         return TwoPhaseOutcome.PREPARE_READONLY;
     }
 
-    /*
-     * Saving of RecoveryRecords is only undertaken during the Prepare phase of
-     * the top level 2PC. Since the managed objects are only recoverable (not
-     * persistent) there is no need to save any information (or restore any
-     * either). However, persistence records (derived from recovery records)
-     * need to be saved for crash recovery purposes.
-     */
-
-    public boolean doSave ()
-    {
+    public boolean doSave() {
         return false;
     }
 
-    public boolean restore_state (InputObjectState os, int ot)
-    {
+    public boolean restore_state(InputObjectState os, int ot) {
         return super.restore_state(os, ot);
     }
 
-    public boolean save_state (OutputObjectState os, int ot)
-    {
+    public boolean save_state(OutputObjectState os, int ot) {
         return super.save_state(os, ot);
-    }
-
-    public void print (PrintWriter strm)
-    {
-        super.print(strm);
-        strm.println("RecoveryRecord with state:\n" + state);
-    }
-
-    public String type ()
-    {
-        return "/StateManager/AbstractRecord/RecoveryRecord";
-    }
-
-    public void merge (AbstractRecord a)
-    {
-    }
-
-    public void alter (AbstractRecord a)
-    {
     }
 
     /*
@@ -246,24 +228,19 @@ public class RecoveryRecord extends AbstractRecord
      * old.
      */
 
-    public boolean shouldAdd (AbstractRecord a)
-    {
-        return false;
+    public void print(PrintWriter strm) {
+        super.print(strm);
+        strm.println("RecoveryRecord with state:\n" + state);
     }
 
-    public boolean shouldAlter (AbstractRecord a)
-    {
-        return false;
+    public String type() {
+        return "/StateManager/AbstractRecord/RecoveryRecord";
     }
 
-    public boolean shouldMerge (AbstractRecord a)
-    {
-        return false;
+    public void merge(AbstractRecord a) {
     }
 
-    public boolean shouldReplace (AbstractRecord a)
-    {
-        return false;
+    public void alter(AbstractRecord a) {
     }
 
     /*
@@ -271,18 +248,8 @@ public class RecoveryRecord extends AbstractRecord
      * when recreating the prepared list of a server atomic action.
      */
 
-    public RecoveryRecord()
-    {
-        super();
-
-        if (tsLogger.logger.isDebugEnabled()) {
-            tsLogger.logger.debug("RecoveryRecord::RecoveryRecord()"
-                    + " - crash recovery constructor");
-        }
-
-        objectAddr = null;
-        state = null;
-        actionHandle = null;
+    public boolean shouldAdd(AbstractRecord a) {
+        return false;
     }
 
     /*
@@ -290,19 +257,23 @@ public class RecoveryRecord extends AbstractRecord
      * prevent the system from creating another record in that action?
      */
 
-    protected final void forgetAction (boolean commit)
-    {
-        if ((actionHandle != null) && (objectAddr != null))
-        {
+    public boolean shouldAlter(AbstractRecord a) {
+        return false;
+    }
+
+    public boolean shouldMerge(AbstractRecord a) {
+        return false;
+    }
+
+    public boolean shouldReplace(AbstractRecord a) {
+        return false;
+    }
+
+    protected final void forgetAction(boolean commit) {
+        if ((actionHandle != null) && (objectAddr != null)) {
             StateManagerFriend.forgetAction(objectAddr, actionHandle, commit, RecordType.RECOVERY);
             actionHandle = null; // only do this once!
         }
     }
-
-    protected StateManager objectAddr;
-
-    protected OutputObjectState state;
-
-    private BasicAction actionHandle;
 
 }

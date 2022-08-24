@@ -51,7 +51,7 @@ public class PmemSlots implements BackingSlots {
             throw new IOException(tsLogger.i18NLogger.get_dir_create_failed(storeDir.getCanonicalPath()));
         }
 
-        if(!PmemUtil.isPmemSupportedFor(storeDir)) {
+        if (!PmemUtil.isPmemSupportedFor(storeDir)) {
             throw new IOException(tsLogger.i18NLogger.get_pmem_not_supported(config.getStoreDir()));
         }
 

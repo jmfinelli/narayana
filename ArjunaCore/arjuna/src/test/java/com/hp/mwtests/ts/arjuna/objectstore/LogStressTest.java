@@ -31,10 +31,6 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
@@ -44,30 +40,33 @@ import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.arjuna.objectstore.LogStore;
 import com.hp.mwtests.ts.arjuna.resources.BasicRecord;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 /*
  * Define our own transaction type to avoid conflicts
  * with other tests.
  */
 
-class MyAtomicAction extends AtomicAction
-{
-    public String type ()
-    {
+class MyAtomicAction extends AtomicAction {
+    public String type() {
         return "/StateManager/BasicAction/TwoPhaseCoordinator/AtomicAction/MyAtomicAction";
     }
 }
 
-class StressWorker extends Thread
-{
-    public StressWorker(int iters, int thread)
-    {
+class StressWorker extends Thread {
+    private int _iters;
+    private int _thread;
+
+    public StressWorker(int iters, int thread) {
         _iters = iters;
         _thread = thread;
     }
 
-    public void run()
-    {
+    public void run() {
         for (int i = 0; i < _iters; i++) {
             try {
                 MyAtomicAction A = new MyAtomicAction();
@@ -77,24 +76,18 @@ class StressWorker extends Thread
                 A.add(new BasicRecord());
 
                 A.commit();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
             Thread.yield();
         }
     }
-
-    private int _iters;
-    private int _thread;
 }
 
-public class LogStressTest
-{
+public class LogStressTest {
     @Test
-    public void test()
-    {
+    public void test() {
         int threads = 10;
         int work = 100;
 
@@ -115,8 +108,7 @@ public class LogStressTest
         for (int j = 0; j < threads; j++) {
             try {
                 workers[j].join();
-            }
-            catch (final Exception ex) {
+            } catch (final Exception ex) {
             }
         }
 
@@ -133,8 +125,7 @@ public class LogStressTest
             if (tempUid.equals(Uid.nullUid())) {
                 passed = true;
             }
-        }
-        catch (final Exception ex) {
+        } catch (final Exception ex) {
         }
 
         assertTrue(passed);

@@ -20,8 +20,6 @@
  */
 package com.arjuna.ats.arjuna.common;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.utils.Process;
 import com.arjuna.ats.arjuna.utils.Utility;
@@ -30,14 +28,16 @@ import com.arjuna.common.internal.util.propertyservice.FullPropertyName;
 import com.arjuna.common.internal.util.propertyservice.PropertyPrefix;
 import com.arjuna.common.util.ConfigurationInfo;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+
 /**
  * A JavaBean containing assorted configuration properties for the core transaction system.
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
 @PropertyPrefix(prefix = "com.arjuna.ats.arjuna.")
-public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
-{
+public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean {
     public static final int NODE_NAME_SIZE = 64;
 
     @FullPropertyName(name = "com.arjuna.ats.arjuna.common.varDir")
@@ -66,14 +66,13 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
 
     /**
      * Returns the 'var' directory path.
-     *
+     * <p>
      * Default: {user.dir}/var/tmp
      * Equivalent deprecated property: com.arjuna.ats.arjuna.common.varDir
      *
      * @return the 'var' directory name.
      */
-    public String getVarDir()
-    {
+    public String getVarDir() {
         return varDir;
     }
 
@@ -82,21 +81,19 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param varDir the path to the 'var' directory.
      */
-    public void setVarDir(String varDir)
-    {
+    public void setVarDir(String varDir) {
         this.varDir = varDir;
     }
 
     /**
      * Returns the Node Identifier.
-     *
+     * <p>
      * Default: null
      * Equivalent deprecated property: com.arjuna.ats.arjuna.nodeIdentifier
      *
      * @return the Node Identifier.
      */
-    public String getNodeIdentifier()
-    {
+    public String getNodeIdentifier() {
         return nodeIdentifier;
     }
 
@@ -104,35 +101,32 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      * Sets the node identifier. Should be uniq amongst all instances that share resource managers or an objectstore.
      *
      * @param nodeIdentifier the Node Identifier.
+     *
      * @throws CoreEnvironmentBeanException if node identifier is null or too long.
      */
-    public void setNodeIdentifier(String nodeIdentifier) throws CoreEnvironmentBeanException
-    {
-        if (nodeIdentifier == null)
-        {
+    public void setNodeIdentifier(String nodeIdentifier) throws CoreEnvironmentBeanException {
+        if (nodeIdentifier == null) {
             tsLogger.i18NLogger.fatal_nodename_null();
             throw new CoreEnvironmentBeanException(tsLogger.i18NLogger.get_fatal_nodename_null());
         }
 
-        if (nodeIdentifier.getBytes(StandardCharsets.UTF_8).length > NODE_NAME_SIZE)
-        {
+        if (nodeIdentifier.getBytes(StandardCharsets.UTF_8).length > NODE_NAME_SIZE) {
             tsLogger.i18NLogger.fatal_nodename_too_long(nodeIdentifier, NODE_NAME_SIZE);
             throw new CoreEnvironmentBeanException(tsLogger.i18NLogger.get_fatal_nodename_too_long(nodeIdentifier, NODE_NAME_SIZE));
         }
 
-    	this.nodeIdentifier = nodeIdentifier;
+        this.nodeIdentifier = nodeIdentifier;
     }
 
     /**
      * Returns the port number for the Socket based process id implementation.
-     *
+     * <p>
      * Default: 0 (use any free port)
      * Equivalent deprecated property: com.arjuna.ats.internal.arjuna.utils.SocketProcessIdPort
      *
      * @return the port number.
      */
-    public int getSocketProcessIdPort()
-    {
+    public int getSocketProcessIdPort() {
         return socketProcessIdPort;
     }
 
@@ -143,32 +137,28 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param socketProcessIdPort the port number to bind to.
      */
-    public void setSocketProcessIdPort(int socketProcessIdPort)
-    {
+    public void setSocketProcessIdPort(int socketProcessIdPort) {
         Utility.validatePortRange(socketProcessIdPort);
         this.socketProcessIdPort = socketProcessIdPort;
     }
 
-    public int getTimeoutFactor()
-    {
+    public int getTimeoutFactor() {
         return timeoutFactor;
     }
 
-    public void setTimeoutFactor(int timeoutFactor)
-    {
+    public void setTimeoutFactor(int timeoutFactor) {
         this.timeoutFactor = timeoutFactor;
     }
 
     /**
      * Returns the maximum number of ports to search when looking for one that is free.
-     *
+     * <p>
      * Default: 1
      * Equivalent deprecated property: com.arjuna.ats.internal.arjuna.utils.SocketProcessIdMaxPorts
      *
      * @return the maximum number of ports to try.
      */
-    public int getSocketProcessIdMaxPorts()
-    {
+    public int getSocketProcessIdMaxPorts() {
         return socketProcessIdMaxPorts;
     }
 
@@ -177,21 +167,19 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param socketProcessIdMaxPorts the maximum number of ports to try.
      */
-    public void setSocketProcessIdMaxPorts(int socketProcessIdMaxPorts)
-    {
+    public void setSocketProcessIdMaxPorts(int socketProcessIdMaxPorts) {
         this.socketProcessIdMaxPorts = socketProcessIdMaxPorts;
     }
 
     /**
      * Returns the class name of the Process implementation to use.
-     *
+     * <p>
      * Default: "com.arjuna.ats.internal.arjuna.utils.SocketProcessId"
      * Equivalent deprecated property: com.arjuna.ats.internal.arjuna.utils.processImplementation
      *
      * @return the name of a class implementing Process.
      */
-    public String getProcessImplementationClassName()
-    {
+    public String getProcessImplementationClassName() {
         return processImplementationClassName;
     }
 
@@ -200,15 +188,11 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param processImplementationClassName the name of a class implementing Process.
      */
-    public void setProcessImplementationClassName(String processImplementationClassName)
-    {
-        synchronized(this) {
-            if(processImplementationClassName == null)
-            {
+    public void setProcessImplementationClassName(String processImplementationClassName) {
+        synchronized (this) {
+            if (processImplementationClassName == null) {
                 this.processImplementation = null;
-            }
-            else if(!processImplementationClassName.equals(this.processImplementationClassName))
-            {
+            } else if (!processImplementationClassName.equals(this.processImplementationClassName)) {
                 this.processImplementation = null;
             }
             this.processImplementationClassName = processImplementationClassName;
@@ -217,18 +201,16 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
 
     /**
      * Returns an instance of a class implementing com.arjuna.ats.arjuna.utils.Process.
-     *
+     * <p>
      * If there is no pre-instantiated instance set and classloading or instantiation fails,
      * this method will log an appropriate warning and return null, not throw an exception.
      *
      * @return a Process implementation instance, or null.
      */
-    public Process getProcessImplementation()
-    {
-        if(processImplementation == null && processImplementationClassName != null)
-        {
-            synchronized(this) {
-                if(processImplementation == null && processImplementationClassName != null) {
+    public Process getProcessImplementation() {
+        if (processImplementation == null && processImplementationClassName != null) {
+            synchronized (this) {
+                if (processImplementation == null && processImplementationClassName != null) {
                     processImplementation = ClassloadingUtility.loadAndInstantiateClass(Process.class, processImplementationClassName, null);
                 }
             }
@@ -242,19 +224,14 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param instance an Object that implements Process, or null.
      */
-    public void setProcessImplementation(Process instance)
-    {
-        synchronized(this)
-        {
+    public void setProcessImplementation(Process instance) {
+        synchronized (this) {
             Process oldInstance = this.processImplementation;
             processImplementation = instance;
 
-            if(instance == null)
-            {
+            if (instance == null) {
                 this.processImplementationClassName = null;
-            }
-            else if(instance != oldInstance)
-            {
+            } else if (instance != oldInstance) {
                 String name = ClassloadingUtility.getNameForClass(instance);
                 this.processImplementationClassName = name;
             }
@@ -263,14 +240,13 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
 
     /**
      * Returns the process id to use if ManualProcessId is selected. Should be uniq across all instances on the same host.
-     *
+     * <p>
      * Default: -1 (invalid, must be changed if used)
      * Equivalent deprecated property: com.arjuna.ats.internal.arjuna.utils.pid
      *
      * @return the process id to use.
      */
-    public int getPid()
-    {
+    public int getPid() {
         return pid;
     }
 
@@ -280,21 +256,19 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param pid the process id to use.
      */
-    public void setPid(int pid)
-    {
+    public void setPid(int pid) {
         this.pid = pid;
     }
 
     /**
      * Returns if multiple last (i.e. one-phase) resources are allowed in the same transaction or not.
-     *
+     * <p>
      * Default: false
      * Equivalent deprecated property: com.arjuna.ats.arjuna.allowMultipleLastResources
      *
      * @return true if multiple last resources are permitted, false otherwise.
      */
-    public boolean isAllowMultipleLastResources()
-    {
+    public boolean isAllowMultipleLastResources() {
         return allowMultipleLastResources;
     }
 
@@ -304,21 +278,19 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param allowMultipleLastResources true if multiple 1PC resource should be permitted, false otherwise.
      */
-    public void setAllowMultipleLastResources(boolean allowMultipleLastResources)
-    {
+    public void setAllowMultipleLastResources(boolean allowMultipleLastResources) {
         this.allowMultipleLastResources = allowMultipleLastResources;
     }
 
     /**
      * Returns if the per-transaction warning on enlistment of multiple last resources is disabled or not.
-     *
+     * <p>
      * Default: false.
      * Equivalent deprecated property: com.arjuna.ats.arjuna.disableMultipleLastResourcesWarning
      *
      * @return true if warning is disabled, false otherwise.
      */
-    public boolean isDisableMultipleLastResourcesWarning()
-    {
+    public boolean isDisableMultipleLastResourcesWarning() {
         return disableMultipleLastResourcesWarning;
     }
 
@@ -327,24 +299,21 @@ public class CoreEnvironmentBean implements CoreEnvironmentBeanMBean
      *
      * @param disableMultipleLastResourcesWarning true to disable the warning, false otherwise.
      */
-    public void setDisableMultipleLastResourcesWarning(boolean disableMultipleLastResourcesWarning)
-    {
+    public void setDisableMultipleLastResourcesWarning(boolean disableMultipleLastResourcesWarning) {
         this.disableMultipleLastResourcesWarning = disableMultipleLastResourcesWarning;
     }
 
     /**
      * @return the version control tag of the source used, or "unknown"
      */
-    public String getBuildVersion()
-    {
+    public String getBuildVersion() {
         return ConfigurationInfo.getVersion();
     }
 
     /**
-     *  @return the build identification line indicating the os name and version and build date
+     * @return the build identification line indicating the os name and version and build date
      */
-    public String getBuildId()
-    {
+    public String getBuildId() {
         return ConfigurationInfo.getBuildId();
     }
 

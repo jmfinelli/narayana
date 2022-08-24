@@ -62,8 +62,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      * @param typeName       The type to scan for.
      * @param foundInstances The object state in which to store the Uids
      * @param matchState     The file type to look for (e.g., committed, shadowed). [StateStatus] Note: matchState=OS_UNKNOWN matches any state.
+     *
      * @return <code>true</code> if no errors occurred, <code>false</code>
-     * otherwise.
+     *         otherwise.
      */
     @Override
     public boolean allObjUids(String typeName, InputObjectState foundInstances, int matchState) throws ObjectStoreException {
@@ -96,8 +97,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      *
      * @param typeName       The type to scan for.
      * @param foundInstances The object state in which to store the Uids
+     *
      * @return <code>true</code> if no errors occurred, <code>false</code>
-     * otherwise.
+     *         otherwise.
      */
     @Override
     public boolean allObjUids(String typeName, InputObjectState foundInstances) throws ObjectStoreException {
@@ -112,8 +114,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      * Obtain all types of objects stored in the object store.
      *
      * @param foundTypes The state in which to store the types.
+     *
      * @return <code>true</code> if no errors occurred, <code>false</code>
-     * otherwise.
+     *         otherwise.
      */
     @Override
     public boolean allTypes(InputObjectState foundTypes) throws ObjectStoreException {
@@ -169,8 +172,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
     /**
      * @param uid      The object to query.
      * @param typeName The type of the object to query.
+     *
      * @return the current state of the object's state (e.g., shadowed,
-     * committed ...) [StateStatus]
+     *         committed ...) [StateStatus]
      */
     @Override
     public int currentState(Uid uid, String typeName) throws ObjectStoreException {
@@ -193,8 +197,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      *
      * @param u  The object to work on.
      * @param tn The type of the object to work on.
+     *
      * @return <code>true</code> if no errors occurred, <code>false</code>
-     * otherwise.
+     *         otherwise.
      */
     @Override
     public boolean hide_state(Uid u, String tn) throws ObjectStoreException {
@@ -206,8 +211,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      *
      * @param u  The object to work on.
      * @param tn The type of the object to work on.
+     *
      * @return <code>true</code> if no errors occurred, <code>false</code>
-     * otherwise.
+     *         otherwise.
      */
     @Override
     public boolean reveal_state(Uid u, String tn) throws ObjectStoreException {
@@ -219,6 +225,7 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      *
      * @param uid      The object to work on.
      * @param typeName The type of the object to work on.
+     *
      * @return the state of the object.
      */
     @Override
@@ -243,8 +250,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      * @param u  The object to work on.
      * @param tn The type of the object.
      * @param st The expected type of the object. [StateType]
+     *
      * @return <code>true</code> if the current state is as expected,
-     * <code>false</code> otherwise.
+     *         <code>false</code> otherwise.
      */
     @Override
     public boolean isType(Uid u, String tn, int st) throws ObjectStoreException {
@@ -256,8 +264,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      *
      * @param uid      The object to work on.
      * @param typeName The type of the object to work on.
+     *
      * @return <code>true</code> if no errors occurred, <code>false</code>
-     * otherwise.
+     *         otherwise.
      */
     @Override
     public boolean remove_committed(Uid uid, String typeName) throws ObjectStoreException {
@@ -280,8 +289,9 @@ public class SlotStoreAdaptor implements ObjectStoreAPI {
      * @param uid      The object to work on.
      * @param typeName The type of the object to work on.
      * @param buff     The state to write.
+     *
      * @return <code>true</code> if no errors occurred, <code>false</code>
-     * otherwise.
+     *         otherwise.
      */
     @Override
     public boolean write_committed(Uid uid, String typeName, OutputObjectState buff) throws ObjectStoreException {

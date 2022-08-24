@@ -31,13 +31,6 @@
 
 package com.arjuna.ats.arjuna;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.concurrent.locks.ReentrantLock;
-
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
@@ -66,17 +59,85 @@ import com.arjuna.ats.internal.arjuna.abstractrecords.RecoveryRecord;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.arjuna.objectstore.TwoPhaseVolatileStore;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * The root of the Arjuna class hierarchy. This class provides state management
  * facilities than can be automatically used by other classes by inheritance.
- * 
+ *
  * @author Mark Little (mark@arjuna.com)
  * @version $Id: StateManager.java 2342 2006-03-30 13:06:17Z $
  * @since JTS 1.0.
  */
 
-public class StateManager
-{
+public class StateManager {
+
+    private static final String marker = "#ARJUNA#";
+    private static final byte[] markerBytes = marker.getBytes(StandardCharsets.UTF_8);
+    protected final Uid objectUid;
+    protected Hashtable modifyingActions = null;
+    protected Hashtable usingActions = null;
+    protected int objectModel = ObjectModel.SINGLE;
+    private boolean activated = false;
+    private boolean currentlyActivated = false;
+    private int currentStatus = ObjectStatus.PASSIVE;
+    private int initialStatus = ObjectStatus.PASSIVE;
+    private int myType;
+    private ParticipantStore participantStore = null;
+    private String storeRoot = null;
+    private ReentrantLock mutex = new ReentrantLock();
+
+    /**
+     * Create object with specific uid. This constructor is primarily used when
+     * recreating an existing object. The object type is set to 'ANDPERSISTENT'
+     * this is equivalent to invoking persist in the object constructor.
+     */
+
+    protected StateManager(Uid objUid) {
+        this(objUid, ObjectType.ANDPERSISTENT, ObjectModel.SINGLE);
+    }
+
+    protected StateManager(Uid objUid, int ot) {
+        this(objUid, ot, ObjectModel.SINGLE);
+    }
+
+    protected StateManager(Uid objUid, int ot, int om) {
+        objectModel = om;
+        myType = ot;
+
+        objectUid = objUid;
+
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("StateManager::StateManager( " + get_uid() + " )");
+        }
+    }
+
+    protected StateManager() {
+        this(ObjectType.RECOVERABLE);
+    }
+
+    protected StateManager(int ot) {
+        this(ot, ObjectModel.SINGLE);
+    }
+
+    protected StateManager(int ot, int om) {
+        objectModel = om;
+        currentStatus = (((objectModel == ObjectModel.SINGLE) && (ot == ObjectType.RECOVERABLE)) ? ObjectStatus.ACTIVE
+                : ObjectStatus.PASSIVE_NEW);
+        initialStatus = currentStatus;
+        myType = ot;
+
+        objectUid = new Uid();
+
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("StateManager::StateManager( " + ot + ", " + om + " )");
+        }
+    }
 
     /**
      * These methods must be used by a derived class. They are responsible for
@@ -84,33 +145,28 @@ public class StateManager
      * StateManager calls them at appropriate times during the lifetime of the
      * object, and may then pass the buffer to a persistent object store for
      * saving.
-     * 
+     * <p>
      * If a derived class calls super.save_state then it must be called before
      * packing any other data item.
      *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      */
 
-    public synchronized boolean save_state (OutputObjectState os, int ot)
-    {
+    public synchronized boolean save_state(OutputObjectState os, int ot) {
         /*
          * Only pack additional information if this is for a persistent state
          * modification.
          */
 
-        if (ot == ObjectType.ANDPERSISTENT)
-        {
-            try
-            {
+        if (ot == ObjectType.ANDPERSISTENT) {
+            try {
                 BasicAction action = BasicAction.Current();
 
                 if (action == null)
                     packHeader(os, new Header(null, Utility.getProcessUid()));
                 else
                     packHeader(os, new Header(action.get_uid(), Utility.getProcessUid()));
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 return false;
             }
         }
@@ -124,22 +180,17 @@ public class StateManager
      * StateManager calls them at appropriate times during the lifetime of the
      * object, and may then pass the buffer to a persistent object store for
      * saving.
-     * 
+     * <p>
      * Data items must be unpacked in the same order that they were packed.
      *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      */
 
-    public synchronized boolean restore_state (InputObjectState os, int ot)
-    {
-        if (ot == ObjectType.ANDPERSISTENT)
-        {
-            try
-            {
+    public synchronized boolean restore_state(InputObjectState os, int ot) {
+        if (ot == ObjectType.ANDPERSISTENT) {
+            try {
                 unpackHeader(os, new Header());
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 return false;
             }
         }
@@ -159,13 +210,12 @@ public class StateManager
      * function. Returns false if PASSIVE object cannot be loaded from object
      * store, true otherwise. The root of the object store is taken as
      * <code>null</code>.
-     * 
+     *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      * @see com.arjuna.ats.arjuna.objectstore.ObjectStore
      */
 
-    public boolean activate ()
-    {
+    public boolean activate() {
         return activate(null);
     }
 
@@ -180,21 +230,19 @@ public class StateManager
      * object store (so-called new persistent objects) are unaffected by this
      * function. Returns false if PASSIVE object cannot be loaded from object
      * store, true otherwise.
-     * 
+     *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      * @see com.arjuna.ats.arjuna.objectstore.ObjectStore
      */
 
-    public synchronized boolean activate (String rootName)
-    {
+    public synchronized boolean activate(String rootName) {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::activate( "
                     + ((rootName != null) ? rootName : "null")
                     + ") for object-id " + objectUid);
         }
 
-        if (myType == ObjectType.NEITHER)
-        {
+        if (myType == ObjectType.NEITHER) {
             return true;
         }
 
@@ -216,8 +264,7 @@ public class StateManager
 
         action = BasicAction.Current();
 
-        if ((action != null) && (action.status() == ActionStatus.RUNNING))
-        {
+        if ((action != null) && (action.status() == ActionStatus.RUNNING)) {
             /*
              * Only check for top-level action. This is sufficient because
              * activation records are propagated to the parent on nested
@@ -230,16 +277,14 @@ public class StateManager
              * later by the creation of a new ActivationRecord.)
              */
 
-            synchronized (mutex)
-            {
+            synchronized (mutex) {
                 createLists();
-                
-                if (usingActions.get(action.get_uid()) == null)
-                {
+
+                if (usingActions.get(action.get_uid()) == null) {
                     /*
                      * May cause us to add parent as well as child.
                      */
-                    
+
                     usingActions.put(action.get_uid(), action);
                     forceAR = true;
                 }
@@ -247,22 +292,19 @@ public class StateManager
         }
 
         if (forceAR || (currentStatus == ObjectStatus.PASSIVE)
-                || (currentStatus == ObjectStatus.PASSIVE_NEW))
-        {
+                || (currentStatus == ObjectStatus.PASSIVE_NEW)) {
             /*
              * If object is recoverable only, then no need to set up the object
              * store.
              */
 
-            if (loadObjectState())
-            {
+            if (loadObjectState()) {
                 setupStore(rootName);
             }
-            
+
             /* Only really activate if object is PASSIVE */
 
-            if (currentStatus == ObjectStatus.PASSIVE)
-            {
+            if (currentStatus == ObjectStatus.PASSIVE) {
                 /*
                  * If the object is shared between different processes, then we
                  * must load the state each time a top-level action accesses it.
@@ -270,48 +312,37 @@ public class StateManager
                  * Dharma/ArjunaII.
                  */
 
-                if (loadObjectState())
-                {
+                if (loadObjectState()) {
                     InputObjectState oldState = null;
 
-                    try
-                    {
+                    try {
                         oldState = participantStore
                                 .read_committed(objectUid, type());
-                    }
-                    catch (ObjectStoreException e)
-                    {
+                    } catch (ObjectStoreException e) {
                         e.printStackTrace();
-                        
+
                         oldState = null;
                     }
 
-                    if (oldState != null)
-                    {
+                    if (oldState != null) {
                         if ((result = restore_state(oldState,
-                                ObjectType.ANDPERSISTENT)))
-                        {
+                                ObjectType.ANDPERSISTENT))) {
                             currentStatus = ObjectStatus.ACTIVE;
                         }
 
                         oldState = null;
-                    }
-                    else {
+                    } else {
                         tsLogger.i18NLogger.warn_StateManager_2(objectUid, type());
 
                         return false;
                     }
-                }
-                else
-                {
+                } else {
                     if (currentStatus == ObjectStatus.PASSIVE_NEW)
                         currentStatus = ObjectStatus.ACTIVE_NEW;
                     else
                         currentStatus = ObjectStatus.ACTIVE;
                 }
-            }
-            else
-            {
+            } else {
                 if (currentStatus == ObjectStatus.PASSIVE_NEW)
                     currentStatus = ObjectStatus.ACTIVE_NEW;
                 else
@@ -325,29 +356,23 @@ public class StateManager
 
             if (forceAR
                     || ((currentStatus == ObjectStatus.ACTIVE) || (currentStatus == ObjectStatus.PASSIVE_NEW))
-                    && (action != null))
-            {
+                    && (action != null)) {
                 int arStatus = AddOutcome.AR_ADDED;
                 ActivationRecord ar = new ActivationRecord(oldStatus, this,
                         action);
 
-                if ((arStatus = action.add(ar)) != AddOutcome.AR_ADDED)
-                {
+                if ((arStatus = action.add(ar)) != AddOutcome.AR_ADDED) {
                     ar = null;
 
-                    if (forceAR)
-                    {
-                        synchronized (mutex)
-                        {
+                    if (forceAR) {
+                        synchronized (mutex) {
                             usingActions.remove(action.get_uid());
                         }
                     }
 
                     if (arStatus == AddOutcome.AR_REJECTED)
                         result = false;
-                }
-                else
-                {
+                } else {
                     /*
                      * We never reset activated, so we can optimise state
                      * loading/unloading in the case of SINGLE object model
@@ -355,14 +380,12 @@ public class StateManager
 
                     currentlyActivated = activated = true;
                 }
-            }
-            else
-            {
+            } else {
                 if (currentStatus == ObjectStatus.ACTIVE_NEW)
                     currentlyActivated = activated = true;
             }
         }
-        
+
         return result;
     }
 
@@ -372,12 +395,11 @@ public class StateManager
      * whether the object's state should be committed or written as a shadow.
      * The root of the object store is <code>null</code>. It is assumed that
      * this is being called during a transaction commit.
-     * 
+     *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      */
 
-    public boolean deactivate ()
-    {
+    public boolean deactivate() {
         return deactivate(null);
     }
 
@@ -386,12 +408,11 @@ public class StateManager
      * manner to the activate operation, but has an extra argument which defines
      * whether the object's state should be commited now or not. It is assumed
      * that this is being called during a transaction commit.
-     * 
+     *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      */
 
-    public boolean deactivate (String rootName)
-    {
+    public boolean deactivate(String rootName) {
         return deactivate(rootName, true);
     }
 
@@ -399,12 +420,11 @@ public class StateManager
      * This operation deactivates a persistent object. It behaves in a similar
      * manner to the activate operation, but has an extra argument which defines
      * whether the object's state should be commited now or not.
-     * 
+     *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      */
 
-    public synchronized boolean deactivate (String rootName, boolean commit)
-    {
+    public synchronized boolean deactivate(String rootName, boolean commit) {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::deactivate("
                     + ((rootName != null) ? rootName : "null") + ", "
@@ -414,13 +434,11 @@ public class StateManager
         boolean result = false;
 
         if ((currentlyActivated && (myType == ObjectType.ANDPERSISTENT))
-                || loadObjectState())
-        {
+                || loadObjectState()) {
             setupStore(rootName);
 
             if ((currentStatus == ObjectStatus.ACTIVE_NEW)
-                    || (currentStatus == ObjectStatus.ACTIVE))
-            {
+                    || (currentStatus == ObjectStatus.ACTIVE)) {
                 String tn = type();
                 OutputObjectState newState = new OutputObjectState(objectUid,
                         tn);
@@ -430,24 +448,20 @@ public class StateManager
                  * representation of the object.
                  */
 
-                if (save_state(newState, myType))
-                {
-                    try
-                    {
+                if (save_state(newState, myType)) {
+                    try {
                         if (commit)
                             result = participantStore.write_committed(objectUid, tn,
                                     newState);
                         else
                             result = participantStore.write_uncommitted(objectUid,
                                     tn, newState);
-                    }
-                    catch (ObjectStoreException e) {
+                    } catch (ObjectStoreException e) {
                         tsLogger.i18NLogger.warn_StateManager_3(e);
 
                         result = false;
                     }
-                }
-                else {
+                } else {
                     tsLogger.i18NLogger.warn_StateManager_4();
                 }
 
@@ -457,21 +471,22 @@ public class StateManager
                  * ObjectStatus.PASSIVE;
                  */
             }
-        }
-        else
-        {
+        } else {
             result = true;
         }
 
         return result;
     }
 
+    /*
+     * Protected non-virtual functions.
+     */
+
     /**
      * @return the object's current status (active, passive, ...)
      */
 
-    public synchronized int status ()
-    {
+    public synchronized int status() {
         return currentStatus;
     }
 
@@ -479,22 +494,19 @@ public class StateManager
      * @return the type of the object (persistent, recoverable, ...)
      */
 
-    public synchronized int objectType ()
-    {
+    public synchronized int objectType() {
         return myType;
     }
 
-    public int getObjectModel ()
-    {
+    public int getObjectModel() {
         return objectModel;
     }
-    
+
     /**
      * @return the object's unique identifier.
      */
 
-    public final Uid get_uid ()
-    {
+    public final Uid get_uid() {
         return objectUid;
     }
 
@@ -502,20 +514,18 @@ public class StateManager
      * Destroy the object (e.g., remove its state from the persistent store.)
      * Calls to destroy for volatile objects (ones not maintained within the
      * volatile object store) are ignored, and FALSE is returned.
-     * 
+     *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      */
 
-    public synchronized boolean destroy ()
-    {
+    public synchronized boolean destroy() {
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("StateManager::destroy for object-id "+objectUid);
+            tsLogger.logger.trace("StateManager::destroy for object-id " + objectUid);
         }
 
         boolean result = false;
 
-        if (participantStore != null)
-        {
+        if (participantStore != null) {
             BasicAction action = BasicAction.Current();
 
             if (action != null) // add will fail if the status is wrong!
@@ -526,14 +536,10 @@ public class StateManager
                     dr = null;
 
                     tsLogger.i18NLogger.warn_StateManager_6(action.get_uid());
-                }
-                else
+                } else
                     result = true;
-            }
-            else
-            {
-                try
-                {
+            } else {
+                try {
                     result = participantStore.remove_committed(get_uid(), type());
 
                     /*
@@ -542,15 +548,13 @@ public class StateManager
 
                     if (result)
                         destroyed();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     tsLogger.i18NLogger.warn_StateManager_7(e);
 
                     result = false;
                 }
             }
-        }
-        else {
+        } else {
             /*
              * Not a persistent object!
              */
@@ -568,8 +572,7 @@ public class StateManager
      * information is created if myType is set to NEITHER.
      */
 
-    public synchronized void disable ()
-    {
+    public synchronized void disable() {
         myType = ObjectType.NEITHER;
     }
 
@@ -577,11 +580,14 @@ public class StateManager
      * Print out information about the object.
      */
 
-    public void print (PrintWriter strm)
-    {
+    public void print(PrintWriter strm) {
         strm.println("Uid: " + objectUid);
         strm.println("Type: " + type());
     }
+
+    /*
+     * Called ONLY by ActivationRecords!
+     */
 
     /**
      * The object's type. Derived classes should override this to reflect their
@@ -590,8 +596,7 @@ public class StateManager
      * object.
      */
 
-    public String type ()
-    {
+    public String type() {
         return "/StateManager";
     }
 
@@ -600,8 +605,7 @@ public class StateManager
      *         save the state of the object to storage.
      */
 
-    public final String getStoreRoot ()
-    {
+    public final String getStoreRoot() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::getStoreRoot ()");
         }
@@ -614,8 +618,7 @@ public class StateManager
      *         state of the object to storage.
      */
 
-    public ParticipantStore getStore ()
-    {
+    public ParticipantStore getStore() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::getStore ()");
         }
@@ -628,13 +631,12 @@ public class StateManager
 
     /**
      * Pack the necessary information for crash recovery.
-     * 
+     *
      * @since JTS 2.1.
      */
 
-    protected void packHeader (OutputObjectState os, Header hdr)
-            throws IOException
-    {
+    protected void packHeader(OutputObjectState os, Header hdr)
+            throws IOException {
         /*
          * If there is a transaction present than pack the process Uid of this
          * JVM and the tx id. Otherwise pack a null Uid.
@@ -642,9 +644,8 @@ public class StateManager
 
         Uid txId = ((hdr == null) ? null : hdr.getTxId());
         Uid processUid = ((hdr == null) ? null : hdr.getProcessId());
-        
-        try
-        {
+
+        try {
             // pack the marker first.
 
             os.packStringBytes(StateManager.markerBytes);
@@ -655,29 +656,23 @@ public class StateManager
              * off!
              */
 
-            if (txId != null)
-            {
+            if (txId != null) {
                 UidHelper.packInto(txId, os);
                 UidHelper.packInto(processUid, os);
-            }
-            else
+            } else
                 UidHelper.packInto(Uid.nullUid(), os);
-            
+
             long birthDate = System.currentTimeMillis();
-            
+
             if (tsLogger.logger.isTraceEnabled()) {
                 tsLogger.logger.trace("StateManager.packHeader for object-id " + get_uid()
                         + " birth-date " + birthDate);
             }
-            
+
             os.packLong(birthDate);
-        }
-        catch (IOException ex)
-        {
+        } catch (IOException ex) {
             throw ex;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             IOException ioException = new IOException(e.toString());
             ioException.initCause(e);
             throw ioException;
@@ -686,28 +681,25 @@ public class StateManager
 
     /**
      * Unpack the crash recovery state header information and return it.
-     * 
+     *
+     * @param os the identity of the transaction that last caused the state to
+     *           be written to the object store.
+     *
      * @since JTS 2.1.
-     * @param os
-     *            the identity of the transaction that last caused the state to
-     *            be written to the object store.
      */
 
-    protected void unpackHeader (InputObjectState os, Header hdr)
-            throws IOException
-    {
-        try
-        {
+    protected void unpackHeader(InputObjectState os, Header hdr)
+            throws IOException {
+        try {
             if (hdr == null)
                 throw new NullPointerException();
-            
+
             Uid txId = null;
             Uid processUid = null;
-            
+
             String myState = os.unpackString();
 
-            if (myState.equals(StateManager.marker))
-            {
+            if (myState.equals(StateManager.marker)) {
                 txId = UidHelper.unpackFrom(os);
 
                 /*
@@ -716,29 +708,24 @@ public class StateManager
 
                 if (!txId.equals(Uid.nullUid()))
                     processUid = UidHelper.unpackFrom(os);
-            }
-            else {
+            } else {
                 tsLogger.i18NLogger.warn_StateManager_9();
 
                 throw new IOException(tsLogger.i18NLogger.get_StateManager_15());
             }
-            
+
             long birthDate = os.unpackLong();
-            
+
             if (tsLogger.logger.isTraceEnabled()) {
                 tsLogger.logger.trace("StateManager.unpackHeader for object-id " + get_uid()
                         + " birth-date " + birthDate);
             }
-            
+
             hdr.setTxId(txId);
             hdr.setProcessId(processUid);
-        }
-        catch (IOException ex)
-        {
+        } catch (IOException ex) {
             throw ex;
-        }
-        catch (final Throwable e)
-        {
+        } catch (final Throwable e) {
             IOException ioException = new IOException(e.toString());
             ioException.initCause(e);
             throw ioException;
@@ -750,8 +737,7 @@ public class StateManager
      * while an action is still running.
      */
 
-    protected void terminate ()
-    {
+    protected void terminate() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::terminate() for object-id " + get_uid());
         }
@@ -759,77 +745,34 @@ public class StateManager
         cleanup(true);
     }
 
-    protected final synchronized void setStatus (int s)
-    {
+    /*
+     * Delay creating these lists until we really need them. Some transactions may start
+     * and end without adding any participants or being involved with multiple threads.
+     * Some classes (e.g., AbstractRecords) that inherit from StateManager may never need
+     * these lists either.
+     */
+
+    protected final synchronized void setStatus(int s) {
         currentStatus = s;
     }
 
-    /**
-     * Create object with specific uid. This constructor is primarily used when
-     * recreating an existing object. The object type is set to 'ANDPERSISTENT'
-     * this is equivalent to invoking persist in the object constructor.
+    /*
+     * Package scope.
      */
 
-    protected StateManager(Uid objUid)
-    {
-        this(objUid, ObjectType.ANDPERSISTENT, ObjectModel.SINGLE);
-    }
-
-    protected StateManager(Uid objUid, int ot)
-    {
-        this(objUid, ot, ObjectModel.SINGLE);
-    }
-
-    protected StateManager (Uid objUid, int ot, int om)
-    {
-        objectModel = om;
-        myType = ot;
-
-        objectUid = objUid;
-
-        if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("StateManager::StateManager( " + get_uid() + " )");
-        }
-    }
-
-    protected StateManager()
-    {
-        this(ObjectType.RECOVERABLE);
-    }
-
-    protected StateManager(int ot)
-    {
-        this(ot, ObjectModel.SINGLE);
-    }
-
-    protected StateManager (int ot, int om)
-    {
-        objectModel = om;
-        currentStatus = (((objectModel == ObjectModel.SINGLE) && (ot == ObjectType.RECOVERABLE)) ? ObjectStatus.ACTIVE
-                : ObjectStatus.PASSIVE_NEW);
-        initialStatus = currentStatus;
-        myType = ot;
-
-        objectUid = new Uid();
-
-        if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("StateManager::StateManager( " + ot + ", " + om + " )");
-        }
-    }
-
     /*
-     * Protected non-virtual functions.
+     * Set the status of the object to destroyed so that we can no longer use
+     * it.
      */
 
     /**
      * The object's state is about to be modified, and StateManager should take
      * a snapshot of the state if the object is being used within a transaction.
-     * 
+     *
      * @return <code>true</code> on success, <code>false</code> otherwise.
      */
 
-    protected synchronized boolean modified ()
-    {
+    protected synchronized boolean modified() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::modified() for object-id " + get_uid());
         }
@@ -839,10 +782,9 @@ public class StateManager
 
         if ((myType == ObjectType.NEITHER)
                 || (currentStatus == ObjectStatus.DESTROYED)) /*
-                                                               * NEITHER => no
-                                                               * recovery info
-                                                               */
-        {
+         * NEITHER => no
+         * recovery info
+         */ {
             return true;
         }
 
@@ -859,23 +801,19 @@ public class StateManager
         if (currentStatus == ObjectStatus.PASSIVE_NEW)
             currentStatus = ObjectStatus.ACTIVE_NEW;
 
-        if (action != null)
-        {
+        if (action != null) {
             /*
              * Check if this is the first call to modified in this action.
              * BasicList insert returns FALSE if the entry is already present.
              */
 
             createLists();
-            
-            synchronized (modifyingActions)
-            {
+
+            synchronized (modifyingActions) {
                 if ((!modifyingActions.isEmpty())
-                        && (modifyingActions.get(action.get_uid()) != null))
-                {
+                        && (modifyingActions.get(action.get_uid()) != null)) {
                     return true;
-                }
-                else
+                } else
                     modifyingActions.put(action.get_uid(), action);
             }
 
@@ -884,33 +822,27 @@ public class StateManager
             OutputObjectState state = new OutputObjectState(objectUid, type());
             int rStatus = AddOutcome.AR_ADDED;
 
-            if (save_state(state, ObjectType.RECOVERABLE))
-            {
+            if (save_state(state, ObjectType.RECOVERABLE)) {
                 if ((myType == ObjectType.RECOVERABLE)
-                        && (objectModel == ObjectModel.SINGLE))
-                {
+                        && (objectModel == ObjectModel.SINGLE)) {
                     record = new RecoveryRecord(state, this);
-                }
-                else
+                } else
                     record = new PersistenceRecord(state, participantStore, this);
 
-                if ((rStatus = action.add(record)) != AddOutcome.AR_ADDED)
-                {
-                    synchronized (modifyingActions)
-                    {
+                if ((rStatus = action.add(record)) != AddOutcome.AR_ADDED) {
+                    synchronized (modifyingActions) {
                         modifyingActions.remove(action.get_uid()); // remember
-                                                                   // to
-                                                                   // unregister
-                                                                   // with
-                                                                   // action
+                        // to
+                        // unregister
+                        // with
+                        // action
                     }
 
                     record = null;
 
                     return false;
                 }
-            }
-            else
+            } else
                 return false;
         }
 
@@ -924,14 +856,12 @@ public class StateManager
      * been modified.
      */
 
-    protected final synchronized void persist ()
-    {
+    protected final synchronized void persist() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::persist() for object-id " + get_uid());
         }
 
-        if (currentStatus == ObjectStatus.ACTIVE)
-        {
+        if (currentStatus == ObjectStatus.ACTIVE) {
             currentStatus = ObjectStatus.PASSIVE_NEW;
             myType = ObjectType.ANDPERSISTENT;
         }
@@ -940,15 +870,14 @@ public class StateManager
     /**
      * Object cleanup. Attempt sane cleanup when object is deleted. Handle
      * perverse cases where multiple actions are still active as object dies.
-     * 
-     * @param fromTerminate
-     *            indicates whether this method is being called from the
-     *            <code>terminate</code> method, or from elsewhere.
+     *
+     * @param fromTerminate indicates whether this method is being called from the
+     *                      <code>terminate</code> method, or from elsewhere.
+     *
      * @see StateManager#terminate
      */
 
-    protected final synchronized void cleanup (boolean fromTerminate)
-    {
+    protected final synchronized void cleanup(boolean fromTerminate) {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::cleanup() for object-id " + get_uid());
         }
@@ -958,20 +887,16 @@ public class StateManager
 
         BasicAction action = null;
 
-        synchronized (mutex)
-        {
-	    createLists();
+        synchronized (mutex) {
+            createLists();
 
-            if (!usingActions.isEmpty())
-            {
+            if (!usingActions.isEmpty()) {
                 Enumeration e = usingActions.keys();
 
-                while (e.hasMoreElements())
-                {
+                while (e.hasMoreElements()) {
                     action = (BasicAction) usingActions.remove(e.nextElement());
 
-                    if (action != null)
-                    {
+                    if (action != null) {
                         /*
                          * Pop actions off using list. Don't check if action is
                          * running below so that cadavers can be created in
@@ -1020,15 +945,12 @@ public class StateManager
                         }
 
                         if (currentlyActivated
-                                && (currentStatus != ObjectStatus.DESTROYED))
-                        {
+                                && (currentStatus != ObjectStatus.DESTROYED)) {
                             record = new CadaverActivationRecord(this);
 
-                            if ((rStatus = action.add(record)) == AddOutcome.AR_ADDED)
-                            {
+                            if ((rStatus = action.add(record)) == AddOutcome.AR_ADDED) {
                                 currentStatus = ObjectStatus.PASSIVE;
-                            }
-                            else {
+                            } else {
                                 tsLogger.i18NLogger.warn_StateManager_6(action.get_uid());
 
                                 record = null;
@@ -1047,15 +969,11 @@ public class StateManager
          * any running action to abort.
          */
 
-        if (currentStatus == ObjectStatus.ACTIVE_NEW)
-        {
+        if (currentStatus == ObjectStatus.ACTIVE_NEW) {
             if ((myType == ObjectType.RECOVERABLE)
-                    && (objectModel == ObjectModel.SINGLE))
-            {
+                    && (objectModel == ObjectModel.SINGLE)) {
                 currentStatus = ObjectStatus.ACTIVE;
-            }
-            else
-            {
+            } else {
                 currentStatus = ObjectStatus.PASSIVE;
             }
         }
@@ -1068,29 +986,25 @@ public class StateManager
      * store is assumed to be <code>null</code>.
      */
 
-    protected final void setupStore ()
-    {
+    protected final void setupStore() {
         setupStore(null);
     }
 
     @SuppressWarnings("unchecked")
-    protected synchronized void setupStore (String rootName)
-    {
+    protected synchronized void setupStore(String rootName) {
         setupStore(rootName, arjPropertyManager.getObjectStoreEnvironmentBean()
                 .getObjectStoreType());
     }
 
     /**
      * Make sure the object store is set up, if required.
-     * 
-     * @param rootName
-     *            indicates the root of the object store.
+     *
+     * @param rootName indicates the root of the object store.
      */
 
     @SuppressWarnings("unchecked")
-    protected synchronized void setupStore (String rootName,
-            String objectStoreType)
-    {
+    protected synchronized void setupStore(String rootName,
+                                           String objectStoreType) {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::setupStore ( "
                     + ((rootName != null) ? rootName : "null") + " )");
@@ -1112,13 +1026,11 @@ public class StateManager
 
         /* Check if we have a store */
 
-        if (storeRoot != null)
-        {
+        if (storeRoot != null) {
             /* Attempting to reuse it ? */
 
             if ((rootName == null) || (rootName.compareTo("") == 0)
-                    || (rootName.compareTo(storeRoot) == 0))
-            {
+                    || (rootName.compareTo(storeRoot) == 0)) {
                 return;
             }
 
@@ -1127,8 +1039,7 @@ public class StateManager
             participantStore = null;
         }
 
-        if (rootName == null)
-        {
+        if (rootName == null) {
             rootName = "";
         }
 
@@ -1137,26 +1048,21 @@ public class StateManager
         storeRoot = new String(rootName);
 
         if ((myType == ObjectType.ANDPERSISTENT)
-                || (myType == ObjectType.NEITHER))
-        {
+                || (myType == ObjectType.NEITHER)) {
             int sharedStatus = ((objectModel == ObjectModel.SINGLE) ? StateType.OS_UNSHARED
                     : StateType.OS_SHARED);
 
             participantStore = StoreManager.setupStore(rootName, sharedStatus);
-        }
-        else {           
+        } else {
             /*
              * TODO
-             * 
+             *
              * Figure out how (and if) this needs to go into StoreManager.
              */
-            
-            try
-            {
+
+            try {
                 participantStore = new TwoPhaseVolatileStore(new ObjectStoreEnvironmentBean());
-            }
-            catch (final Throwable ex)
-            {
+            } catch (final Throwable ex) {
                 tsLogger.i18NLogger.warn_StateManager_13();
 
                 throw new FatalError(tsLogger.i18NLogger.get_StateManager_14());
@@ -1166,13 +1072,12 @@ public class StateManager
 
     /**
      * Do we need to load the object's state?
-     * 
+     *
      * @return <code>true</code> if the object state should be loaded,
      *         <code>false</code> otherwise.
      */
 
-    protected final boolean loadObjectState ()
-    {
+    protected final boolean loadObjectState() {
         boolean load = (objectModel != ObjectModel.SINGLE);
 
         /*
@@ -1180,8 +1085,7 @@ public class StateManager
          * we are RECOVERABLE - we use the volatile store.
          */
 
-        if (!load)
-        {
+        if (!load) {
             /*
              * Must be SINGLE object model. So, is this the first time? If so,
              * load state.
@@ -1194,19 +1098,14 @@ public class StateManager
         return load;
     }
 
-    /*
-     * Called ONLY by ActivationRecords!
-     */
-
     /**
      * Remove action from list of using actions. If the action list empties
      * reset state to PASSIVE. The second param tells why the action should be
      * forgotten. This aids in resetting the state correctly.
      */
 
-    protected final synchronized boolean forgetAction (BasicAction action,
-            boolean committed, int recordType)
-    {
+    protected final synchronized boolean forgetAction(BasicAction action,
+                                                      boolean committed, int recordType) {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::forgetAction("
                     + ((action != null) ? action.get_uid() : Uid
@@ -1215,36 +1114,25 @@ public class StateManager
         }
 
         createLists();
-        
-        synchronized (modifyingActions)
-        {
+
+        synchronized (modifyingActions) {
             modifyingActions.remove(action.get_uid());
         }
 
-        if (recordType != RecordType.RECOVERY)
-        {
-            synchronized (mutex)
-            {
-                if (usingActions != null)
-                {
+        if (recordType != RecordType.RECOVERY) {
+            synchronized (mutex) {
+                if (usingActions != null) {
                     usingActions.remove(action.get_uid());
 
-                    if (usingActions.isEmpty())
-                    {
-                        if (committed)
-                        {
+                    if (usingActions.isEmpty()) {
+                        if (committed) {
                             if ((myType == ObjectType.RECOVERABLE)
-                                    && (objectModel == ObjectModel.SINGLE) || (action.typeOfAction() == ActionType.NESTED))
-                            {
+                                    && (objectModel == ObjectModel.SINGLE) || (action.typeOfAction() == ActionType.NESTED)) {
                                 initialStatus = currentStatus = ObjectStatus.ACTIVE;
-                            }
-                            else
-                            {
+                            } else {
                                 initialStatus = currentStatus = ObjectStatus.PASSIVE;
                             }
-                        }
-                        else
-                        {
+                        } else {
                             if (objectModel == ObjectModel.SINGLE)
                                 currentStatus = initialStatus;
                             else
@@ -1262,9 +1150,8 @@ public class StateManager
      * Remember that the specified transaction is using the object.
      */
 
-    protected final synchronized boolean rememberAction (BasicAction action,
-            int recordType, int state)
-    {
+    protected final synchronized boolean rememberAction(BasicAction action,
+                                                        int recordType, int state) {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("StateManager::rememberAction("
                     + ((action != null) ? action.get_uid() : Uid
@@ -1274,22 +1161,19 @@ public class StateManager
 
         boolean result = false;
 
-        if (recordType != RecordType.RECOVERY)
-        {
-            if ((action != null) && (action.status() == ActionStatus.RUNNING))
-            {
-                synchronized (mutex)
-                {
-		    createLists();  // if there wasn't a transaction running when we were activated then we need to do this now
+        if (recordType != RecordType.RECOVERY) {
+            if ((action != null) && (action.status() == ActionStatus.RUNNING)) {
+                synchronized (mutex) {
+                    createLists();  // if there wasn't a transaction running when we were activated then we need to do this now
 
                     if (usingActions.get(action.get_uid()) == null)
                         usingActions.put(action.get_uid(), action);
                 }
             }
-            
+
             if ((currentStatus == ObjectStatus.PASSIVE) || (currentStatus == ObjectStatus.PASSIVE_NEW))
                 currentStatus = state;
-            
+
             result = true;
         }
 
@@ -1301,8 +1185,7 @@ public class StateManager
      * @since JTS 2.1.
      */
 
-    protected final ReentrantLock getMutex ()
-    {
+    protected final ReentrantLock getMutex() {
         return mutex;
     }
 
@@ -1311,16 +1194,12 @@ public class StateManager
      * @since JTS 2.1.
      */
 
-    protected final boolean lockMutex ()
-    {
-        try
-        {
+    protected final boolean lockMutex() {
+        try {
             mutex.lock();
-            
+
             return true;
-        }
-        catch (final Throwable ex)
-        {
+        } catch (final Throwable ex) {
             return false;
         }
     }
@@ -1330,16 +1209,12 @@ public class StateManager
      * @since JTS 2.1.
      */
 
-    protected final boolean unlockMutex ()
-    {
-        try
-        {
+    protected final boolean unlockMutex() {
+        try {
             mutex.unlock();
-            
+
             return true;
-        }
-        catch (final Throwable ex)
-        {
+        } catch (final Throwable ex) {
             return false;
         }
     }
@@ -1350,55 +1225,18 @@ public class StateManager
      * @since JTS 2.1.
      */
 
-    protected final boolean tryLockMutex ()
-    {
+    protected final boolean tryLockMutex() {
         return mutex.tryLock();
     }
-   
-    /*
-     * Delay creating these lists until we really need them. Some transactions may start
-     * and end without adding any participants or being involved with multiple threads.
-     * Some classes (e.g., AbstractRecords) that inherit from StateManager may never need
-     * these lists either.
-     */
-    
-    protected synchronized void createLists ()
-    {
-        if (modifyingActions == null)
-        {
+
+    protected synchronized void createLists() {
+        if (modifyingActions == null) {
             modifyingActions = new Hashtable();
             usingActions = new Hashtable();
         }
     }
-    
-    /*
-     * Package scope.
-     */
 
-    /*
-     * Set the status of the object to destroyed so that we can no longer use
-     * it.
-     */
-
-    synchronized final void destroyed ()
-    {
+    final synchronized void destroyed() {
         currentStatus = ObjectStatus.DESTROYED;
     }
-
-    protected Hashtable modifyingActions = null;
-    protected Hashtable usingActions = null;
-    protected final Uid objectUid;
-    protected int objectModel = ObjectModel.SINGLE;
-
-    private boolean activated = false;
-    private boolean currentlyActivated = false;
-    private int currentStatus = ObjectStatus.PASSIVE;
-    private int initialStatus = ObjectStatus.PASSIVE;
-    private int myType;
-    private ParticipantStore participantStore = null;
-    private String storeRoot = null;
-    private ReentrantLock mutex = new ReentrantLock();
-
-    private static final String marker = "#ARJUNA#";
-    private static final byte[] markerBytes = marker.getBytes(StandardCharsets.UTF_8);
 }

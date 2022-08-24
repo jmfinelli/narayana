@@ -20,15 +20,12 @@
  */
 package com.arjuna.ats.arjuna.common;
 
-import com.arjuna.ats.arjuna.objectstore.jdbc.JDBCAccess;
-
 /**
  * A JMX MBean interface containing configuration for the objectstore and various implementations thereof.
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
-public interface ObjectStoreEnvironmentBeanMBean
-{
+public interface ObjectStoreEnvironmentBeanMBean {
     int getCacheStoreSize();
 
     boolean isCacheStoreSync();
@@ -64,48 +61,45 @@ public interface ObjectStoreEnvironmentBeanMBean
     long getTxLogSize();
 
     long getPurgeTime();
-    
-	/**
-	 * Get the JDBCAccess details.
-	 */
-	public String getJdbcAccess();
 
-	/**
-	 * Sets the instance of JDBCAccess
-	 * 
-	 * @param connectionDetails
-	 *            an Object that provides JDBCAccess, or null.
-	 */
-	public void setJdbcAccess(String connectionDetails);
+    /**
+     * Get the JDBCAccess details.
+     */
+    public String getJdbcAccess();
 
-	/**
-	 * Get the table prefix
-	 * 
-	 * @return The prefix to apply to the table
-	 */
-	public String getTablePrefix();
+    /**
+     * Sets the instance of JDBCAccess
+     *
+     * @param connectionDetails an Object that provides JDBCAccess, or null.
+     */
+    public void setJdbcAccess(String connectionDetails);
 
-	/**
-	 * Set the table prefix
-	 * 
-	 * @param tablePrefix
-	 *            A prefix to use on the tables
-	 */
-	public void setTablePrefix(String tablePrefix);
+    /**
+     * Get the table prefix
+     *
+     * @return The prefix to apply to the table
+     */
+    public String getTablePrefix();
 
-	/**
-	 * Should the store drop the table
-	 * 
-	 * @return Whether to drop the table
-	 */
-	public boolean getDropTable();
+    /**
+     * Set the table prefix
+     *
+     * @param tablePrefix A prefix to use on the tables
+     */
+    public void setTablePrefix(String tablePrefix);
 
-	/**
-	 * Set whether to drop the table.
-	 * 
-	 * @param dropTable
-	 *            Drop the table
-	 */
-	public void setDropTable(boolean dropTable);
+    /**
+     * Should the store drop the table
+     *
+     * @return Whether to drop the table
+     */
+    public boolean getDropTable();
+
+    /**
+     * Set whether to drop the table.
+     *
+     * @param dropTable Drop the table
+     */
+    public void setDropTable(boolean dropTable);
 
 }

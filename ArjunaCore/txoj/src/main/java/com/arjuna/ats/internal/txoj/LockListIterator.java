@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,7 +24,7 @@
  * Arjuna Solutions Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: LockListIterator.java 2342 2006-03-30 13:06:17Z  $
  */
@@ -34,36 +34,29 @@ package com.arjuna.ats.internal.txoj;
 import com.arjuna.ats.txoj.Lock;
 
 
-public class LockListIterator
-{
+public class LockListIterator {
 
-    public LockListIterator(LockList L)
-    {
+    private LockList currentList;
+    private Lock next;
+
+    public LockListIterator(LockList L) {
         currentList = L;
         next = currentList.head;
     }
 
-    public final synchronized Lock iterate ()
-    {
+    public final synchronized Lock iterate() {
         Lock current = next;
 
-        if (current == null)
-        {
+        if (current == null) {
             return null;
-        }
-        else
+        } else
             next = LockFriend.getLink(current);
 
         return current;
     }
 
-    public final synchronized void reset ()
-    {
+    public final synchronized void reset() {
         next = null;
     }
-
-    private LockList currentList;
-
-    private Lock next;
 
 }

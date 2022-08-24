@@ -29,11 +29,7 @@
  * $Id: TransactionStatusConnectionManager.java 2342 2006-03-30 13:06:17Z  $
  */
 
-package com.arjuna.ats.arjuna.recovery ;
-
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
+package com.arjuna.ats.arjuna.recovery;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.ActionStatus;
@@ -46,19 +42,28 @@ import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.arjuna.recovery.TransactionStatusConnector;
 import com.arjuna.ats.internal.arjuna.recovery.TransactionStatusManagerItem;
 
-public class TransactionStatusConnectionManager
-{
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
+
+public class TransactionStatusConnectionManager {
+    // Type within ObjectStore.
+    private static String _typeName = TransactionStatusManagerItem.typeName();
+    // Reference to object store.
+    private static RecoveryStore _recoveryStore = null;
+    private static Uid _localUid = new Uid();
+    // Table of process ids and their transaction status managers items.
+    private Hashtable _tscTable = new Hashtable();
+
     /**
      * Gets a reference to the Object Store.
      */
-    public TransactionStatusConnectionManager()
-    {
-	if ( _recoveryStore == null )
-	{
-	    _recoveryStore = StoreManager.getRecoveryStore();
-	}
+    public TransactionStatusConnectionManager() {
+        if (_recoveryStore == null) {
+            _recoveryStore = StoreManager.getRecoveryStore();
+        }
 
-	updateTSMI() ;
+        updateTSMI();
     }
 
     /**
@@ -71,22 +76,20 @@ public class TransactionStatusConnectionManager
      * type through another method.
      */
 
-    public int getTransactionStatus( Uid tranUid )
-    {
-	String transactionType = "" ;
+    public int getTransactionStatus(Uid tranUid) {
+        String transactionType = "";
 
-	int status = getTransactionStatus( transactionType, tranUid );
+        int status = getTransactionStatus(transactionType, tranUid);
 
-	return status ;
+        return status;
     }
 
     /**
      * Obtain the transaction status for the specified transaction type
      * and transaction.
      */
-    public int getTransactionStatus( String transactionType, Uid tranUid )
-    {
-        int status = ActionStatus.INVALID ;
+    public int getTransactionStatus(String transactionType, Uid tranUid) {
+        int status = ActionStatus.INVALID;
 
         // extract process id from uid
         String process_id = tranUid.getHexPid();
@@ -95,7 +98,7 @@ public class TransactionStatusConnectionManager
         // This skips the communication with TransactionStatusManager, which is just backed
         // by ActionStatusService anyhow. That allows TSM to be turned off for local only cases if desired.
         // Note: condition assumes ObjectStore is not shared between machines i.e. that processId is globally uniq.
-        if(! process_id.equals( _localUid.getHexPid()) ) {
+        if (!process_id.equals(_localUid.getHexPid())) {
             status = getRemoteTransactionStatus(process_id, transactionType, tranUid);
         }
 
@@ -109,33 +112,31 @@ public class TransactionStatusConnectionManager
          * to find and map the state type.
          */
 
-        if ( status == ActionStatus.INVALID )
-        {
+        if (status == ActionStatus.INVALID) {
             ActionStatusService ass = new ActionStatusService();
 
-            try
-            {
+            try {
                 status = ass.getTransactionStatus(transactionType, tranUid.stringForm());
-            }
-            catch ( Exception ex ) {
+            } catch (Exception ex) {
                 tsLogger.i18NLogger.warn_recovery_TransactionStatusConnectionManager_1(ex);
             }
         }
 
-        return status ;
+        return status;
     }
 
     /**
      * Use the TransactionStatusConnector to remotly query a transaction manager to get the tx status.
      *
-     * @param process_id the process identifier
+     * @param process_id      the process identifier
      * @param transactionType the type of the transaction
-     * @param tranUid the Uid of the transaction
+     * @param tranUid         the Uid of the transaction
+     *
      * @return the remote transaction status
      */
-    private int getRemoteTransactionStatus(String process_id, String transactionType, Uid tranUid ) {
+    private int getRemoteTransactionStatus(String process_id, String transactionType, Uid tranUid) {
 
-        int status = ActionStatus.INVALID ;
+        int status = ActionStatus.INVALID;
 
         // tx is not local, so use process id to index into
         // hash table to obtain transaction status connector
@@ -144,24 +145,19 @@ public class TransactionStatusConnectionManager
         // Note: assumes ObjectStore is not shared between machienes
         // otherwise we need to key on hostname,process_id tuple.
 
-        if ( ! _tscTable.containsKey ( process_id ) )
-        {
+        if (!_tscTable.containsKey(process_id)) {
             updateTSMI();
         }
 
-        if ( _tscTable.containsKey ( process_id ) )
-        {
-            TransactionStatusConnector tsc = (TransactionStatusConnector) _tscTable.get( process_id ) ;
+        if (_tscTable.containsKey(process_id)) {
+            TransactionStatusConnector tsc = (TransactionStatusConnector) _tscTable.get(process_id);
 
-            if ( tsc.isDead() )
-            {
-                _tscTable.remove( process_id ) ;
-                tsc.delete() ;
-                tsc = null ;
-            }
-            else
-            {
-                status = tsc.getTransactionStatus( transactionType, tranUid ) ;
+            if (tsc.isDead()) {
+                _tscTable.remove(process_id);
+                tsc.delete();
+                tsc = null;
+            } else {
+                status = tsc.getTransactionStatus(transactionType, tranUid);
             }
         }
 
@@ -173,98 +169,71 @@ public class TransactionStatusConnectionManager
      * objects, and add to local hash table.
      */
 
-    public void updateTSMI()
-    {
-	boolean tsmis = false ;
+    public void updateTSMI() {
+        boolean tsmis = false;
 
-	InputObjectState uids = new InputObjectState() ;
-	Vector tsmiVector = new Vector() ;
+        InputObjectState uids = new InputObjectState();
+        Vector tsmiVector = new Vector();
 
-	try
-	{
-	    tsmis = _recoveryStore.allObjUids( _typeName, uids ) ;
-	}
-	catch ( ObjectStoreException ex ) {
-        tsLogger.i18NLogger.warn_recovery_TransactionStatusConnectionManager_2(ex);
-    }
-
-	// cycle through each item, and update tsmTable with any
-	// new TransactionStatusManagerItems
-
-	if ( tsmis )
-	{
-	    Uid theUid = null;
-
-	    boolean moreUids = true ;
-
-	    while (moreUids)
-	    {
-		try
-		{
-		    theUid = UidHelper.unpackFrom(uids);
-
-		    if ( theUid.equals( Uid.nullUid() ) )
-		    {
-			moreUids = false ;
-		    }
-		    else
-		    {
-			Uid newUid = new Uid (theUid) ;
-
-			if (tsLogger.logger.isDebugEnabled()) {
-                tsLogger.logger.debug("found process uid "+newUid);
-            }
-			tsmiVector.addElement(newUid) ;
-		    }
-		}
-		catch (Exception ex )
-		{
-		    moreUids = false;
-		}
-	    }
-	}
-
-	// for each TransactionStatusManager found, if their is
-	// not an entry in the local hash table for it then add it.
-	Enumeration tsmiEnum = tsmiVector.elements() ;
-
-	while ( tsmiEnum.hasMoreElements() )
-	{
-	    Uid currentUid = (Uid) tsmiEnum.nextElement() ;
-
-	    String process_id = currentUid.getHexPid();
-
-	    if ( ! _tscTable.containsKey( process_id ) )
-	    {
-		TransactionStatusConnector tsc = new TransactionStatusConnector ( process_id, currentUid ) ;
-
-		if ( tsc.isDead() )
-		{
-		    tsc.delete() ;
-		    tsc = null ;
-		}
-		else
-		{
-		    _tscTable.put ( process_id, tsc ) ;
-		}
-
-		if (tsLogger.logger.isDebugEnabled()) {
-            tsLogger.logger.debug("added TransactionStatusConnector to table for process uid "+process_id);
+        try {
+            tsmis = _recoveryStore.allObjUids(_typeName, uids);
+        } catch (ObjectStoreException ex) {
+            tsLogger.i18NLogger.warn_recovery_TransactionStatusConnectionManager_2(ex);
         }
-	    }
-	}
+
+        // cycle through each item, and update tsmTable with any
+        // new TransactionStatusManagerItems
+
+        if (tsmis) {
+            Uid theUid = null;
+
+            boolean moreUids = true;
+
+            while (moreUids) {
+                try {
+                    theUid = UidHelper.unpackFrom(uids);
+
+                    if (theUid.equals(Uid.nullUid())) {
+                        moreUids = false;
+                    } else {
+                        Uid newUid = new Uid(theUid);
+
+                        if (tsLogger.logger.isDebugEnabled()) {
+                            tsLogger.logger.debug("found process uid " + newUid);
+                        }
+                        tsmiVector.addElement(newUid);
+                    }
+                } catch (Exception ex) {
+                    moreUids = false;
+                }
+            }
+        }
+
+        // for each TransactionStatusManager found, if their is
+        // not an entry in the local hash table for it then add it.
+        Enumeration tsmiEnum = tsmiVector.elements();
+
+        while (tsmiEnum.hasMoreElements()) {
+            Uid currentUid = (Uid) tsmiEnum.nextElement();
+
+            String process_id = currentUid.getHexPid();
+
+            if (!_tscTable.containsKey(process_id)) {
+                TransactionStatusConnector tsc = new TransactionStatusConnector(process_id, currentUid);
+
+                if (tsc.isDead()) {
+                    tsc.delete();
+                    tsc = null;
+                } else {
+                    _tscTable.put(process_id, tsc);
+                }
+
+                if (tsLogger.logger.isDebugEnabled()) {
+                    tsLogger.logger.debug("added TransactionStatusConnector to table for process uid " + process_id);
+                }
+            }
+        }
     }
-
-    // Type within ObjectStore.
-    private static String _typeName = TransactionStatusManagerItem.typeName() ;
-
-    // Table of process ids and their transaction status managers items.
-   private Hashtable _tscTable  = new Hashtable() ;
-
-    // Reference to object store.
-    private static RecoveryStore _recoveryStore = null ;
-
-    private static Uid _localUid = new Uid();
 }
 
 

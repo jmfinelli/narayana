@@ -31,12 +31,6 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
@@ -45,12 +39,17 @@ import com.arjuna.ats.arjuna.objectstore.StateStatus;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.arjuna.objectstore.CacheStore;
+import org.junit.jupiter.api.Test;
 
-public class RemoveCachedTest
-{
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
+
+public class RemoveCachedTest {
     @Test
-    public void test() throws IOException, ObjectStoreException
-    {
+    public void test() throws IOException, ObjectStoreException {
         boolean passed = true;
         RecoveryStore store = new CacheStore(new ObjectStoreEnvironmentBean());
         String type = "ArjunaMS/Destinations/a3d6227_dc656_3b77ce7e_2/Messages";

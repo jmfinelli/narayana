@@ -55,6 +55,13 @@ public class SlotStoreKey {
 
     }
 
+    public static SlotStoreKey unpackFrom(InputBuffer inputBuffer) throws IOException {
+        Uid uid = UidHelper.unpackFrom(inputBuffer);
+        String typeName = inputBuffer.unpackString();
+        int stateStatus = inputBuffer.unpackInt();
+        return new SlotStoreKey(uid, typeName, stateStatus);
+    }
+
     public Uid getUid() {
         return uid;
     }
@@ -71,13 +78,6 @@ public class SlotStoreKey {
         UidHelper.packInto(uid, outputBuffer);
         outputBuffer.packString(typeName);
         outputBuffer.packInt(stateStatus);
-    }
-
-    public static SlotStoreKey unpackFrom(InputBuffer inputBuffer) throws IOException {
-        Uid uid = UidHelper.unpackFrom(inputBuffer);
-        String typeName = inputBuffer.unpackString();
-        int stateStatus = inputBuffer.unpackInt();
-        return new SlotStoreKey(uid, typeName, stateStatus);
     }
 
     @Override

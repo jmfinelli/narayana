@@ -31,32 +31,26 @@
 
 package com.hp.mwtests.ts.txoj.concurrencycontrol;
 
-import org.junit.jupiter.api.Test;
-
 import com.hp.mwtests.ts.txoj.common.resources.AtomicObject;
 import com.hp.mwtests.ts.txoj.common.resources.HammerThreadedObject;
+import org.junit.jupiter.api.Test;
 
-public class LockConflictUnitTest
-{
+public class LockConflictUnitTest {
     @Test
-    public void testAtomicObject () throws Exception
-    {
+    public void testAtomicObject() throws Exception {
         HammerThreadedObject.object = new AtomicObject();
         HammerThreadedObject object1 = new HammerThreadedObject(2);
         HammerThreadedObject object2 = new HammerThreadedObject(-2);
 
         HammerThreadedObject.object.setRetry(2);
-        
+
         object1.start();
         object2.start();
 
-        try
-        {
+        try {
             object1.join();
             object2.join();
-        }
-        catch (InterruptedException e)
-        {
+        } catch (InterruptedException e) {
         }
     }
 }

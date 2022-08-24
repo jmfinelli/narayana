@@ -20,24 +20,24 @@
  */
 package com.hp.mwtests.ts.arjuna.common;
 
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.CoordinatorEnvironmentBean;
 import com.arjuna.ats.arjuna.common.CoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean;
+import org.junit.jupiter.api.Test;
+
+;
 
 /**
  * Unit tests for EnvironmentBean classes.
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
-public class EnvironmentBeanTest
-{
+public class EnvironmentBeanTest {
     @Test
     public void testCoordinatorEnvironmentBean() throws Exception {
-    	CoordinatorEnvironmentBean coordinatorEnvironmentBean = new CoordinatorEnvironmentBean();
-    	coordinatorEnvironmentBean.setAllowCheckedActionFactoryOverride(true);
+        CoordinatorEnvironmentBean coordinatorEnvironmentBean = new CoordinatorEnvironmentBean();
+        coordinatorEnvironmentBean.setAllowCheckedActionFactoryOverride(true);
         com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(coordinatorEnvironmentBean);
     }
 

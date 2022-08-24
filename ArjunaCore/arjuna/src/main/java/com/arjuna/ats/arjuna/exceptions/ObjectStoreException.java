@@ -42,8 +42,7 @@ import java.io.Serializable;
  * @since JTS 1.0.
  */
 
-public class ObjectStoreException extends Exception implements Serializable
-{
+public class ObjectStoreException extends Exception implements Serializable {
     static final long serialVersionUID = -1228565199285342890L;
 
     /**
@@ -79,6 +78,7 @@ public class ObjectStoreException extends Exception implements Serializable
      *                {@link #getCause()} method).  (A <code>null</code> value is
      *                permitted, and indicates that the cause is nonexistent or
      *                unknown.)
+     *
      * @since 1.4
      */
     public ObjectStoreException(String message, Throwable cause) {
@@ -97,6 +97,7 @@ public class ObjectStoreException extends Exception implements Serializable
      *              {@link #getCause()} method).  (A <code>null</code> value is
      *              permitted, and indicates that the cause is nonexistent or
      *              unknown.)
+     *
      * @since 1.4
      */
     public ObjectStoreException(Throwable cause) {

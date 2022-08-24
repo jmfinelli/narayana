@@ -8,7 +8,7 @@ package com.arjuna.ats.internal.arjuna.objectstore.jdbc.drivers;
 
 /**
  * JDBC store implementation driver-specific code.
- *
+ * <p>
  * This version for Postgres Plus DB, this string is now "EnterpriseDB JDBC Driver"
  * (at least from driver version 42.2.12.3)
  * which results in searching for driver class `enterprisedb_driver`.

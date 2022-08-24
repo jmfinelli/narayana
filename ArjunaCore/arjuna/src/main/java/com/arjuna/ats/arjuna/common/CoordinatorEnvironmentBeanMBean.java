@@ -25,8 +25,7 @@ package com.arjuna.ats.arjuna.common;
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
-public interface CoordinatorEnvironmentBeanMBean
-{
+public interface CoordinatorEnvironmentBeanMBean {
     boolean isAsyncCommit();
 
     boolean isAsyncPrepare();

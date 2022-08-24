@@ -31,11 +31,6 @@
 
 package com.arjuna.ats.txoj;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Enumeration;
-import java.util.concurrent.locks.ReentrantLock;
-
 import com.arjuna.ats.arjuna.ObjectModel;
 import com.arjuna.ats.arjuna.ObjectStatus;
 import com.arjuna.ats.arjuna.ObjectType;
@@ -64,23 +59,27 @@ import com.arjuna.ats.txoj.lockstore.LockStore;
 import com.arjuna.ats.txoj.logging.txojLogger;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * This class provides (transactional) concurrency control for application
  * objects.
- * 
+ *
  * @author Mark Little (mark@arjuna.com)
  * @version $Id: LockManager.java 2342 2006-03-30 13:06:17Z $
- * @since JTS 1.0.
  * @see com.arjuna.ats.arjuna.StateManager
+ * @since JTS 1.0.
  */
 
-public class LockManager extends StateManager
-{
+public class LockManager extends StateManager {
 
     /**
      * The default retry value which will be used by setlock if no other value
      * is given.
-     * 
+     *
      * @see #setlock
      */
 
@@ -89,7 +88,7 @@ public class LockManager extends StateManager
     /**
      * The default timeout value which will be used by setlock if no other value
      * is given. Milliseconds.
-     * 
+     *
      * @see #setlock
      */
 
@@ -102,20 +101,128 @@ public class LockManager extends StateManager
      * period is set to this value, then such threads will sleep for their total
      * wait period and be signalled if the lock is released within this period
      * of time.
-     * 
+     *
      * @see #setlock
      * @since JTS 2.1.
      */
 
     public static final int waitTotalTimeout = -100;
+    protected static final int DOZE_TIME = 1000000;
+    protected static final boolean nestedLocking = txojPropertyManager.getTxojEnvironmentBean().isAllowNestedLocking();
+    protected final Object locksHeldLockObject = new Object(); // mutex for sync
+    protected String lockStoreType = txojPropertyManager.getTxojEnvironmentBean().getLockStoreType();
+
+    /*
+     * This is the main user visible operation. Attempts to set the given lock
+     * on the current object. If lock cannot be set, then the lock attempt is
+     * retried retry times before giving up and returning an error. This gives a
+     * simple handle on deadlock. Use the default timeout and retry values.
+     * @return <code>LockResult</code> indicating outcome.
+     */
+    protected String systemKey; /* used in accessing system resources */
+
+    /*
+     * This is the main user visible operation. Attempts to set the given lock
+     * on the current object. If lock cannot be set, then the lock attempt is
+     * retried retry times before giving up and returning an error. This gives a
+     * simple handle on deadlock. Use the default timeout value.
+     * @return <code>LockResult</code> indicating outcome.
+     */
+    protected LockList locksHeld; /* the actual list of locks set */
+
+    /*
+     * This is the main user visible operation. Attempts to set the given lock
+     * on the current object. If lock cannot be set, then the lock attempt is
+     * retried retry times before giving up and returning an error. This gives a
+     * simple handle on deadlock.
+     *
+     * sleepTime is milliseconds.
+     *
+     * @return <code>LockResult</code> indicating outcome.
+     */
+    protected LockStore lockStore; /* locks held in shared memory */
+    protected boolean stateLoaded;
+    protected boolean hasBeenLocked;/* Locked at least once */
+    protected boolean objectLocked;/* Semaphore grabbed */
+
+    /*
+     * Pass on some args to StateManager and initialise internal state. The lock
+     * store and semaphore are set up lazily since they depend upon the result
+     * of the type() operation which if run in the constructor always give the
+     * same answer!
+     */
+    protected ReentrantLock mutex = new ReentrantLock();  /* Controls access to the lock store */
+    protected LockConflictManager conflictManager;
+
+    // make default SINGLE
+
+    protected LockManager(Uid storeUid) {
+        this(storeUid, ObjectType.ANDPERSISTENT, ObjectModel.SINGLE);
+    }
+
+    /*
+     * Pass on some args to StateManager and initialise internal state. The lock
+     * store and semaphore are set up lazily since they depend upon the result
+     * of the type() operation which if run in the constructor always give the
+     * same answer!
+     */
+
+    protected LockManager(Uid storeUid, int ot) {
+        this(storeUid, ot, ObjectModel.SINGLE);
+    }
+
+    protected LockManager(Uid storeUid, int ot, int om) {
+        super(storeUid, ot, om);
+
+        if (txojLogger.logger.isTraceEnabled()) {
+            txojLogger.logger.trace("LockManager::LockManager(" + storeUid + ")");
+        }
+
+        systemKey = null;
+        locksHeld = new LockList();
+        lockStore = null;
+        stateLoaded = false;
+        hasBeenLocked = false;
+        objectLocked = false;
+        conflictManager = new LockConflictManager(mutex);
+    }
+
+    protected LockManager() {
+        this(ObjectType.RECOVERABLE);
+    }
+
+    protected LockManager(int ot) {
+        this(ot, ObjectModel.SINGLE);
+    }
+
+    protected LockManager(int ot, int om) {
+        super(ot, om);
+
+        if (txojLogger.logger.isTraceEnabled()) {
+            txojLogger.logger.trace("LockManager::LockManager(" + ot + ")");
+        }
+
+        systemKey = null;
+        locksHeld = new LockList();
+        lockStore = null;
+        stateLoaded = false;
+        hasBeenLocked = false;
+        objectLocked = false;
+        conflictManager = new LockConflictManager(mutex);
+    }
+
+    /*
+     * doRelease: Does all the hard work of lock release. Either releases all
+     * locks for a given tx uid, or simply one lock with a given uid as
+     * appropriate.
+     */
 
     /**
      * Cleanup. Note we grab the semaphore before destroying the lock store
      * to ensure the store is deleted cleanly.
      */
 
-    public void finalize () throws Throwable
-    {
+    public void finalize() throws Throwable {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("LockManager.finalize() for object-id " + get_uid()
                     + " type " + type());
@@ -125,9 +232,8 @@ public class LockManager extends StateManager
          * terminate should have been called. Check and warn/do something about it if this
          * is not the case!
          */
-        
-        if (status() == ObjectStatus.ACTIVE_NEW)
-        {
+
+        if (status() == ObjectStatus.ACTIVE_NEW) {
             BasicAction action = BasicAction.Current();
 
             if ((action != null) && (action.status() == ActionStatus.RUNNING)) {
@@ -135,13 +241,12 @@ public class LockManager extends StateManager
                 cleanup(false);
             }
         }
-        
+
         boolean doSignal = false;
 
         cleanUp();
 
-        if (mutex != null)
-        {
+        if (mutex != null) {
             if (mutex.isLocked())
                 doSignal = true;
         }
@@ -150,19 +255,22 @@ public class LockManager extends StateManager
         lockStore = null;
         conflictManager = null;
 
-        try
-        {
+        try {
             if (doSignal) // mutex must be set
             {
                 mutex.unlock();
             }
-        }
-        catch (final Throwable ex)
-        {
+        } catch (final Throwable ex) {
         }
 
         mutex = null;
     }
+
+    /*
+     * Simply free up the semaphore. We do this if we detect conflict. Since the
+     * list has not been modified it can simply be discarded. Does not need
+     * 'synchronized' as can only be called from synchronized methods.
+     */
 
     /**
      * Change lock ownership as nested action commits. All locks owned by the
@@ -173,8 +281,7 @@ public class LockManager extends StateManager
      * new, propagating en route.
      */
 
-    public boolean propagate (Uid from, Uid to)
-    {
+    public boolean propagate(Uid from, Uid to) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::propagate(" + from + ", " + to + ")");
         }
@@ -182,37 +289,28 @@ public class LockManager extends StateManager
         boolean result = false;
         int retryCount = 10;
 
-        if (lockMutex())
-        {
-            do
-            {
-                try
-                {
-                    synchronized (locksHeldLockObject)
-                    {
-                        if (loadState())
-                        {
+        if (lockMutex()) {
+            do {
+                try {
+                    synchronized (locksHeldLockObject) {
+                        if (loadState()) {
                             LockList oldlist = locksHeld;
                             Lock current = null;
 
                             locksHeld = new LockList(); /* create a new one */
 
-                            if (locksHeld != null)
-                            {
+                            if (locksHeld != null) {
                                 /*
                                  * scan through old list of held locks and propagate
                                  * to parent.
                                  */
 
-                                while ((current = oldlist.pop()) != null)
-                                {
-                                    if (current.getCurrentOwner().equals(from))
-                                    {
+                                while ((current = oldlist.pop()) != null) {
+                                    if (current.getCurrentOwner().equals(from)) {
                                         current.propagate();
                                     }
 
-                                    if (!locksHeld.insert(current))
-                                    {
+                                    if (!locksHeld.insert(current)) {
                                         current = null;
                                     }
                                 }
@@ -220,9 +318,7 @@ public class LockManager extends StateManager
                                 oldlist = null; /* get rid of old lock list */
 
                                 result = true;
-                            }
-                            else
-                            {
+                            } else {
                                 /*
                                  * Cannot create new locklist - abort and try again.
                                  */
@@ -233,19 +329,15 @@ public class LockManager extends StateManager
                             }
                         }
 
-                        if (result)
-                        {
+                        if (result) {
                             result = unloadState();
                         }
                     }
-                }
-                catch (NullPointerException e)
-                {
+                } catch (NullPointerException e) {
                     result = false;
                 }
 
-                if (!result)
-                {
+                if (!result) {
                     if (tsLogger.logger.isTraceEnabled()) {
                         tsLogger.logger.trace("LockManager.propagate() Dozing");
                     }
@@ -256,21 +348,25 @@ public class LockManager extends StateManager
             }
             while ((!result) && (--retryCount > 0));
 
-            if (!result)
-            {
+            if (!result) {
                 txojLogger.i18NLogger.warn_LockManager_1();
 
-                synchronized (locksHeldLockObject)
-                {
+                synchronized (locksHeldLockObject) {
                     freeState();
                 }
             }
-            
+
             unlockMutex();
         }
 
         return result;
     }
+
+    /*
+     * Don't need to protect with a synchronization as this routine can only be
+     * called from within other protected methods. Only called if multiple
+     * object model is used.
+     */
 
     /**
      * Clear out all locks for a given action. Should be triggered automatically
@@ -278,12 +374,11 @@ public class LockManager extends StateManager
      * dangerous.
      */
 
-    public final boolean releaseAll (Uid actionUid)
-    {
+    public final boolean releaseAll(Uid actionUid) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::releaseAll(" + actionUid + ")");
         }
-        
+
         return doRelease(actionUid, true);
     }
 
@@ -292,8 +387,7 @@ public class LockManager extends StateManager
      * locking rules so watch out!
      */
 
-    public final boolean releaselock (Uid lockUid)
-    {
+    public final boolean releaselock(Uid lockUid) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::releaseLock(" + lockUid + ")");
         }
@@ -302,240 +396,207 @@ public class LockManager extends StateManager
     }
 
     /*
-     * This is the main user visible operation. Attempts to set the given lock
-     * on the current object. If lock cannot be set, then the lock attempt is
-     * retried retry times before giving up and returning an error. This gives a
-     * simple handle on deadlock. Use the default timeout and retry values.
-     * @return <code>LockResult</code> indicating outcome.
+     * Lock and load the concurrency control state. First we grab the semaphore
+     * to ensure exclusive access and then we build the held lock list by
+     * retrieving the locks from the lock repository. If there is only one
+     * server we do not bother doing this since all the locks can stay in the
+     * server's memory. This is yet another consequence of not having
+     * multi-threaded servers. Does not require synchronized since it can only
+     * be called from other synchronized methods.
      */
 
-    public final int setlock (Lock toSet)
-    {
+    /*
+     * Return to 'protected final boolean' if we address https://issues.jboss.org/browse/JBTM-2399
+     */
+
+    public final int setlock(Lock toSet) {
         return setlock(toSet, LockManager.defaultRetry,
                 LockManager.defaultSleepTime);
     }
 
     /*
-     * This is the main user visible operation. Attempts to set the given lock
-     * on the current object. If lock cannot be set, then the lock attempt is
-     * retried retry times before giving up and returning an error. This gives a
-     * simple handle on deadlock. Use the default timeout value.
-     * @return <code>LockResult</code> indicating outcome.
+     * lockconflict: Here we attempt to determine if the provided lock is in
+     * conflict with any of the existing locks. If it is we use nested locking
+     * rules to allow children to lock objects already locked by their
+     * ancestors.
      */
 
-    public final int setlock (Lock toSet, int retry)
-    {
+    public final int setlock(Lock toSet, int retry) {
         return setlock(toSet, retry, LockManager.defaultSleepTime);
     }
 
     /*
-     * This is the main user visible operation. Attempts to set the given lock
-     * on the current object. If lock cannot be set, then the lock attempt is
-     * retried retry times before giving up and returning an error. This gives a
-     * simple handle on deadlock.
-     * 
-     * sleepTime is milliseconds.
-     * 
-     * @return <code>LockResult</code> indicating outcome.
+     * Unload the state by writing all the locks to the repository and then
+     * freeing the semaphore.
      */
 
-    public int setlock (Lock toSet, int retry, int sleepTime)
-    {
+    public int setlock(Lock toSet, int retry, int sleepTime) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::setlock(" + toSet + ", " + retry + ", "
                     + sleepTime + ")");
         }
-        
+
         int returnStatus = LockResult.REFUSED;
-        
-        // JBTM-2098, we need to have the action locked in case a simultaneous abort 
+
+        // JBTM-2098, we need to have the action locked in case a simultaneous abort
         // is issued which would try to lock the mutex before we can call modified
         Object toLock = BasicAction.Current();
         if (toLock == null) {
-        	toLock = new Object();
+            toLock = new Object();
         }
-        
+
         synchronized (toLock) {
-        if (!lockMutex())
-            return LockResult.REFUSED;
-        
-        try
-        {
-            int conflict = ConflictType.CONFLICT;
-            LockRecord newLockR = null;
-            boolean modifyRequired = false;
-            BasicAction currAct = null;
-
-            if (toSet == null)
-            {
-                txojLogger.i18NLogger.warn_LockManager_2();
-
+            if (!lockMutex())
                 return LockResult.REFUSED;
-            }
 
-            currAct = BasicAction.Current();
+            try {
+                int conflict = ConflictType.CONFLICT;
+                LockRecord newLockR = null;
+                boolean modifyRequired = false;
+                BasicAction currAct = null;
 
-            if (currAct != null)
-            {
-                ActionHierarchy ah = currAct.getHierarchy();
-
-                if (ah != null)
-                    toSet.changeHierarchy(ah);
-                else
-                {
-                    txojLogger.i18NLogger.warn_LockManager_3();
-
-                    toSet = null;
+                if (toSet == null) {
+                    txojLogger.i18NLogger.warn_LockManager_2();
 
                     return LockResult.REFUSED;
                 }
-            }
 
-            if (super.loadObjectState())
-                super.setupStore();
+                currAct = BasicAction.Current();
 
-            while ((conflict == ConflictType.CONFLICT)
-                    && ((retry >= 0) || ((retry == LockManager.waitTotalTimeout) && (sleepTime > 0))))
-            {
-                synchronized (locksHeldLockObject)
-                {
-                    conflict = ConflictType.CONFLICT;
+                if (currAct != null) {
+                    ActionHierarchy ah = currAct.getHierarchy();
 
-                    if (loadState())
-                    {
-                        conflict = lockConflict(toSet);
+                    if (ah != null)
+                        toSet.changeHierarchy(ah);
+                    else {
+                        txojLogger.i18NLogger.warn_LockManager_3();
+
+                        toSet = null;
+
+                        return LockResult.REFUSED;
                     }
-                    else
-                    {
-                        txojLogger.i18NLogger.warn_LockManager_4();
-                    }
+                }
 
-                    if (conflict != ConflictType.CONFLICT)
-                    {
-                        /*
-                         * When here the conflict was resolved or the retry limit
-                         * expired.
-                         */
+                if (super.loadObjectState())
+                    super.setupStore();
 
-                        /* no conflict so set lock */
+                while ((conflict == ConflictType.CONFLICT)
+                        && ((retry >= 0) || ((retry == LockManager.waitTotalTimeout) && (sleepTime > 0)))) {
+                    synchronized (locksHeldLockObject) {
+                        conflict = ConflictType.CONFLICT;
 
-                        modifyRequired = toSet.modifiesObject();
+                        if (loadState()) {
+                            conflict = lockConflict(toSet);
+                        } else {
+                            txojLogger.i18NLogger.warn_LockManager_4();
+                        }
 
-                        /* trigger object load from store */
+                        if (conflict != ConflictType.CONFLICT) {
+                            /*
+                             * When here the conflict was resolved or the retry limit
+                             * expired.
+                             */
 
-                        if (super.activate())
-                        {
-                            returnStatus = LockResult.GRANTED;
+                            /* no conflict so set lock */
 
-                            if (conflict == ConflictType.COMPATIBLE)
-                            {
-                                int lrStatus = AddOutcome.AR_ADDED;
+                            modifyRequired = toSet.modifiesObject();
 
-                                if (currAct != null)
-                                {
-                                    /* add new lock record to action list */
+                            /* trigger object load from store */
 
-                                    newLockR = new LockRecord(this, (modifyRequired ? false : true), currAct);
+                            if (super.activate()) {
+                                returnStatus = LockResult.GRANTED;
 
-                                    if ((lrStatus = currAct.add(newLockR)) != AddOutcome.AR_ADDED)
-                                    {
-                                        newLockR = null;
+                                if (conflict == ConflictType.COMPATIBLE) {
+                                    int lrStatus = AddOutcome.AR_ADDED;
 
-                                        if (lrStatus == AddOutcome.AR_REJECTED)
-                                            returnStatus = LockResult.REFUSED;
+                                    if (currAct != null) {
+                                        /* add new lock record to action list */
+
+                                        newLockR = new LockRecord(this, (modifyRequired ? false : true), currAct);
+
+                                        if ((lrStatus = currAct.add(newLockR)) != AddOutcome.AR_ADDED) {
+                                            newLockR = null;
+
+                                            if (lrStatus == AddOutcome.AR_REJECTED)
+                                                returnStatus = LockResult.REFUSED;
+                                        }
+                                    }
+
+                                    if (returnStatus == LockResult.GRANTED) {
+                                        locksHeld.insert(toSet); /*
+                                         * add to local lock
+                                         * list
+                                         */
                                     }
                                 }
-
-                                if (returnStatus == LockResult.GRANTED)
-                                {
-                                    locksHeld.insert(toSet); /*
-                                     * add to local lock
-                                     * list
-                                     */
-                                }
-                            }
-                        }
-                        else
-                        {
-                            /* activate failed - refuse request */
-                            txojLogger.i18NLogger.warn_LockManager_5();
-
-                            returnStatus = LockResult.REFUSED;
-                        }
-                    }
-
-                    /*
-                     * Unload internal state into lock store only if lock list was
-                     * modified if this fails claim the setlock failed. If we are
-                     * using the lock daemon we can arbitrarily throw the lock away
-                     * as the daemon has it.
-                     */
-
-                    if ((returnStatus == LockResult.GRANTED)
-                            && (conflict == ConflictType.COMPATIBLE))
-                    {
-                        if (!unloadState())
-                        {
-                            txojLogger.i18NLogger.warn_LockManager_6();
-
-                            returnStatus = LockResult.REFUSED;
-                        }
-                    }
-                    else
-                        freeState();
-
-                    /*
-                     * Postpone call on modified to here so that semaphore will have
-                     * been released. This means when modified invokes save_state
-                     * that routine may set another lock without blocking.
-                     */
-
-                    if (returnStatus == LockResult.GRANTED)
-                    {
-                        if (modifyRequired)
-                        {
-                            if (super.modified())
-                                hasBeenLocked = true;
-                            else
-                            {
-                                conflict = ConflictType.CONFLICT;
+                            } else {
+                                /* activate failed - refuse request */
+                                txojLogger.i18NLogger.warn_LockManager_5();
 
                                 returnStatus = LockResult.REFUSED;
                             }
                         }
-                    }
 
-                    /*
-                     * Make sure we free state while we still have the lock.
-                     */
+                        /*
+                         * Unload internal state into lock store only if lock list was
+                         * modified if this fails claim the setlock failed. If we are
+                         * using the lock daemon we can arbitrarily throw the lock away
+                         * as the daemon has it.
+                         */
 
-                    if (conflict == ConflictType.CONFLICT)
-                        freeState();
-                }
+                        if ((returnStatus == LockResult.GRANTED)
+                                && (conflict == ConflictType.COMPATIBLE)) {
+                            if (!unloadState()) {
+                                txojLogger.i18NLogger.warn_LockManager_6();
 
-                if (conflict == ConflictType.CONFLICT)
-                {
-                    if (retry != 0)
-                    {
-                        if (sleepTime > 0)
-                        {
-                            sleepTime -= conflictManager.wait(retry, sleepTime);
+                                returnStatus = LockResult.REFUSED;
+                            }
+                        } else
+                            freeState();
+
+                        /*
+                         * Postpone call on modified to here so that semaphore will have
+                         * been released. This means when modified invokes save_state
+                         * that routine may set another lock without blocking.
+                         */
+
+                        if (returnStatus == LockResult.GRANTED) {
+                            if (modifyRequired) {
+                                if (super.modified())
+                                    hasBeenLocked = true;
+                                else {
+                                    conflict = ConflictType.CONFLICT;
+
+                                    returnStatus = LockResult.REFUSED;
+                                }
+                            }
                         }
-                        else
-                            retry = 0;
+
+                        /*
+                         * Make sure we free state while we still have the lock.
+                         */
+
+                        if (conflict == ConflictType.CONFLICT)
+                            freeState();
                     }
 
-                    if (retry != LockManager.waitTotalTimeout)
-                        retry--;
+                    if (conflict == ConflictType.CONFLICT) {
+                        if (retry != 0) {
+                            if (sleepTime > 0) {
+                                sleepTime -= conflictManager.wait(retry, sleepTime);
+                            } else
+                                retry = 0;
+                        }
+
+                        if (retry != LockManager.waitTotalTimeout)
+                            retry--;
+                    }
                 }
+            } finally {
+                unlockMutex();
             }
         }
-        finally
-        {
-            unlockMutex();
-        }
-        }
-        
+
         return returnStatus;
     }
 
@@ -544,8 +605,7 @@ public class LockManager extends StateManager
      * <code>PrintWriter</code>.
      */
 
-    public void print (PrintWriter strm)
-    {
+    public void print(PrintWriter strm) {
         LockListIterator next = new LockListIterator(locksHeld);
         Lock current;
 
@@ -553,15 +613,13 @@ public class LockManager extends StateManager
 
         if (!stateLoaded)
             strm.println("No loaded state");
-        else if (locksHeld != null)
-        {
+        else if (locksHeld != null) {
             strm.println("\tCurrently holding : " + locksHeld.entryCount()
                     + " locks");
 
             while ((current = next.iterate()) != null)
                 current.print(strm);
-        }
-        else
+        } else
             strm.println("Currently holding : 0 locks");
     }
 
@@ -569,14 +627,11 @@ public class LockManager extends StateManager
      * Load state into object prior to doing the printing.
      */
 
-    public void printState (PrintWriter strm)
-    {
-        synchronized (locksHeldLockObject)
-        {
+    public void printState(PrintWriter strm) {
+        synchronized (locksHeldLockObject) {
             boolean iDeleteState = false;
 
-            if (!stateLoaded)
-            {
+            if (!stateLoaded) {
                 loadState();
                 iDeleteState = true;
             }
@@ -592,89 +647,17 @@ public class LockManager extends StateManager
      * Overload StateManager.type()
      */
 
-    public String type ()
-    {
+    public String type() {
         return "StateManager/LockManager";
     }
 
-    /*
-     * Pass on some args to StateManager and initialise internal state. The lock
-     * store and semaphore are set up lazily since they depend upon the result
-     * of the type() operation which if run in the constructor always give the
-     * same answer!
-     */
-
-    protected LockManager(Uid storeUid)
-    {
-        this(storeUid, ObjectType.ANDPERSISTENT, ObjectModel.SINGLE);
-    }
-
-    protected LockManager(Uid storeUid, int ot)
-    {
-        this(storeUid, ot, ObjectModel.SINGLE);
-    }
-    
-    // make default SINGLE
-
-    protected LockManager (Uid storeUid, int ot, int om)
-    {
-        super(storeUid, ot, om);
-        
-        if (txojLogger.logger.isTraceEnabled()) {
-            txojLogger.logger.trace("LockManager::LockManager(" + storeUid + ")");
-        }
-
-        systemKey = null;
-        locksHeld = new LockList();
-        lockStore = null;
-        stateLoaded = false;
-        hasBeenLocked = false;
-        objectLocked = false;
-        conflictManager = new LockConflictManager(mutex);
-    }
-    
-    /*
-     * Pass on some args to StateManager and initialise internal state. The lock
-     * store and semaphore are set up lazily since they depend upon the result
-     * of the type() operation which if run in the constructor always give the
-     * same answer!
-     */
-
-    protected LockManager()
-    {
-        this(ObjectType.RECOVERABLE);
-    }
-
-    protected LockManager(int ot)
-    {
-        this(ot, ObjectModel.SINGLE);
-    }
-
-    protected LockManager (int ot, int om)
-    {
-        super(ot, om);
-        
-        if (txojLogger.logger.isTraceEnabled()) {
-            txojLogger.logger.trace("LockManager::LockManager(" + ot + ")");
-        }
-
-        systemKey = null;
-        locksHeld = new LockList();
-        lockStore = null;
-        stateLoaded = false;
-        hasBeenLocked = false;
-        objectLocked = false;
-        conflictManager = new LockConflictManager(mutex);
-    }
-    
     /**
      * This method *must* be called in the finalizer of every object. It ensures
      * that any necessary cleanup work is done in the event that the object goes
      * out of scope within a transaction.
      */
 
-    protected void terminate ()
-    {
+    protected void terminate() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::terminate() for object-id " + get_uid());
         }
@@ -683,20 +666,21 @@ public class LockManager extends StateManager
 
         super.terminate();
     }
+    // on locksHeld.
+    // Can't use
+    // locksHeld
+    // itself, it's
+    // mutable.
 
-    protected final void cleanUp ()
-    {
+    protected final void cleanUp() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::cleanUp() for object-id " + get_uid());
         }
 
-        if (lockMutex())
-        {
-            if (hasBeenLocked)
-            {
+        if (lockMutex()) {
+            if (hasBeenLocked) {
                 if ((super.objectModel == ObjectModel.MULTIPLE)
-                        && (systemKey == null))
-                {
+                        && (systemKey == null)) {
                     initialise();
                 }
 
@@ -709,14 +693,11 @@ public class LockManager extends StateManager
 
                 BasicAction current = BasicAction.Current();
 
-                synchronized (super.usingActions)
-                {
-                    if (super.usingActions != null)
-                    {
+                synchronized (super.usingActions) {
+                    if (super.usingActions != null) {
                         Enumeration e = super.usingActions.elements();
 
-                        while (e.hasMoreElements())
-                        {
+                        while (e.hasMoreElements()) {
                             BasicAction action = (BasicAction) e.nextElement();
 
                             if (action != null)  // shouldn't be null!!
@@ -736,8 +717,7 @@ public class LockManager extends StateManager
                                 AbstractRecord A = new CadaverLockRecord(lockStore,
                                         this, action);
 
-                                if (action.add(A) != AddOutcome.AR_ADDED)
-                                {
+                                if (action.add(A) != AddOutcome.AR_ADDED) {
                                     A = null;
                                 }
                             }
@@ -752,21 +732,14 @@ public class LockManager extends StateManager
         }
     }
 
-    /*
-     * doRelease: Does all the hard work of lock release. Either releases all
-     * locks for a given tx uid, or simply one lock with a given uid as
-     * appropriate.
-     */
-
-    protected boolean doRelease (Uid u, boolean all)
-    {
+    protected boolean doRelease(Uid u, boolean all) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::doRelease(" + u + ", " + all + ")");
         }
-        
+
         if (!lockMutex())
             return false;
-        
+
         Lock previous = null;
         Lock current = null;
         boolean deleted = false;
@@ -776,14 +749,10 @@ public class LockManager extends StateManager
         boolean releasedOK = false;
         BasicAction currAct = BasicAction.Current();
 
-        try
-        {
-            synchronized (locksHeldLockObject)
-            {
-                do
-                {
-                    if (loadState())
-                    {
+        try {
+            synchronized (locksHeldLockObject) {
+                do {
+                    if (loadState()) {
                         loaded = true;
 
                         /*
@@ -802,8 +771,7 @@ public class LockManager extends StateManager
 
                         previous = null;
 
-                        while ((current = next.iterate()) != null)
-                        {
+                        while ((current = next.iterate()) != null) {
                             Uid checkUid = null;
 
                             if (all)
@@ -815,25 +783,20 @@ public class LockManager extends StateManager
                              * Is this the right lock?
                              */
 
-                            if (u.equals(checkUid))
-                            {
+                            if (u.equals(checkUid)) {
                                 locksHeld.forgetNext(previous);
                                 current = null;
                                 deleted = true;
 
-                                if (!all)
-                                {
+                                if (!all) {
                                     break;
                                 }
-                            }
-                            else
+                            } else
                                 previous = current;
                         }
 
                         result = true;
-                    }
-                    else
-                    {
+                    } else {
                         /*
                          * Free state while we still have the lock.
                          */
@@ -843,33 +806,23 @@ public class LockManager extends StateManager
                         result = false;
                     }
 
-                    if (!result)
-                    {
-                        try
-                        {
+                    if (!result) {
+                        try {
                             if (tsLogger.logger.isTraceEnabled()) {
                                 tsLogger.logger.trace("LockManager.doRelease() Dozing");
                             }
                             Thread.sleep(LockManager.DOZE_TIME);
+                        } catch (InterruptedException e) {
                         }
-                        catch (InterruptedException e)
-                        {
-                        }
-                    }
-                    else
-                    {
+                    } else {
                         // if (!stateLoaded)
-                        if (!loaded)
-                        {
+                        if (!loaded) {
                             txojLogger.i18NLogger.warn_LockManager_7();
                             /*
                              * No need to freeState since we will have done that by now.
                              */
-                        }
-                        else
-                        {
-                            if (!deleted)
-                            {
+                        } else {
+                            if (!deleted) {
                                 if (txojLogger.logger.isTraceEnabled()) {
                                     txojLogger.logger.trace(" *** CANNOT locate locks  ***");
                                 }
@@ -877,13 +830,10 @@ public class LockManager extends StateManager
 
                             int unloadRetryCount = 10;
 
-                            do
-                            {
-                                if (!unloadState())
-                                {
+                            do {
+                                if (!unloadState()) {
                                     txojLogger.i18NLogger.warn_LockManager_8();
-                                }
-                                else
+                                } else
                                     releasedOK = true;
 
                             }
@@ -900,94 +850,68 @@ public class LockManager extends StateManager
              */
 
             conflictManager.signal();
+        } finally {
+            unlockMutex();
         }
-        finally
-        {
-            unlockMutex();            
-        }
-        
+
         return releasedOK;
     }
 
-    /*
-     * Simply free up the semaphore. We do this if we detect conflict. Since the
-     * list has not been modified it can simply be discarded. Does not need
-     * 'synchronized' as can only be called from synchronized methods.
-     */
-
-    protected final void freeState ()
-    {
+    protected final void freeState() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::freeState()");
         }
 
-        if (mutex != null)
-        {
+        if (mutex != null) {
             /*
              * If we are working in a shared lock store mode, then clear the
              * cached lock list. Otherwise, do nothing.
              */
 
-            if (super.objectModel != ObjectModel.SINGLE)
-            {
+            if (super.objectModel != ObjectModel.SINGLE) {
                 /* clear out the existing list */
 
-                while (locksHeld.pop() != null)
-                    ;
+                while (locksHeld.pop() != null) {
+                }
 
                 stateLoaded = false;
 
-                if (objectLocked)
-                {
+                if (objectLocked) {
                     objectLocked = false;
-                    
+
                     mutex.unlock();
                 }
-            }
-            else
+            } else
                 stateLoaded = false;
-        }
-        else
-        {
+        } else {
             stateLoaded = false;
             objectLocked = false;
         }
     }
 
-    /*
-     * Don't need to protect with a synchronization as this routine can only be
-     * called from within other protected methods. Only called if multiple
-     * object model is used.
-     */
-
-    protected final boolean initialise ()
-    {
+    protected final boolean initialise() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::initialise()");
         }
 
         boolean result = false;
 
-        if (systemKey == null)
-        {
+        if (systemKey == null) {
             systemKey = type();
 
-            if (mutex != null)
-            {
+            if (mutex != null) {
                 mutex.lock();
 
                 /*
                  * At some point we may want to add a factory to hide this, but
                  * since we only have two implementations at the moment it is perhaps
                  * overkill.
-                 * 
+                 *
                  * TODO add factory.
                  */
 
-                if (lockStore == null)
-                {
-                    try
-                    {
+                if (lockStore == null) {
+                    try {
                         if (txojLogger.logger.isTraceEnabled()) {
                             txojLogger.logger.trace("LockManager::initialise() lockStoreType is " + lockStoreType);
                         }
@@ -1000,9 +924,7 @@ public class LockManager extends StateManager
                             objectStoreEnvironmentBean.setLocalOSRoot(systemKey);
                             lockStore = new BasicPersistentLockStore(objectStoreEnvironmentBean);
                         }
-                    }
-                    catch (final Exception ex)
-                    {
+                    } catch (final Exception ex) {
                         txojLogger.i18NLogger.warn_LockManager_14(ex);
                     }
                 }
@@ -1016,8 +938,7 @@ public class LockManager extends StateManager
         return result;
     }
 
-    protected final boolean isAncestorOf (Lock heldLock)
-    {
+    protected final boolean isAncestorOf(Lock heldLock) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::isAncestorOf(" + heldLock.getCurrentOwner()
                     + ")");
@@ -1031,43 +952,23 @@ public class LockManager extends StateManager
         return action.isAncestor(heldLock.getCurrentOwner());
     }
 
-    /*
-     * Lock and load the concurrency control state. First we grab the semaphore
-     * to ensure exclusive access and then we build the held lock list by
-     * retrieving the locks from the lock repository. If there is only one
-     * server we do not bother doing this since all the locks can stay in the
-     * server's memory. This is yet another consequence of not having
-     * multi-threaded servers. Does not require synchronized since it can only
-     * be called from other synchronized methods.
-     */
-
-    /*
-     * Return to 'protected final boolean' if we address https://issues.jboss.org/browse/JBTM-2399
-     */
-    
-    protected boolean loadState ()
-    {
+    protected boolean loadState() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::loadState()");
         }
 
-        if (super.objectModel == ObjectModel.SINGLE)
-        {
+        if (super.objectModel == ObjectModel.SINGLE) {
             stateLoaded = true;
 
             return true;
-        }
-        else
-        {
+        } else {
             InputObjectState S = null;
 
-            if ((systemKey == null) && !initialise())
-            {
+            if ((systemKey == null) && !initialise()) {
                 return false; /* init failed */
             }
 
-            if ((mutex == null) || (!mutex.tryLock()))
-            {
+            if ((mutex == null) || (!mutex.tryLock())) {
                 return false;
             }
 
@@ -1079,23 +980,20 @@ public class LockManager extends StateManager
              * cannot be found, which is indicated by S being null.
              */
 
-            try
-            {
+            try {
                 S = lockStore.read_state(get_uid(), type());
 
                 /* Pick returned state apart again */
 
-                if (S != null)
-                {
+                if (S != null) {
                     Uid u = null; /*
-                                                     * avoid system calls in Uid
-                                                     * creation
-                                                     */
+                     * avoid system calls in Uid
+                     * creation
+                     */
                     Lock current = null;
                     int count = 0;
 
-                    try
-                    {
+                    try {
                         count = S.unpackInt();
 
                         boolean cleanLoad = true;
@@ -1110,82 +1008,57 @@ public class LockManager extends StateManager
                          * throw it away and return.
                          */
 
-                        for (int i = 0; (i < count) && cleanLoad; i++)
-                        {
-                            try
-                            {
+                        for (int i = 0; (i < count) && cleanLoad; i++) {
+                            try {
                                 u = UidHelper.unpackFrom(S);
                                 current = new Lock(u);
 
-                                if (current != null)
-                                {
+                                if (current != null) {
                                     if (current.restore_state(S,
-                                            ObjectType.ANDPERSISTENT))
-                                    {
+                                            ObjectType.ANDPERSISTENT)) {
                                         locksHeld.push(current);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         current = null;
                                         cleanLoad = false;
                                     }
-                                }
-                                else
-                                {
+                                } else {
                                     cleanLoad = false;
                                 }
-                            }
-                            catch (IOException e)
-                            {
+                            } catch (IOException e) {
                                 cleanLoad = false;
                             }
                         }
 
                         if (cleanLoad)
                             stateLoaded = true;
-                        else
-                        {
+                        else {
                             while ((current = locksHeld.pop()) != null)
                                 current = null;
                         }
-                    }
-                    catch (IOException e)
-                    {
+                    } catch (IOException e) {
                     }
 
                     S = null;
-                }
-                else
+                } else
                     stateLoaded = true;
-            }
-            catch (LockStoreException e)
-            {
+            } catch (LockStoreException e) {
                 txojLogger.logger.warn(e);
             }
         }
 
-        if (!stateLoaded)
-        {
+        if (!stateLoaded) {
             if (mutex != null) // means object model != SINGLE
             {
                 mutex.unlock(); // and exit mutual exclusion
             }
-            
+
             objectLocked = false;
         }
-        
+
         return stateLoaded;
     }
 
-    /*
-     * lockconflict: Here we attempt to determine if the provided lock is in
-     * conflict with any of the existing locks. If it is we use nested locking
-     * rules to allow children to lock objects already locked by their
-     * ancestors.
-     */
-
-    protected final int lockConflict (Lock otherLock)
-    {
+    protected final int lockConflict(Lock otherLock) {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::lockConflict(" + otherLock.get_uid() + ")");
         }
@@ -1194,20 +1067,14 @@ public class LockManager extends StateManager
         Lock heldLock = null;
         LockListIterator next = new LockListIterator(locksHeld);
 
-        while ((heldLock = next.iterate()) != null)
-        {
-            if (heldLock.conflictsWith(otherLock))
-            {
-                if (LockManager.nestedLocking)
-                {
+        while ((heldLock = next.iterate()) != null) {
+            if (heldLock.conflictsWith(otherLock)) {
+                if (LockManager.nestedLocking) {
                     if (!isAncestorOf(heldLock)) /* not quite Moss's rules */
                         return ConflictType.CONFLICT;
-                }
-                else
+                } else
                     return ConflictType.CONFLICT;
-            }
-            else
-            {
+            } else {
                 if (heldLock.equals(otherLock))
                     matching = true;
             }
@@ -1216,13 +1083,7 @@ public class LockManager extends StateManager
         return (matching ? ConflictType.PRESENT : ConflictType.COMPATIBLE);
     }
 
-    /*
-     * Unload the state by writing all the locks to the repository and then
-     * freeing the semaphore.
-     */
-
-    protected final boolean unloadState ()
-    {
+    protected final boolean unloadState() {
         if (txojLogger.logger.isTraceEnabled()) {
             txojLogger.logger.trace("LockManager::unloadState()");
         }
@@ -1231,14 +1092,11 @@ public class LockManager extends StateManager
          * Single object model means we don't need a lock store at all.
          */
 
-        if (super.objectModel == ObjectModel.SINGLE)
-        {
+        if (super.objectModel == ObjectModel.SINGLE) {
             stateLoaded = false;
 
             return true;
-        }
-        else
-        {
+        } else {
             boolean unloadOk = false;
             Lock current = null;
             String otype = type();
@@ -1253,33 +1111,24 @@ public class LockManager extends StateManager
                         + " lock(s)");
             }
 
-            if (lockCount == 0)
-            {
-                if (lockStore.remove_state(u, otype))
-                {
+            if (lockCount == 0) {
+                if (lockStore.remove_state(u, otype)) {
                     unloadOk = true;
-                }
-                else
-                {
+                } else {
                     txojLogger.i18NLogger.warn_LockManager_10(u, otype);
                 }
-            }
-            else
-            {
-                try
-                {
+            } else {
+                try {
                     /* generate new state */
 
                     S.packInt(lockCount);
 
                     unloadOk = true;
-                    
-                    while ((current = locksHeld.pop()) != null)
-                    {
+
+                    while ((current = locksHeld.pop()) != null) {
                         UidHelper.packInto(current.get_uid(), S);
 
-                        if (!current.save_state(S, ObjectType.ANDPERSISTENT))
-                        {
+                        if (!current.save_state(S, ObjectType.ANDPERSISTENT)) {
                             txojLogger.i18NLogger.warn_LockManager_11(current.toString());
                             unloadOk = false;
                         }
@@ -1287,24 +1136,18 @@ public class LockManager extends StateManager
                         current = null;
                     }
 
-                    if (unloadOk)
-                    {
+                    if (unloadOk) {
                         unloadOk = false;
-                        
+
                         /* load image into store */
 
-                        if (S.valid() && lockStore.write_committed(u, otype, S))
-                        {
+                        if (S.valid() && lockStore.write_committed(u, otype, S)) {
                             unloadOk = true;
-                        }
-                        else
-                        {
+                        } else {
                             txojLogger.i18NLogger.warn_LockManager_12(u, otype);
                         }
                     }
-                }
-                catch (IOException e)
-                {
+                } catch (IOException e) {
                     unloadOk = false;
 
                     txojLogger.i18NLogger.warn_LockManager_13(u, otype);
@@ -1313,8 +1156,7 @@ public class LockManager extends StateManager
 
             stateLoaded = false;
 
-            if (objectLocked)
-            {
+            if (objectLocked) {
                 objectLocked = false;
 
                 if (mutex != null) // means object model != SINGLE
@@ -1326,34 +1168,5 @@ public class LockManager extends StateManager
             return unloadOk;
         }
     }
-
-    protected String lockStoreType = txojPropertyManager.getTxojEnvironmentBean().getLockStoreType();
-
-    protected String systemKey; /* used in accessing system resources */
-
-    protected LockList locksHeld; /* the actual list of locks set */
-
-    protected final Object locksHeldLockObject = new Object(); // mutex for sync
-                                                             // on locksHeld.
-                                                             // Can't use
-                                                             // locksHeld
-                                                             // itself, it's
-                                                             // mutable.
-
-    protected LockStore lockStore; /* locks held in shared memory */
-
-    protected boolean stateLoaded;
-
-    protected boolean hasBeenLocked;/* Locked at least once */
-
-    protected boolean objectLocked;/* Semaphore grabbed */
-    
-    protected ReentrantLock mutex = new ReentrantLock();  /* Controls access to the lock store */
-    
-    protected LockConflictManager conflictManager;
-
-    protected static final int DOZE_TIME = 1000000;
-
-    protected static final boolean nestedLocking = txojPropertyManager.getTxojEnvironmentBean().isAllowNestedLocking();
 
 }

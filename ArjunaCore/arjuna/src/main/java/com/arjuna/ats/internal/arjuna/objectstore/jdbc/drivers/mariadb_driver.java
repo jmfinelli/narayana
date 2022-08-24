@@ -20,9 +20,7 @@
  */
 package com.arjuna.ats.internal.arjuna.objectstore.jdbc.drivers;
 
-import java.sql.Blob;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -30,26 +28,26 @@ import java.sql.SQLException;
  * Drivers.
  */
 public class mariadb_driver extends
-		com.arjuna.ats.internal.arjuna.objectstore.jdbc.JDBCImple_driver {
+        com.arjuna.ats.internal.arjuna.objectstore.jdbc.JDBCImple_driver {
 
-	@Override
-	protected String getObjectStateSQLType() {
-		return "BLOB";
-	}
+    @Override
+    protected String getObjectStateSQLType() {
+        return "BLOB";
+    }
 
-	@Override
-	protected void checkCreateTableError(SQLException ex) throws SQLException {
-		if (!ex.getSQLState().equals("42S01")) {
-			throw ex;
-		}
+    @Override
+    protected void checkCreateTableError(SQLException ex) throws SQLException {
+        if (!ex.getSQLState().equals("42S01")) {
+            throw ex;
+        }
 
-	}
+    }
 
-	@Override
-	protected void checkDropTableException(Connection connection,
-			SQLException ex) throws SQLException {
-		if (!ex.getSQLState().equals("42S02")) {
-			throw ex;
-		}
-	}
+    @Override
+    protected void checkDropTableException(Connection connection,
+                                           SQLException ex) throws SQLException {
+        if (!ex.getSQLState().equals("42S02")) {
+            throw ex;
+        }
+    }
 }

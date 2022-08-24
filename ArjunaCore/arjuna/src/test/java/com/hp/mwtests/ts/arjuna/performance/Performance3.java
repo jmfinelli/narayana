@@ -31,36 +31,16 @@
 
 package com.hp.mwtests.ts.arjuna.performance;
 
+import com.arjuna.ats.arjuna.coordinator.TwoPhaseCoordinator;
+import com.hp.mwtests.ts.arjuna.resources.SyncRecord;
 import io.narayana.perf.Measurement;
 import io.narayana.perf.WorkerWorkload;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.Test;
 
-import com.arjuna.ats.arjuna.coordinator.TwoPhaseCoordinator;
-import com.hp.mwtests.ts.arjuna.resources.SyncRecord;
+;
 
-public class Performance3
-{
-    @Test
-    public void test()
-    {
-        int warmUpCount = 10;
-        int numberOfTransactions = 1000000;
-        int threadCount =  1;
-        int batchSize = 100;
-
-        Measurement measurement = new Measurement.Builder(getClass().getName() + "_test1")
-                .maxTestTime(0L).numberOfCalls(numberOfTransactions)
-                .numberOfThreads(threadCount).batchSize(batchSize)
-                .numberOfWarmupCalls(warmUpCount).build().measure(worker);
-
-        Assertions.assertEquals(0, measurement.getNumberOfErrors());
-        Assertions.assertFalse(measurement.shouldFail(), measurement.getInfo());
-
-        System.out.printf("%s%n", measurement.getInfo());
-        System.err.println("TPS: " + measurement.getThroughput());
-    }
-
+public class Performance3 {
     WorkerWorkload<Void> worker = new WorkerWorkload<Void>() {
         @Override
         public Void doWork(Void context, int batchSize, Measurement<Void> config) {
@@ -81,4 +61,23 @@ public class Performance3
         public void finishWork(Measurement<Void> measurement) {
         }
     };
+
+    @Test
+    public void test() {
+        int warmUpCount = 10;
+        int numberOfTransactions = 1000000;
+        int threadCount = 1;
+        int batchSize = 100;
+
+        Measurement measurement = new Measurement.Builder(getClass().getName() + "_test1")
+                .maxTestTime(0L).numberOfCalls(numberOfTransactions)
+                .numberOfThreads(threadCount).batchSize(batchSize)
+                .numberOfWarmupCalls(warmUpCount).build().measure(worker);
+
+        Assertions.assertEquals(0, measurement.getNumberOfErrors());
+        Assertions.assertFalse(measurement.shouldFail(), measurement.getInfo());
+
+        System.out.printf("%s%n", measurement.getInfo());
+        System.err.println("TPS: " + measurement.getThroughput());
+    }
 }

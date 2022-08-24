@@ -104,7 +104,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <!-- exclude everything by default then the not-ibmorb and ibmorb profiles can
-               selectively include/exclude specific tests -->
+                         selectively include/exclude specific tests -->
           <excludes>
             <exclude>**/*.java</exclude>
           </excludes>
@@ -229,35 +229,35 @@
       </build>
     </profile>
     <!--
-    <profile>
-      <id>sybase-jdbc-store</id>
-      <dependencies>
-        <dependency>
-          <groupId>com.sybase.jConnect</groupId>
-          <artifactId>jconn3</artifactId>
-          <version>${version.com.sybase.jConnect}</version>
-          <scope>system</scope>
-          <systemPath>${orson.jar.location}/../qa/dbdrivers/jConnect-6_0/classes/jconn3.jar</systemPath>
-        </dependency>
-      </dependencies>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <systemProperties>
-                <property>
-                  <name>com.arjuna.ats.arjuna.common.propertiesFile</name>
-                  <value>sybasejbossts-properties.xml</value>
-                </property>
-              </systemProperties>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    -->
+        <profile>
+          <id>sybase-jdbc-store</id>
+          <dependencies>
+            <dependency>
+              <groupId>com.sybase.jConnect</groupId>
+              <artifactId>jconn3</artifactId>
+              <version>${version.com.sybase.jConnect}</version>
+              <scope>system</scope>
+              <systemPath>${orson.jar.location}/../qa/dbdrivers/jConnect-6_0/classes/jconn3.jar</systemPath>
+            </dependency>
+          </dependencies>
+          <build>
+            <plugins>
+              <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                  <systemProperties>
+                    <property>
+                      <name>com.arjuna.ats.arjuna.common.propertiesFile</name>
+                      <value>sybasejbossts-properties.xml</value>
+                    </property>
+                  </systemProperties>
+                </configuration>
+              </plugin>
+            </plugins>
+          </build>
+        </profile>
+        -->
     <profile>
       <id>oracle-jdbc-store</id>
       <dependencies>
@@ -395,35 +395,35 @@
     </profile>
 
     <!--
-    <profile>
-      <id>mssql-jdbc-store</id>
-      <dependencies>
-        <dependency>
-          <groupId>com.microsoft.sqlserver</groupId>
-          <artifactId>sqljdbc4</artifactId>
-          <version>${version.com.microsoft.sqlserver}</version>
-          <systemPath>${orson.jar.location}/../qa/dbdrivers/mssql2005_sqljdbc_2.0/enu/sqljdbc4.jar</systemPath>
-          <scope>system</scope>
-        </dependency>
-      </dependencies>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <systemProperties>
-                <property>
-                  <name>com.arjuna.ats.arjuna.common.propertiesFile</name>
-                  <value>mssqljbossts-properties.xml</value>
-                </property>
-              </systemProperties>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    -->
+        <profile>
+          <id>mssql-jdbc-store</id>
+          <dependencies>
+            <dependency>
+              <groupId>com.microsoft.sqlserver</groupId>
+              <artifactId>sqljdbc4</artifactId>
+              <version>${version.com.microsoft.sqlserver}</version>
+              <systemPath>${orson.jar.location}/../qa/dbdrivers/mssql2005_sqljdbc_2.0/enu/sqljdbc4.jar</systemPath>
+              <scope>system</scope>
+            </dependency>
+          </dependencies>
+          <build>
+            <plugins>
+              <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                  <systemProperties>
+                    <property>
+                      <name>com.arjuna.ats.arjuna.common.propertiesFile</name>
+                      <value>mssqljbossts-properties.xml</value>
+                    </property>
+                  </systemProperties>
+                </configuration>
+              </plugin>
+            </plugins>
+          </build>
+        </profile>
+        -->
     <profile>
       <id>community</id>
       <dependencies>
@@ -500,13 +500,13 @@
                 <configuration>
                   <excludes>
                     <!--
-                    BMUnit uses a special, /optional/ capability of the JVM to load the
-                    Byteman agent into a running JVM (the agent is the bit of Byteman which
-                    injects rules into bytecode) but the IBM jdk does not support the option.
-                    It is possible to load the agent from the java command line but BMUNit
-                    chooses to load the agent on demand. The fix is use the latter stragegy
-                    when running with the IBM jdk. TODO
-                    -->
+                                        BMUnit uses a special, /optional/ capability of the JVM to load the
+                                        Byteman agent into a running JVM (the agent is the bit of Byteman which
+                                        injects rules into bytecode) but the IBM jdk does not support the option.
+                                        It is possible to load the agent from the java command line but BMUNit
+                                        chooses to load the agent on demand. The fix is use the latter stragegy
+                                        when running with the IBM jdk. TODO
+                                        -->
                     <exclude>**/RecoveryManagerStartStopTest.java</exclude>
                     <exclude>**/ReaperTestCase3.java</exclude>
                     <exclude>**/ReaperTestCase2.java</exclude>

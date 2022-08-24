@@ -63,7 +63,7 @@ public class DiskSlots implements BackingSlots {
         synchronized (randomAccessFile) {
 
             // randomAccessFile.writeInt() is slower than the memory copy for our smallish records.
-            byte[] record = new byte[data.length+8];
+            byte[] record = new byte[data.length + 8];
             java.nio.ByteBuffer byteBuffer = java.nio.ByteBuffer.wrap(record);
             byteBuffer.putInt(data.length);
             byteBuffer.put(data);

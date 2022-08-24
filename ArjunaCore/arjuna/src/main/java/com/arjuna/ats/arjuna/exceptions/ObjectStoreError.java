@@ -41,10 +41,9 @@ package com.arjuna.ats.arjuna.exceptions;
  * @since JTS 2.1.
  */
 
-public class ObjectStoreError extends Error
-{
+public class ObjectStoreError extends Error {
     static final long serialVersionUID = 1951283264836760439L;
-    
+
     /**
      * Constructs a new error with <code>null</code> as its detail message.
      * The cause is not initialized, and may subsequently be initialized by a
@@ -78,6 +77,7 @@ public class ObjectStoreError extends Error
      *                {@link #getCause()} method).  (A <code>null</code> value is
      *                permitted, and indicates that the cause is nonexistent or
      *                unknown.)
+     *
      * @since 1.4
      */
     public ObjectStoreError(String message, Throwable cause) {
@@ -95,6 +95,7 @@ public class ObjectStoreError extends Error
      *              {@link #getCause()} method).  (A <code>null</code> value is
      *              permitted, and indicates that the cause is nonexistent or
      *              unknown.)
+     *
      * @since 1.4
      */
     public ObjectStoreError(Throwable cause) {

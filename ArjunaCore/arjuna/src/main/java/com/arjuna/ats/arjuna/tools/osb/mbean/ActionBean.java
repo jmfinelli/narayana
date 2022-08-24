@@ -21,6 +21,18 @@
  */
 package com.arjuna.ats.arjuna.tools.osb.mbean;
 
+import com.arjuna.ats.arjuna.common.Uid;
+import com.arjuna.ats.arjuna.common.arjPropertyManager;
+import com.arjuna.ats.arjuna.coordinator.AbstractRecord;
+import com.arjuna.ats.arjuna.coordinator.BasicAction;
+import com.arjuna.ats.arjuna.coordinator.RecordList;
+import com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome;
+import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
+import com.arjuna.ats.arjuna.logging.tsLogger;
+import com.arjuna.ats.arjuna.objectstore.StoreManager;
+import com.arjuna.ats.arjuna.tools.osb.util.JMXServer;
+
+import javax.management.MBeanException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -33,38 +45,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.management.MBeanException;
-
-import com.arjuna.ats.arjuna.common.Uid;
-import com.arjuna.ats.arjuna.common.arjPropertyManager;
-import com.arjuna.ats.arjuna.coordinator.AbstractRecord;
-import com.arjuna.ats.arjuna.coordinator.BasicAction;
-import com.arjuna.ats.arjuna.coordinator.RecordList;
-import com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome;
-import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
-import com.arjuna.ats.arjuna.logging.tsLogger;
-import com.arjuna.ats.arjuna.objectstore.StoreManager;
-import com.arjuna.ats.arjuna.tools.osb.util.JMXServer;
-
 /**
  * MBean implementation of an ObjectStore entry that represents an AtomicAction
  *
- * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to 
- * provide a better separation between public and internal classes.
- *
  * @author Mike Musgrove
+ * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to
+ *         provide a better separation between public and internal classes.
  */
 @Deprecated // in order to provide a better separation between public and internal classes.
 public class ActionBean extends OSEntryBean implements ActionBeanMBean {
+    private static final ThreadLocal<String> classname = new ThreadLocal<String>();
+    // wrapper around the real AtomicAction
+    protected ActionBeanWrapperInterface ra;
+    protected List<UidWrapper> recuids = new ArrayList<UidWrapper>();
     // Basic properties this enty
     private StateManagerWrapper sminfo;
     // collection of participants belonging to this BasicAction
     private Collection<LogRecordWrapper> participants = new ArrayList<LogRecordWrapper>();
-    // wrapper around the real AtomicAction
-    protected ActionBeanWrapperInterface ra;
-
-    protected List<UidWrapper> recuids = new ArrayList<UidWrapper>();
-    private static final ThreadLocal<String> classname = new ThreadLocal<String>();
 
     public ActionBean(UidWrapper w) {
         super(w);
@@ -78,7 +75,8 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
                 Constructor<ActionBeanWrapperInterface> constructor = cl.getConstructor(ActionBean.class, UidWrapper.class);
                 ra = constructor.newInstance(this, w);
                 ra.activate();
-            } catch (Exception e) { // ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException
+            } catch (
+                    Exception e) { // ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, InstantiationException
                 if (tsLogger.logger.isTraceEnabled())
                     tsLogger.logger.trace("Error constructing " + JMXServer.AJT_WRAPPER_TYPE + ": " + e);
                 ra = createWrapper(w, true);
@@ -125,8 +123,10 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
 
     /**
      * return the Uid for given AbstractRecord
+     *
      * @param rec the record whose Uid is required
-     * @return  the Uid of the requested record
+     *
+     * @return the Uid of the requested record
      */
     public Uid getUid(AbstractRecord rec) {
         return ra.getUid(rec);
@@ -134,8 +134,9 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
 
     /**
      * Remove this AtomicAction from the ObjectStore
+     *
      * @return a textual indication of whether the remove operation succeeded
-     * @throws MBeanException 
+     * @throws MBeanException
      */
     public String remove() throws MBeanException {
         // first unregister each participant of this action
@@ -171,10 +172,11 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
 
     /**
      * create MBean representations of the participants of this transaction
-     * @param recuids some transaction participants are represented in the ObjectStore
-     * - if this is the case then recuids contains a list of MBean wrappers representing them.
-     * Otherwise this list will be empty.
-     * @param list the records representing the participants
+     *
+     * @param recuids  some transaction participants are represented in the ObjectStore
+     *                 - if this is the case then recuids contains a list of MBean wrappers representing them.
+     *                 Otherwise this list will be empty.
+     * @param list     the records representing the participants
      * @param listType indicates the type of the records in list (PREPARED, PENDING, FAILED, READONLY, HEURISTIC)
      */
     private void findParticipants(List<UidWrapper> recuids, RecordList list, ParticipantStatus listType) {
@@ -207,8 +209,10 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
     /**
      * Extension point for other Bean implementations to provide an implementation bean for its participants.
      * For example @see com.arjuna.ats.internal.jta.tools.osb.mbean.jta.JTAActionBean
-     * @param rec the record that should be represented by an MBean
+     *
+     * @param rec      the record that should be represented by an MBean
      * @param listType the status of the record
+     *
      * @return the MBean implementation of the participant
      */
     protected LogRecordWrapper createParticipant(AbstractRecord rec, ParticipantStatus listType) {
@@ -218,9 +222,12 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
     protected LogRecordWrapper createParticipant(AbstractRecord rec, ParticipantStatus listType, UidWrapper wrapper) {
         return new LogRecordWrapper(this, rec, listType, wrapper);
     }
+
     /**
      * See if there is participant Bean corresponding to the given record
+     *
      * @param rec the record for the target participant
+     *
      * @return the bean corresponding to the requested record
      */
     public LogRecordWrapper getParticipant(AbstractRecord rec) {
@@ -268,8 +275,10 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
      * heuristic status then this method could be used to move it back into the
      * prepared state so that the recovery system can replay phase 2 of the
      * commitment protocol
-     * @param logrec the record whose status is to be changed
+     *
+     * @param logrec    the record whose status is to be changed
      * @param newStatus the desired status
+     *
      * @return true if the status was changed
      */
     public boolean setStatus(LogRecordWrapper logrec, ParticipantStatus newStatus) {
@@ -313,7 +322,6 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
     }
 
     /**
-     *
      * @return the MBeans corresponding to the participants within this action
      */
     public Collection<LogRecordWrapper> getParticipants() {
@@ -322,6 +330,7 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
 
     /**
      * remove the a participant
+     *
      * @param logRecordWrapper the wrapped log record
      */
     public void remove(LogRecordWrapper logRecordWrapper) {
@@ -339,27 +348,6 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
         Method setHeuristicDecision;
         Method updateState = null;
         UidWrapper uidWrapper;
-
-        private static BasicAction createAction(String classType, UidWrapper wrapper) {
-            if (classType == null)
-                classType = "com.arjuna.ats.arjuna.AtomicAction";
-
-            try {
-                Class cls = Class.forName(classType);
-
-                Class pTypes[] = new Class[1];
-                pTypes[0] = Uid.class;
-                Constructor ctor = cls.getConstructor(pTypes);
-                Object args[] = new Object[1];
-                args[0] = wrapper.getUid();
-                return (BasicAction) ctor.newInstance(args);
-            } catch (Exception e) {
-                if (tsLogger.logger.isDebugEnabled())
-                    tsLogger.logger.debug("unable to create log wrapper for type " + wrapper.getType() + ": error: " + e.getMessage());
-
-                return null;
-            }
-        }
 
         public GenericAtomicActionWrapper(BasicAction ba, UidWrapper w) {
             action = ba;
@@ -380,6 +368,27 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
 
         public GenericAtomicActionWrapper(String classType, UidWrapper w) {
             this(createAction(classType, w), w);
+        }
+
+        private static BasicAction createAction(String classType, UidWrapper wrapper) {
+            if (classType == null)
+                classType = "com.arjuna.ats.arjuna.AtomicAction";
+
+            try {
+                Class cls = Class.forName(classType);
+
+                Class[] pTypes = new Class[1];
+                pTypes[0] = Uid.class;
+                Constructor ctor = cls.getConstructor(pTypes);
+                Object[] args = new Object[1];
+                args[0] = wrapper.getUid();
+                return (BasicAction) ctor.newInstance(args);
+            } catch (Exception e) {
+                if (tsLogger.logger.isDebugEnabled())
+                    tsLogger.logger.debug("unable to create log wrapper for type " + wrapper.getType() + ": error: " + e.getMessage());
+
+                return null;
+            }
         }
 
         public BasicAction getAction() {
@@ -509,11 +518,16 @@ public class ActionBean extends OSEntryBean implements ActionBeanMBean {
 
             switch (type) {
                 default:
-                case PREPARED: return getRecords("preparedList");
-                case FAILED: return getRecords("failedList");
-                case HEURISTIC: return getRecords("heuristicList");
-                case PENDING: return getRecords("pendingList");
-                case READONLY: return getRecords("readonlyList");
+                case PREPARED:
+                    return getRecords("preparedList");
+                case FAILED:
+                    return getRecords("failedList");
+                case HEURISTIC:
+                    return getRecords("heuristicList");
+                case PENDING:
+                    return getRecords("pendingList");
+                case READONLY:
+                    return getRecords("readonlyList");
             }
         }
     }

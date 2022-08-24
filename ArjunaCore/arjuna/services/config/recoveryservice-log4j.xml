@@ -24,25 +24,25 @@
 <!-- $Id: recoveryservice-log4j.xml 2342 2006-03-30 13:06:17Z  $ -->
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
-   <appender name="stdout" class="org.apache.log4j.ConsoleAppender">
-      <param name="Threshold" value="WARN"/>
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d [%t] %-5p %c - %m%n"/>
-      </layout>
-   </appender>
+    <appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+        <param name="Threshold" value="WARN"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d [%t] %-5p %c - %m%n"/>
+        </layout>
+    </appender>
 
-   <appender name="default" class="org.apache.log4j.RollingFileAppender">
-      <param name="File" value="$USER_INSTALL_DIR$/services/logs/recovery-manager.log"/>
-      <param name="MaxFileSize" value="500KB"/>
-      <param name="MaxBackupIndex" value="2"/>
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d [%t] %-5p %c - %m%n"/>
-      </layout>
-   </appender>
-   
-   <category name="com.arjuna">
-     <priority value="INFO"/>
-     <appender-ref ref="default"/>
-     <appender-ref ref="stdout"/>
-   </category>
+    <appender name="default" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="$USER_INSTALL_DIR$/services/logs/recovery-manager.log"/>
+        <param name="MaxFileSize" value="500KB"/>
+        <param name="MaxBackupIndex" value="2"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d [%t] %-5p %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <category name="com.arjuna">
+        <priority value="INFO"/>
+        <appender-ref ref="default"/>
+        <appender-ref ref="stdout"/>
+    </category>
 </log4j:configuration>

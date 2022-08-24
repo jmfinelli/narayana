@@ -31,23 +31,22 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.internal.arjuna.objectstore.LogStore;
 import com.hp.mwtests.ts.arjuna.resources.BasicRecord;
+import org.junit.jupiter.api.Test;
+
+;
 
 /*
  * Run with the log store for N hours and make sure there are
  * no logs left at the end.
  */
 
-public class LogStressTest2
-{
+public class LogStressTest2 {
     @Test
-    public void test()
-    {
+    public void test() {
         arjPropertyManager.getCoordinatorEnvironmentBean().setCommitOnePhase(false);
         arjPropertyManager.getObjectStoreEnvironmentBean().setObjectStoreType(LogStore.class.getName());
         arjPropertyManager.getObjectStoreEnvironmentBean().setTxLogSize(10000);
@@ -69,8 +68,7 @@ public class LogStressTest2
                 A.add(new BasicRecord());
 
                 A.commit();
-            }
-            catch (final Exception ex) {
+            } catch (final Exception ex) {
             }
 
             ftime = System.currentTimeMillis();

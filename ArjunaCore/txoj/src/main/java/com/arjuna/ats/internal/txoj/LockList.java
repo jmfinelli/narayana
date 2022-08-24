@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,7 +24,7 @@
  * Arjuna Solutions Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: LockList.java 2342 2006-03-30 13:06:17Z  $
  */
@@ -34,17 +34,26 @@ package com.arjuna.ats.internal.txoj;
 import com.arjuna.ats.txoj.Lock;
 
 
-public class LockList
-{
+public class LockList {
 
-    public LockList()
-    {
+    protected Lock head;
+    private int count;
+
+    /*
+     * Insert a new Lock. This returns TRUE if the insertion occurred, false
+     * otherwise. Insertion fails if a matching lock already exists in the list.
+     */
+
+    public LockList() {
         count = 0;
         head = null;
     }
 
-    public void finalize ()
-    {
+    /*
+     * Pop the first element off the list and return it.
+     */
+
+    public void finalize() {
         @SuppressWarnings("unused")
         Lock temp;
 
@@ -53,19 +62,16 @@ public class LockList
     }
 
     /*
-     * Insert a new Lock. This returns TRUE if the insertion occurred, false
-     * otherwise. Insertion fails if a matching lock already exists in the list.
+     * Push a new element at the head of the list. First set the link field to
+     * be the old head, and then set head to be the new element.
      */
 
-    public final boolean insert (Lock newlock)
-    {
+    public final boolean insert(Lock newlock) {
         LockListIterator next = new LockListIterator(this);
         Lock current = null;
 
-        while ((current = next.iterate()) != null)
-        {
-            if (current.equals(newlock))
-            {
+        while ((current = next.iterate()) != null) {
+            if (current.equals(newlock)) {
                 return false;
             }
         }
@@ -76,11 +82,13 @@ public class LockList
     }
 
     /*
-     * Pop the first element off the list and return it.
+     * Discard the element following the one pointed at. If it is the first
+     * element (current = 0) then simply change the head pointer. Beware if
+     * current points at the last element or the list is empty! This probably
+     * indicates a bug in the caller.
      */
 
-    public final Lock pop ()
-    {
+    public final Lock pop() {
         Lock current;
 
         if (count == 0)
@@ -94,41 +102,24 @@ public class LockList
         return current;
     }
 
-    /*
-     * Push a new element at the head of the list. First set the link field to
-     * be the old head, and then set head to be the new element.
-     */
-
-    public final void push (Lock newLock)
-    {
+    public final void push(Lock newLock) {
         LockFriend.setLink(newLock, head);
         head = newLock;
         count++;
     }
 
-    /*
-     * Discard the element following the one pointed at. If it is the first
-     * element (current = 0) then simply change the head pointer. Beware if
-     * current points at the last element or the list is empty! This probably
-     * indicates a bug in the caller.
-     */
-
-    public final void forgetNext (Lock current)
-    {
-        if (count > 0) /* something there to forget */
-        {
+    public final void forgetNext(Lock current) {
+        if (count > 0) /* something there to forget */ {
             if (current == null)
                 head = LockFriend.getLink(head);
-            else
-            {
+            else {
                 Lock nextOne = LockFriend.getLink(current);
 
                 /* See if at list end */
 
                 if (nextOne != null)
                     LockFriend.setLink(current, LockFriend.getLink(nextOne));
-                else
-                {
+                else {
                     /*
                      * Probably an error - being asked to forget element after
                      * end of list
@@ -142,13 +133,8 @@ public class LockList
         }
     }
 
-    public final int entryCount ()
-    {
+    public final int entryCount() {
         return count;
     }
-
-    protected Lock head;
-
-    private int count;
 
 }

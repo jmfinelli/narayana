@@ -40,23 +40,25 @@ import com.arjuna.ats.arjuna.state.OutputObjectState;
 
 /**
  * A null implementation. Useful for performance tuning.
- * 
+ *
  * @author Mark Little (mark@arjuna.com)
  * @version $Id: NullActionStore.java 2342 2006-03-30 13:06:17Z $
  * @since JTS 1.0.
  */
 
-public class NullActionStore extends ShadowNoFileLockStore
-{
+public class NullActionStore extends ShadowNoFileLockStore {
+    public NullActionStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException {
+        super(objectStoreEnvironmentBean);
+    }
+
     /**
      * @return current state of object. Assumes that genPathName allocates
      *         enough extra space to allow extra chars to be added. Action
      *         stores only store committed objects
      */
 
-    public int currentState (Uid objUid, String tName)
-            throws ObjectStoreException
-    {
+    public int currentState(Uid objUid, String tName)
+            throws ObjectStoreException {
         return StateStatus.OS_UNKNOWN;
     }
 
@@ -66,60 +68,46 @@ public class NullActionStore extends ShadowNoFileLockStore
      * the hidden version.
      */
 
-    public boolean commit_state (Uid objUid, String tName)
-            throws ObjectStoreException
-    {
+    public boolean commit_state(Uid objUid, String tName)
+            throws ObjectStoreException {
         return true;
     }
 
-    public boolean hide_state (Uid u, String tn) throws ObjectStoreException
-    {
+    public boolean hide_state(Uid u, String tn) throws ObjectStoreException {
         return false;
     }
 
-    public boolean reveal_state (Uid u, String tn) throws ObjectStoreException
-    {
+    public boolean reveal_state(Uid u, String tn) throws ObjectStoreException {
         return false;
     }
 
-    public InputObjectState read_committed (Uid storeUid, String tName)
-            throws ObjectStoreException
-    {
+    public InputObjectState read_committed(Uid storeUid, String tName)
+            throws ObjectStoreException {
         return null;
     }
 
-    public InputObjectState read_uncommitted (Uid u, String tn)
-            throws ObjectStoreException
-    {
+    public InputObjectState read_uncommitted(Uid u, String tn)
+            throws ObjectStoreException {
         return null;
     }
 
-    public boolean remove_committed (Uid storeUid, String tName)
-            throws ObjectStoreException
-    {
+    public boolean remove_committed(Uid storeUid, String tName)
+            throws ObjectStoreException {
         return true;
     }
 
-    public boolean remove_uncommitted (Uid u, String tn)
-            throws ObjectStoreException
-    {
+    public boolean remove_uncommitted(Uid u, String tn)
+            throws ObjectStoreException {
         return false;
     }
 
-    public boolean write_committed (Uid storeUid, String tName,
-            OutputObjectState state) throws ObjectStoreException
-    {
+    public boolean write_committed(Uid storeUid, String tName,
+                                   OutputObjectState state) throws ObjectStoreException {
         return true;
     }
 
-    public boolean write_uncommitted (Uid u, String tn, OutputObjectState s)
-            throws ObjectStoreException
-    {
+    public boolean write_uncommitted(Uid u, String tn, OutputObjectState s)
+            throws ObjectStoreException {
         return false;
-    }
-    
-    public NullActionStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException
-    {
-        super(objectStoreEnvironmentBean);
     }
 }

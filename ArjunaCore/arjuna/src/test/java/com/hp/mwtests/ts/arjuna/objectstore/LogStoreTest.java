@@ -31,10 +31,6 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.arjuna.objectstore.RecoveryStore;
@@ -44,12 +40,15 @@ import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.arjuna.objectstore.LogStore;
+import org.junit.jupiter.api.Test;
 
-public class LogStoreTest
-{
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
+
+public class LogStoreTest {
     @Test
-    public void test()
-    {
+    public void test() {
         arjPropertyManager.getObjectStoreEnvironmentBean().setObjectStoreType(LogStore.class.getName());
 
         RecoveryStore recoveryStore = StoreManager.getRecoveryStore();
@@ -65,8 +64,7 @@ public class LogStoreTest
                 dummyState.packInt(fakeData);
                 ids[i] = new Uid();
                 recoveryStore.write_committed(ids[i], type, dummyState);
-            }
-            catch (final Exception ex) {
+            } catch (final Exception ex) {
                 ex.printStackTrace();
             }
         }
@@ -82,8 +80,7 @@ public class LogStoreTest
                 do {
                     try {
                         id = UidHelper.unpackFrom(ios);
-                    }
-                    catch (Exception ex) {
+                    } catch (Exception ex) {
                         id = Uid.nullUid();
                     }
 
@@ -116,8 +113,7 @@ public class LogStoreTest
                     System.err.println("Expected " + ids.length + " and got " + numberOfEntries);
                 }
             }
-        }
-        catch (final Exception ex) {
+        } catch (final Exception ex) {
             ex.printStackTrace();
         }
 

@@ -31,19 +31,18 @@
 
 package com.hp.mwtests.ts.arjuna.recovery;
 
+import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
+import com.arjuna.ats.arjuna.recovery.RecoveryManager;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;;
+;
 
-import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
-import com.arjuna.ats.arjuna.recovery.RecoveryManager;
-
-public class RecoveryLifecycleTest
-{
+public class RecoveryLifecycleTest {
     @Test
-    public void test()
-    {
+    public void test() {
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryBackoffPeriod(1);
 
         RecoveryManager manager = RecoveryManager.manager(RecoveryManager.DIRECT_MANAGEMENT);

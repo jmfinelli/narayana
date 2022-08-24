@@ -20,10 +20,10 @@
  */
 package com.arjuna.ats.txoj.common;
 
-import java.io.File;
-
 import com.arjuna.ats.internal.txoj.lockstore.BasicLockStore;
 import com.arjuna.common.internal.util.propertyservice.PropertyPrefix;
+
+import java.io.File;
 
 /**
  * A JavaBean containing configuration properties for the transactional object system.
@@ -31,8 +31,7 @@ import com.arjuna.common.internal.util.propertyservice.PropertyPrefix;
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
 @PropertyPrefix(prefix = "com.arjuna.ats.txoj.lockstore.")
-public class TxojEnvironmentBean implements TxojEnvironmentBeanMBean
-{
+public class TxojEnvironmentBean implements TxojEnvironmentBeanMBean {
     @Deprecated
     private volatile String lockStoreDir = System.getProperty("user.dir") + File.separator + "LockStore";
     private volatile String lockStoreType = BasicLockStore.class.getName();
@@ -44,15 +43,14 @@ public class TxojEnvironmentBean implements TxojEnvironmentBeanMBean
 
     /**
      * Returns the directory path used for storing persistent locks.
-     *
+     * <p>
      * Default: {user.dir}/LockStore
      * Equivalent deprecated property: com.arjuna.ats.txoj.lockstore.lockStoreDir
      *
      * @return the path to the lock directory.
      */
     @Deprecated
-    public String getLockStoreDir()
-    {
+    public String getLockStoreDir() {
         return lockStoreDir;
     }
 
@@ -62,22 +60,20 @@ public class TxojEnvironmentBean implements TxojEnvironmentBeanMBean
      * @param lockStoreDir the path to the lock directory.
      */
     @Deprecated
-    public void setLockStoreDir(String lockStoreDir)
-    {
+    public void setLockStoreDir(String lockStoreDir) {
         this.lockStoreDir = lockStoreDir;
     }
 
     /**
      * Returns the name of the lock store implementation.
-     *
+     * <p>
      * Default: null
      * Equivalent deprecated property: com.arjuna.ats.txoj.lockstore.lockStoreType
      *
      * @return the name of the lock store implementation.
      */
-    
-    public String getLockStoreType()
-    {
+
+    public String getLockStoreType() {
         return lockStoreType;
     }
 
@@ -86,22 +82,20 @@ public class TxojEnvironmentBean implements TxojEnvironmentBeanMBean
      *
      * @param lockStoreType the name of the lock store implementation.
      */
-    public void setLockStoreType(String lockStoreType)
-    {
+    public void setLockStoreType(String lockStoreType) {
         this.lockStoreType = lockStoreType;
     }
 
     /**
      * Returns the name of the multiple lock store implementation.
-     *
+     * <p>
      * Default: null
      * Equivalent deprecated property: com.arjuna.ats.txoj.lockstore.multipleLockStore
      *
-     * @return the name of the multiple lock store implementation. 
+     * @return the name of the multiple lock store implementation.
      */
     @Deprecated
-    public String getMultipleLockStore()
-    {
+    public String getMultipleLockStore() {
         return multipleLockStore;
     }
 
@@ -111,46 +105,42 @@ public class TxojEnvironmentBean implements TxojEnvironmentBeanMBean
      * @param multipleLockStore the name of the multiple lock store implementation.
      */
     @Deprecated
-    public void setMultipleLockStore(String multipleLockStore)
-    {
+    public void setMultipleLockStore(String multipleLockStore) {
         this.multipleLockStore = multipleLockStore;
     }
 
     /**
      * Sets the name of the single lock store implementation.
-     *
+     * <p>
      * Default: "BasicLockStore" TODO test
      * Equivalent deprecated property: com.arjuna.ats.txoj.lockstore.singleLockStore
      *
      * @return the name of the single lock store implementation.
      */
     @Deprecated
-    public String getSingleLockStore()
-    {
+    public String getSingleLockStore() {
         return singleLockStore;
     }
 
     /**
      * Sets the name of the single lock store implementation.
      *
-     * @param singleLockStore  the name of the single lock store implementation.
+     * @param singleLockStore the name of the single lock store implementation.
      */
     @Deprecated
-    public void setSingleLockStore(String singleLockStore)
-    {
+    public void setSingleLockStore(String singleLockStore) {
         this.singleLockStore = singleLockStore;
     }
 
     /**
      * Returns if nested locking is allowed or not.
-     *
+     * <p>
      * Default: true
      * Equivalent deprecated property: com.arjuna.ats.txoj.lockstore.allowNestedLocking
      *
      * @return true if nested locking is enabled, false otherwise.
      */
-    public boolean isAllowNestedLocking()
-    {
+    public boolean isAllowNestedLocking() {
         return allowNestedLocking;
     }
 
@@ -159,8 +149,7 @@ public class TxojEnvironmentBean implements TxojEnvironmentBeanMBean
      *
      * @param allowNestedLocking true to enable, false to disable.
      */
-    public void setAllowNestedLocking(boolean allowNestedLocking)
-    {
+    public void setAllowNestedLocking(boolean allowNestedLocking) {
         this.allowNestedLocking = allowNestedLocking;
     }
 }

@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -24,14 +24,12 @@
  * Arjuna Solutions Limited,
  * Newcastle upon Tyne,
  * Tyne and Wear,
- * UK.  
+ * UK.
  *
  * $Id: ActivationRecord.java 2342 2006-03-30 13:06:17Z  $
  */
 
 package com.arjuna.ats.internal.arjuna.abstractrecords;
-
-import java.io.PrintWriter;
 
 import com.arjuna.ats.arjuna.ObjectStatus;
 import com.arjuna.ats.arjuna.ObjectType;
@@ -44,15 +42,19 @@ import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 
-public class ActivationRecord extends AbstractRecord
-{
+import java.io.PrintWriter;
+
+public class ActivationRecord extends AbstractRecord {
 
     /*
      * This constructor is used to create a new instance of an ActivationRecord.
      */
 
-    public ActivationRecord(int st, StateManager sm, BasicAction action)
-    {
+    private StateManager objectAddr;
+    private BasicAction actionHandle;
+    private int state;
+
+    public ActivationRecord(int st, StateManager sm, BasicAction action) {
         super(sm.get_uid(), sm.type(), ObjectType.ANDPERSISTENT);
 
         objectAddr = sm;
@@ -65,28 +67,41 @@ public class ActivationRecord extends AbstractRecord
         }
     }
 
-    public int typeIs ()
-    {
+    public ActivationRecord() {
+        super();
+
+        objectAddr = null;
+        actionHandle = null;
+        state = ObjectStatus.PASSIVE;
+
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("ActivationRecord::ActivationRecord()");
+        }
+    }
+
+    public int typeIs() {
         return RecordType.ACTIVATION;
     }
 
-    public Object value ()
-    {
+    public Object value() {
         return (Object) state;
     }
 
-    public void setValue (Object v)
-    {
+    public void setValue(Object v) {
         tsLogger.i18NLogger.warn_ActivationRecord_1();
     }
+
+    /*
+     * topLevelCommit has little to do for ActivationRecords other than to
+     * ensure the object is forgotten by the object.
+     */
 
     /**
      * nestedAbort causes the reset_state function of the object to be invoked
      * passing it the saved ObjectStatus.
      */
 
-    public int nestedAbort ()
-    {
+    public int nestedAbort() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActivationRecord::nestedAbort() for " + order());
         }
@@ -107,8 +122,7 @@ public class ActivationRecord extends AbstractRecord
      * actually be called.
      */
 
-    public int nestedCommit ()
-    {
+    public int nestedCommit() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActivationRecord::nestedCommit() for " + order());
         }
@@ -116,25 +130,22 @@ public class ActivationRecord extends AbstractRecord
         return TwoPhaseOutcome.FINISH_OK;
     }
 
-    public int nestedPrepare ()
-    {
+    public int nestedPrepare() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActivationRecord::nestedPrepare() for " + order());
         }
 
-        if ((objectAddr != null) && (actionHandle != null))
-        {
+        if ((objectAddr != null) && (actionHandle != null)) {
             int state = objectAddr.status();
-            
-            if (StateManagerFriend.forgetAction(objectAddr, actionHandle, true, RecordType.ACTIVATION))
-            {              
+
+            if (StateManagerFriend.forgetAction(objectAddr, actionHandle, true, RecordType.ACTIVATION)) {
                 actionHandle = actionHandle.parent();
-                
+
                 if (StateManagerFriend.rememberAction(objectAddr, actionHandle, RecordType.ACTIVATION, state))
                     return TwoPhaseOutcome.PREPARE_READONLY;
             }
         }
-        
+
         return TwoPhaseOutcome.FINISH_ERROR;
     }
 
@@ -142,8 +153,7 @@ public class ActivationRecord extends AbstractRecord
      * topLevelAbort for Activation records is exactly like a nested abort.
      */
 
-    public int topLevelAbort ()
-    {
+    public int topLevelAbort() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActivationRecord::topLevelAbort() for " + order());
         }
@@ -151,19 +161,12 @@ public class ActivationRecord extends AbstractRecord
         return nestedAbort(); /* i.e., same as nested case */
     }
 
-    /*
-     * topLevelCommit has little to do for ActivationRecords other than to
-     * ensure the object is forgotten by the object.
-     */
-
-    public int topLevelCommit ()
-    {
+    public int topLevelCommit() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActivationRecord::topLevelCommit() for " + order());
         }
 
-        if ((objectAddr != null) && (actionHandle != null))
-        {
+        if ((objectAddr != null) && (actionHandle != null)) {
             return (StateManagerFriend.forgetAction(objectAddr, actionHandle, true, RecordType.ACTIVATION) ? TwoPhaseOutcome.FINISH_OK
                     : TwoPhaseOutcome.FINISH_ERROR);
         }
@@ -171,8 +174,7 @@ public class ActivationRecord extends AbstractRecord
         return TwoPhaseOutcome.FINISH_ERROR;
     }
 
-    public int topLevelPrepare ()
-    {
+    public int topLevelPrepare() {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ActivationRecord::topLevelPrepare() for " + order());
         }
@@ -188,35 +190,14 @@ public class ActivationRecord extends AbstractRecord
      * of the top level 2PC.
      */
 
-    public boolean restore_state (InputObjectState os, int v)
-    {
+    public boolean restore_state(InputObjectState os, int v) {
         tsLogger.i18NLogger.warn_ActivationRecord_2(type(), order());
 
         return false;
     }
 
-    public boolean save_state (OutputObjectState os, ObjectType v)
-    {
+    public boolean save_state(OutputObjectState os, ObjectType v) {
         return true;
-    }
-
-    public void print (PrintWriter strm)
-    {
-        super.print(strm);
-        strm.println("ActivationRecord with state:\n" + state);
-    }
-
-    public String type ()
-    {
-        return "/StateManager/AbstractRecord/ActivationRecord";
-    }
-
-    public void merge (AbstractRecord a)
-    {
-    }
-
-    public void alter (AbstractRecord a)
-    {
     }
 
     /*
@@ -229,43 +210,35 @@ public class ActivationRecord extends AbstractRecord
      * old
      */
 
-    public boolean shouldAdd (AbstractRecord a)
-    {
+    public void print(PrintWriter strm) {
+        super.print(strm);
+        strm.println("ActivationRecord with state:\n" + state);
+    }
+
+    public String type() {
+        return "/StateManager/AbstractRecord/ActivationRecord";
+    }
+
+    public void merge(AbstractRecord a) {
+    }
+
+    public void alter(AbstractRecord a) {
+    }
+
+    public boolean shouldAdd(AbstractRecord a) {
         return false;
     }
 
-    public boolean shouldAlter (AbstractRecord a)
-    {
+    public boolean shouldAlter(AbstractRecord a) {
         return false;
     }
 
-    public boolean shouldMerge (AbstractRecord a)
-    {
+    public boolean shouldMerge(AbstractRecord a) {
         return false;
     }
 
-    public boolean shouldReplace (AbstractRecord a)
-    {
+    public boolean shouldReplace(AbstractRecord a) {
         return false;
     }
-
-    public ActivationRecord()
-    {
-        super();
-
-        objectAddr = null;
-        actionHandle = null;
-        state = ObjectStatus.PASSIVE;
-
-        if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("ActivationRecord::ActivationRecord()");
-        }
-    }
-
-    private StateManager objectAddr;
-
-    private BasicAction actionHandle;
-
-    private int state;
 
 }

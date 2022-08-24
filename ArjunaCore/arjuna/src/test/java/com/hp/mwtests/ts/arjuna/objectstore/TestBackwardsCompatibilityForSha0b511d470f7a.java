@@ -31,7 +31,7 @@ import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.objectstore.FileSystemStore;
 import com.arjuna.ats.internal.arjuna.objectstore.ShadowNoFileLockStore;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,19 +40,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+;
 
 /**
  * Verify that a log created by the code prior to the fix for JBTM-3262 can be read by later code
  */
 public class TestBackwardsCompatibilityForSha0b511d470f7a {
-    // define a unique path for the test log
-    private String RECORD_TYPE = "/StateManager/BasicAction/TwoPhaseCoordinator/AtomicAction/JBTM-3262";
     // define a system property for controlling a code path that will generate a log record
     private static final String CREATE_RECORD_SYS_PROP = "JBTM3262";
+    // define a unique path for the test log
+    private String RECORD_TYPE = "/StateManager/BasicAction/TwoPhaseCoordinator/AtomicAction/JBTM-3262";
 
     @BeforeEach
     public void beforeMethod() {
@@ -106,6 +106,7 @@ public class TestBackwardsCompatibilityForSha0b511d470f7a {
      * copy it into the object store to see if the current arjuna code reads it correctly
      *
      * @param uid the uid of a log on the classpath which should be copied over to the object store
+     *
      * @throws IOException if the file cannot be copied
      */
     private void copyJBTMLogToLogStore(Uid uid) throws IOException {
@@ -116,7 +117,7 @@ public class TestBackwardsCompatibilityForSha0b511d470f7a {
         // the full file system path to the log record
         Path logContainer = Paths.get(os.storeDir(), os.storeRoot(), RECORD_TYPE); // valid on linux and windows
         // read a resource representing a log from the classpath
-        try(InputStream inputStream = getClass().getClassLoader().getResourceAsStream(logName)) {
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(logName)) {
 
             assertNotNull(inputStream);
 

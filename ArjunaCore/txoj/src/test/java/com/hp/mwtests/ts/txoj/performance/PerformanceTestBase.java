@@ -21,12 +21,11 @@
  */
 package com.hp.mwtests.ts.txoj.performance;
 
-public class PerformanceTestBase
-{
+public class PerformanceTestBase {
     protected void reportThroughput(String method, long iterations,
-                              long startTimeMillis) {
+                                    long startTimeMillis) {
         System.out.printf("%s.%s: Time taken to perform %d iterations: %d ms%n",
-            getClass().getCanonicalName(), method, iterations,
-            (System.currentTimeMillis() - startTimeMillis));
+                getClass().getCanonicalName(), method, iterations,
+                (System.currentTimeMillis() - startTimeMillis));
     }
 }

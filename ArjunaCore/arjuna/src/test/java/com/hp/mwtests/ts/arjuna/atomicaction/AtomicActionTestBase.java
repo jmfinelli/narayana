@@ -28,13 +28,18 @@ import com.arjuna.ats.arjuna.coordinator.ActionStatus;
 import com.arjuna.ats.arjuna.coordinator.AddOutcome;
 import com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome;
 import com.arjuna.ats.internal.arjuna.abstractrecords.LastResourceRecord;
-import com.hp.mwtests.ts.arjuna.resources.*;
+import com.hp.mwtests.ts.arjuna.resources.BasicRecord;
+import com.hp.mwtests.ts.arjuna.resources.DummyHeuristic;
+import com.hp.mwtests.ts.arjuna.resources.HeuristicRecord;
+import com.hp.mwtests.ts.arjuna.resources.LastResourceShutdownRecord;
+import com.hp.mwtests.ts.arjuna.resources.OnePhase;
+import com.hp.mwtests.ts.arjuna.resources.ShutdownRecord;
+import com.hp.mwtests.ts.arjuna.resources.SyncRecord;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AtomicActionTestBase
-{
+public class AtomicActionTestBase {
     protected static void init(boolean isAsync) {
         arjPropertyManager.getCoordinatorEnvironmentBean().setAsyncPrepare(isAsync);
         arjPropertyManager.getCoordinatorEnvironmentBean().setAsyncCommit(isAsync);
@@ -44,18 +49,15 @@ public class AtomicActionTestBase
         arjPropertyManager.getCoordinatorEnvironmentBean().setAsyncAfterSynchronization(isAsync);
     }
 
-    protected void testCommit () throws Exception
-    {
+    protected void testCommit() throws Exception {
         executeTest(true, ActionStatus.COMMITTED, null, new BasicRecord(), new BasicRecord());
     }
 
-    protected void testAbort () throws Exception
-    {
+    protected void testAbort() throws Exception {
         executeTest(false, ActionStatus.ABORTED, null, new BasicRecord(), new BasicRecord());
     }
 
-    protected void testPrepareWithLRRSuccess()
-    {
+    protected void testPrepareWithLRRSuccess() {
         OnePhase onePhase = new OnePhase();
         AbstractRecord lastResourceRecord = new LastResourceRecord(onePhase);
         AbstractRecord basicRecord = new BasicRecord();
@@ -65,8 +67,7 @@ public class AtomicActionTestBase
         assertEquals(OnePhase.COMMITTED, onePhase.status());
     }
 
-    protected void testPrepareWithLRRFailOn2PCAwareResourcePrepare()
-    {
+    protected void testPrepareWithLRRFailOn2PCAwareResourcePrepare() {
         OnePhase onePhase = new OnePhase();
         AbstractRecord lastResourceRecord = new LastResourceRecord(onePhase);
         AbstractRecord shutdownRecord = new ShutdownRecord(ShutdownRecord.FAIL_IN_PREPARE);
@@ -76,8 +77,7 @@ public class AtomicActionTestBase
         assertEquals(OnePhase.ROLLEDBACK, onePhase.status());
     }
 
-    protected void testPrepareWithLRRFailOn2PCUnawareResourcePrepare()
-    {
+    protected void testPrepareWithLRRFailOn2PCUnawareResourcePrepare() {
         OnePhase onePhase = new OnePhase();
         AbstractRecord lastResourceRecord = new LastResourceShutdownRecord(onePhase, true);
         AbstractRecord basicRecord = new BasicRecord();
@@ -87,8 +87,7 @@ public class AtomicActionTestBase
         assertEquals(OnePhase.ROLLEDBACK, onePhase.status());
     }
 
-    protected void testPrepareWithLRRFailOn2PCAwareResourceCommit()
-    {
+    protected void testPrepareWithLRRFailOn2PCAwareResourceCommit() {
         OnePhase onePhase = new OnePhase();
         AbstractRecord lastResourceRecord = new LastResourceRecord(onePhase);
         AbstractRecord shutdownRecord = new ShutdownRecord(ShutdownRecord.FAIL_IN_COMMIT);
@@ -100,10 +99,10 @@ public class AtomicActionTestBase
 
     /**
      * Tests for correct behaviour of synchronisations (the normal case)
+     *
      * @throws Exception
      */
-    protected void testCompletionWithoutFailures() throws Exception
-    {
+    protected void testCompletionWithoutFailures() throws Exception {
         SyncRecord[] syncs = {
                 new SyncRecord(),
                 new SyncRecord(true, SyncRecord.FailureMode.NONE)
@@ -125,10 +124,10 @@ public class AtomicActionTestBase
 
     /**
      * Tests for correct behaviour of synchronisations (in the abnormal case)
+     *
      * @throws Exception
      */
-    protected void testCompletionWithFailures() throws Exception
-    {
+    protected void testCompletionWithFailures() throws Exception {
         SyncRecord[] syncs = {
                 new SyncRecord(false, SyncRecord.FailureMode.BEFORE_FAIL),
                 new SyncRecord(true, SyncRecord.FailureMode.NONE)
@@ -153,10 +152,10 @@ public class AtomicActionTestBase
 
     /**
      * Tests for correct behaviour of synchronisations (in the abnormal case)
+     *
      * @throws Exception
      */
-    protected void testCompletionWithException() throws Exception
-    {
+    protected void testCompletionWithException() throws Exception {
         SyncRecord[] syncs = {
                 new SyncRecord(false, SyncRecord.FailureMode.NONE),
                 new SyncRecord(true, SyncRecord.FailureMode.NONE)
@@ -164,7 +163,7 @@ public class AtomicActionTestBase
         RuntimeException exception = new RuntimeException("testCompletionWithException");
 
         syncs[0].setBeforeThrowable(exception);
-        AtomicAction a= executeTest(true, ActionStatus.ABORTED, syncs, new BasicRecord(), new BasicRecord());
+        AtomicAction a = executeTest(true, ActionStatus.ABORTED, syncs, new BasicRecord(), new BasicRecord());
 
         /*
          * since the first synch failed during the beforeCompletion callback:
@@ -292,8 +291,7 @@ public class AtomicActionTestBase
         executeTest(true, expect, syncs, new BasicRecord(), new BasicRecord());
     }
 
-    protected void testHeuristicNotification(boolean reportHeuristics) throws Exception
-    {
+    protected void testHeuristicNotification(boolean reportHeuristics) throws Exception {
         AtomicAction A = new AtomicAction();
         DummyHeuristic[] dha = {new DummyHeuristic(), new DummyHeuristic()};
 

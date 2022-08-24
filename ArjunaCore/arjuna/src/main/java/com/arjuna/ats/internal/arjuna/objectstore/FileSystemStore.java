@@ -31,17 +31,6 @@
 
 package com.arjuna.ats.internal.arjuna.objectstore;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.Hashtable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
@@ -56,6 +45,17 @@ import com.arjuna.ats.arjuna.utils.FileLock;
 import com.arjuna.ats.arjuna.utils.Utility;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Hashtable;
+
 
 /**
  * The basic class for file system object stores. This is not actually
@@ -68,34 +68,45 @@ import com.arjuna.ats.internal.arjuna.common.UidHelper;
  * @since JTS 1.0.
  */
 
-public abstract class FileSystemStore extends ObjectStore
-{
+public abstract class FileSystemStore extends ObjectStore {
 
-    class FileFilter implements FilenameFilter
-    {
-        public boolean accept (File dir, String name)
-        {
-            File f = new File(name);
-
-            if (f.isDirectory())
-                return false;
-            else
-                return true;
-        }
-    }
-
-    public String getStoreName ()
-    {
-        return _objectStoreRoot;
-    }
+    static final char unixSeparator = '/';
+    static final boolean rewriteSeparator = (File.separatorChar != FileSystemStore.unixSeparator);
 
     /*
      * read an uncommitted instance of State out of the object store.
      * The instance is identified by the unique id and type
      */
+    private static final Hashtable fileCache = new Hashtable();
+    private static final int createRetry = arjPropertyManager.getObjectStoreEnvironmentBean().getHierarchyRetry();
+    private static final int createTimeout = arjPropertyManager.getObjectStoreEnvironmentBean().getHierarchyTimeout();
+    private static final boolean isWindows = Utility.isWindows();
+    private final String fullStoreName;
+    protected boolean syncWrites = true;
+    protected volatile boolean doSync = true;
+    protected boolean scanZeroLengthFiles = false;
 
-    public InputObjectState read_committed (Uid storeUid, String tName) throws ObjectStoreException
-    {
+    public FileSystemStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException {
+        super(objectStoreEnvironmentBean);
+
+        fullStoreName = locateStore(_objectStoreRoot);
+
+        doSync = objectStoreEnvironmentBean.isObjectStoreSync();
+
+        scanZeroLengthFiles = objectStoreEnvironmentBean.isScanZeroLengthFiles();
+
+        /* The root of the objectstore must exist and be writable */
+
+        if ((fullStoreName == null) || !createHierarchy(fullStoreName)) {
+            throw new ObjectStoreException(tsLogger.i18NLogger.get_objectstore_FileSystemStore_1(fullStoreName));
+        }
+    }
+
+    public String getStoreName() {
+        return _objectStoreRoot;
+    }
+
+    public InputObjectState read_committed(Uid storeUid, String tName) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.read_committed(" + storeUid + ", " + tName + ")");
         }
@@ -103,8 +114,7 @@ public abstract class FileSystemStore extends ObjectStore
         return read_state_internal(storeUid, tName, StateType.OS_ORIGINAL);
     }
 
-    public InputObjectState read_uncommitted (Uid storeUid, String tName) throws ObjectStoreException
-    {
+    public InputObjectState read_uncommitted(Uid storeUid, String tName) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.read_uncommitted(" + storeUid + ", " + tName + ")");
         }
@@ -112,8 +122,7 @@ public abstract class FileSystemStore extends ObjectStore
         return read_state_internal(storeUid, tName, StateType.OS_SHADOW);
     }
 
-    public boolean remove_committed (Uid storeUid, String tName) throws ObjectStoreException
-    {
+    public boolean remove_committed(Uid storeUid, String tName) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.remove_committed(" + storeUid + ", " + tName + ")");
         }
@@ -121,8 +130,7 @@ public abstract class FileSystemStore extends ObjectStore
         return remove_state_internal(storeUid, tName, StateType.OS_ORIGINAL);
     }
 
-    public boolean remove_uncommitted (Uid storeUid, String tName) throws ObjectStoreException
-    {
+    public boolean remove_uncommitted(Uid storeUid, String tName) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.remove_uncommitted(" + storeUid + ", " + tName + ")");
         }
@@ -130,8 +138,7 @@ public abstract class FileSystemStore extends ObjectStore
         return remove_state_internal(storeUid, tName, StateType.OS_SHADOW);
     }
 
-    public boolean write_committed (Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException
-    {
+    public boolean write_committed(Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.write_committed(" + storeUid + ", " + tName + ")");
         }
@@ -139,8 +146,7 @@ public abstract class FileSystemStore extends ObjectStore
         return write_state_internal(storeUid, tName, state, StateType.OS_ORIGINAL);
     }
 
-    public boolean write_uncommitted (Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException
-    {
+    public boolean write_uncommitted(Uid storeUid, String tName, OutputObjectState state) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.write_uncommitted(" + storeUid + ", " + tName + ", " + state + ")");
         }
@@ -148,45 +154,41 @@ public abstract class FileSystemStore extends ObjectStore
         return write_state_internal(storeUid, tName, state, StateType.OS_SHADOW);
     }
 
-    
-    
     /**
      * Given a type name initialise the <code>state</code> to contains all of
      * the Uids of objects of that type
      */
-    public boolean allObjUids(final String tName, final InputObjectState state, final int match) throws ObjectStoreException
-    {
-       if(System.getSecurityManager() == null) {
-           return allObjUidsInternal(tName, state, match);
-       } else {
-           try {
-               return AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
-                   @Override
-                   public Boolean run() throws Exception {
-                       return allObjUidsInternal(tName, state, match);
-                   }
-               });
-           } catch (PrivilegedActionException e) {
-               throw unwrapException(e);
-           }
-       }
+    public boolean allObjUids(final String tName, final InputObjectState state, final int match) throws ObjectStoreException {
+        if (System.getSecurityManager() == null) {
+            return allObjUidsInternal(tName, state, match);
+        } else {
+            try {
+                return AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
+                    @Override
+                    public Boolean run() throws Exception {
+                        return allObjUidsInternal(tName, state, match);
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                throw unwrapException(e);
+            }
+        }
     }
 
     private RuntimeException unwrapException(PrivilegedActionException e) throws ObjectStoreException {
         Throwable c = e.getCause();
-        if(c instanceof ObjectStoreException) {
-            throw (ObjectStoreException)c;
-        } else if(c instanceof RuntimeException) {
-            throw (RuntimeException)c;
-        } else if(c instanceof Error) {
-            throw (Error)c;
+        if (c instanceof ObjectStoreException) {
+            throw (ObjectStoreException) c;
+        } else if (c instanceof RuntimeException) {
+            throw (RuntimeException) c;
+        } else if (c instanceof Error) {
+            throw (Error) c;
         } else {
             throw new RuntimeException(c);
         }
     }
 
-    private boolean allObjUidsInternal (String tName, InputObjectState state, int match) throws ObjectStoreException
-    {
+    private boolean allObjUidsInternal(String tName, InputObjectState state, int match) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.allObjUids(" + tName + ", " + state + ", " + match + ")");
         }
@@ -198,27 +200,21 @@ public abstract class FileSystemStore extends ObjectStore
          * If typename starts with a '/' then skip over it.
          */
 
-        if ((tName != null) && (tName.length() > 0) && (tName.charAt(0) == File.separatorChar))
-        {
+        if ((tName != null) && (tName.length() > 0) && (tName.charAt(0) == File.separatorChar)) {
             String s = tName.substring(1, tName.length());
             directory = new String(fullStoreName + s);
-        }
-        else
+        } else
             directory = new String(fullStoreName + tName);
 
         File f = new File(directory);
         String[] entry = f.list(new FileFilter()); // only return files not dirs
 
-        if ((entry != null) && (entry.length > 0))
-        {
-            for (int i = 0; i < entry.length; i++)
-            {
-                try
-                {
+        if ((entry != null) && (entry.length > 0)) {
+            for (int i = 0; i < entry.length; i++) {
+                try {
                     Uid aUid = new Uid(entry[i], true);
 
-                    if (!aUid.valid() || (aUid.equals(Uid.nullUid())))
-                    {
+                    if (!aUid.valid() || (aUid.equals(Uid.nullUid()))) {
                         String revealed = revealedId(entry[i]);
 
                         // don't want to give the same id twice.
@@ -229,36 +225,27 @@ public abstract class FileSystemStore extends ObjectStore
                             aUid = new Uid(revealed);
                     }
 
-                    if ((aUid != null) && (aUid.valid()))
-                    {
+                    if ((aUid != null) && (aUid.valid())) {
                         if ((aUid.notEquals(Uid.nullUid())) && ((match == StateStatus.OS_UNKNOWN) ||
-                                (isType(aUid, tName, match))))
-                        {
-                            if(scanZeroLengthFiles || new File(f, entry[i]).length() > 0) {
+                                (isType(aUid, tName, match)))) {
+                            if (scanZeroLengthFiles || new File(f, entry[i]).length() > 0) {
                                 UidHelper.packInto(aUid, store);
                             }
                         }
                     }
-                }
-                catch (NumberFormatException e)
-                {
+                } catch (NumberFormatException e) {
                     /*
                      * Not a number at start of file.
                      */
-                }
-                catch (IOException e)
-                {
+                } catch (IOException e) {
                     throw new ObjectStoreException(tsLogger.i18NLogger.get_objectstore_FileSystemStore_2a(), e);
                 }
             }
         }
 
-        try
-        {
+        try {
             UidHelper.packInto(Uid.nullUid(), store);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new ObjectStoreException(tsLogger.i18NLogger.get_objectstore_FileSystemStore_3(), e);
         }
 
@@ -269,8 +256,7 @@ public abstract class FileSystemStore extends ObjectStore
         return true;
     }
 
-    public boolean allTypes (InputObjectState foundTypes) throws ObjectStoreException
-    {
+    public boolean allTypes(InputObjectState foundTypes) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.allTypes(" + foundTypes + ")");
         }
@@ -285,22 +271,16 @@ public abstract class FileSystemStore extends ObjectStore
 
         OutputObjectState store = new OutputObjectState();
 
-        for (int i = 0; i < entry.length; i++)
-        {
-            if (!supressEntry(entry[i]))
-            {
-                File tmpFile = new File(directory+File.separator+entry[i]);
+        for (int i = 0; i < entry.length; i++) {
+            if (!supressEntry(entry[i])) {
+                File tmpFile = new File(directory + File.separator + entry[i]);
 
-                if (tmpFile.isDirectory())
-                {
-                    try
-                    {
+                if (tmpFile.isDirectory()) {
+                    try {
                         store.packString(entry[i]);
 
                         result = allTypes(store, entry[i]);
-                    }
-                    catch (IOException e)
-                    {
+                    } catch (IOException e) {
                         throw new ObjectStoreException(tsLogger.i18NLogger.get_objectstore_FileSystemStore_4(), e);
                     }
                 }
@@ -309,12 +289,9 @@ public abstract class FileSystemStore extends ObjectStore
             }
         }
 
-        try
-        {
+        try {
             store.packString("");
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new ObjectStoreException(tsLogger.i18NLogger.get_objectstore_FileSystemStore_5(), e);
         }
 
@@ -323,11 +300,8 @@ public abstract class FileSystemStore extends ObjectStore
         return result;
     }
 
-
-
-    private InputObjectState read_state_internal (final Uid u, final String tn, final int s) throws ObjectStoreException
-    {
-        if(System.getSecurityManager() == null) {
+    private InputObjectState read_state_internal(final Uid u, final String tn, final int s) throws ObjectStoreException {
+        if (System.getSecurityManager() == null) {
             return read_state(u, tn, s);
         } else {
             try {
@@ -342,9 +316,9 @@ public abstract class FileSystemStore extends ObjectStore
             }
         }
     }
-    private boolean remove_state_internal (final Uid u, final String tn, final int s) throws ObjectStoreException
-    {
-        if(System.getSecurityManager() == null) {
+
+    private boolean remove_state_internal(final Uid u, final String tn, final int s) throws ObjectStoreException {
+        if (System.getSecurityManager() == null) {
             return remove_state(u, tn, s);
         } else {
             try {
@@ -358,169 +332,6 @@ public abstract class FileSystemStore extends ObjectStore
                 throw unwrapException(e);
             }
         }
-    }
-    private boolean write_state_internal (final Uid u, final String tn, final OutputObjectState buff, final int s) throws ObjectStoreException
-    {
-        if(System.getSecurityManager() == null) {
-            return write_state(u, tn, buff, s);
-        } else {
-            try {
-                return AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
-                    @Override
-                    public Boolean run() throws Exception {
-                        return write_state(u, tn, buff, s);
-                    }
-                });
-            } catch (PrivilegedActionException e) {
-                throw unwrapException(e);
-            }
-        }
-    }
-
-    protected abstract InputObjectState read_state (Uid u, String tn, int s) throws ObjectStoreException;
-    protected abstract boolean remove_state (Uid u, String tn, int s) throws ObjectStoreException;
-    protected abstract boolean write_state (Uid u, String tn, OutputObjectState buff, int s) throws ObjectStoreException;
-
-    /**
-     * Are synchronous write enabled?
-     */
-
-    protected synchronized final boolean synchronousWrites ()
-    {
-        return doSync && syncWrites;
-    }
-
-    /**
-     * Lock the file in the object store.
-     */
-
-    protected synchronized boolean lock (final File fd, final int lmode, final boolean create)
-    {
-        if(System.getSecurityManager() == null) {
-            FileLock fileLock = new FileLock(fd);
-            return fileLock.lock(lmode, create);
-        } else {
-            return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                @Override
-                public Boolean run() {
-                    FileLock fileLock = new FileLock(fd);
-                    return fileLock.lock(lmode, create);
-                }
-            });
-        }
-    }
-
-    /**
-     * Unlock the file in the object store.
-     */
-
-    protected synchronized boolean unlock (final File fd)
-    {
-        if(System.getSecurityManager() == null) {
-            FileLock fileLock = new FileLock(fd);
-            return fileLock.unlock();
-        } else {
-            return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                @Override
-                public Boolean run() {
-                    FileLock fileLock = new FileLock(fd);
-                    return fileLock.unlock();
-                }
-            });
-        }
-    }
-
-    /**
-     * Unlock and close the file. Note that if the unlock fails we set
-     * the return value to false to indicate an error but rely on the
-     * close to really do the unlock.
-     */
-
-    protected boolean closeAndUnlock (File fd, FileInputStream ifile, FileOutputStream ofile)
-    {
-        if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("FileSystemStore.closeAndUnlock(" + fd + ", " + ifile + ", " + ofile + ")");
-        }
-
-        boolean closedOk = unlock(fd);
-
-        try
-        {
-            if (ifile != null)
-                ifile.close();
-        }
-        catch (Exception e)
-        {
-            closedOk = false;
-        }
-
-        try
-        {
-            if (ofile != null)
-                ofile.close();
-        }
-        catch (Exception e)
-        {
-            closedOk = false;
-        }
-
-        return closedOk;
-    }
-
-    protected File openAndLock (final String fname, final int lmode, final boolean create) throws ObjectStoreException {
-        if(System.getSecurityManager() == null) {
-            return openAndLockInternal(fname, lmode, create);
-        } else {
-            try {
-                return AccessController.doPrivileged(new PrivilegedExceptionAction<File>() {
-                    @Override
-                    public File run() throws Exception {
-                        return openAndLockInternal(fname, lmode, create);
-                    }
-                });
-            } catch (PrivilegedActionException e) {
-                throw unwrapException(e);
-            }
-        }
-    }
-
-    private File openAndLockInternal (String fname, int lmode, boolean create) throws ObjectStoreException
-    {
-        if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("FileSystemStore.openAndLock(" + fname + ", " + FileLock.modeString(lmode) + ", " + create + ")");
-        }
-
-        File fd = null;       
-
-        /*
-         * Consider re-introducing the FdCache concept from original Arjuna
-         * to save time on checking if exists etc.
-         */
-        
-        if (fd == null)
-        {
-            fd = new File(fname);
-
-            if (!fd.getParentFile().exists())
-            {
-                if (createHierarchy(fname))
-                {
-                    if (!lock(fd, lmode, create))
-                    {
-                        return null;
-                    }
-                    else
-                        return fd;
-                }
-                else
-                    throw new ObjectStoreException("FileSystemStore.openAndLock failed to create hierarchy "+fname);
-            }
-
-            if (!lock(fd, lmode, create))
-                fd = null;
-        }
-
-        return fd;
     }
 
     /*
@@ -546,8 +357,156 @@ public abstract class FileSystemStore extends ObjectStore
      * to improve performance.
      */
 
-    protected synchronized final boolean renameFromTo (final File from, final File to) {
-        if(System.getSecurityManager() == null) {
+    private boolean write_state_internal(final Uid u, final String tn, final OutputObjectState buff, final int s) throws ObjectStoreException {
+        if (System.getSecurityManager() == null) {
+            return write_state(u, tn, buff, s);
+        } else {
+            try {
+                return AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
+                    @Override
+                    public Boolean run() throws Exception {
+                        return write_state(u, tn, buff, s);
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                throw unwrapException(e);
+            }
+        }
+    }
+
+    protected abstract InputObjectState read_state(Uid u, String tn, int s) throws ObjectStoreException;
+
+    protected abstract boolean remove_state(Uid u, String tn, int s) throws ObjectStoreException;
+
+    protected abstract boolean write_state(Uid u, String tn, OutputObjectState buff, int s) throws ObjectStoreException;
+
+    /**
+     * Are synchronous write enabled?
+     */
+
+    protected final synchronized boolean synchronousWrites() {
+        return doSync && syncWrites;
+    }
+
+    /**
+     * Lock the file in the object store.
+     */
+
+    protected synchronized boolean lock(final File fd, final int lmode, final boolean create) {
+        if (System.getSecurityManager() == null) {
+            FileLock fileLock = new FileLock(fd);
+            return fileLock.lock(lmode, create);
+        } else {
+            return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                @Override
+                public Boolean run() {
+                    FileLock fileLock = new FileLock(fd);
+                    return fileLock.lock(lmode, create);
+                }
+            });
+        }
+    }
+
+    /**
+     * Unlock the file in the object store.
+     */
+
+    protected synchronized boolean unlock(final File fd) {
+        if (System.getSecurityManager() == null) {
+            FileLock fileLock = new FileLock(fd);
+            return fileLock.unlock();
+        } else {
+            return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                @Override
+                public Boolean run() {
+                    FileLock fileLock = new FileLock(fd);
+                    return fileLock.unlock();
+                }
+            });
+        }
+    }
+
+    /**
+     * Unlock and close the file. Note that if the unlock fails we set
+     * the return value to false to indicate an error but rely on the
+     * close to really do the unlock.
+     */
+
+    protected boolean closeAndUnlock(File fd, FileInputStream ifile, FileOutputStream ofile) {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("FileSystemStore.closeAndUnlock(" + fd + ", " + ifile + ", " + ofile + ")");
+        }
+
+        boolean closedOk = unlock(fd);
+
+        try {
+            if (ifile != null)
+                ifile.close();
+        } catch (Exception e) {
+            closedOk = false;
+        }
+
+        try {
+            if (ofile != null)
+                ofile.close();
+        } catch (Exception e) {
+            closedOk = false;
+        }
+
+        return closedOk;
+    }
+
+    protected File openAndLock(final String fname, final int lmode, final boolean create) throws ObjectStoreException {
+        if (System.getSecurityManager() == null) {
+            return openAndLockInternal(fname, lmode, create);
+        } else {
+            try {
+                return AccessController.doPrivileged(new PrivilegedExceptionAction<File>() {
+                    @Override
+                    public File run() throws Exception {
+                        return openAndLockInternal(fname, lmode, create);
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                throw unwrapException(e);
+            }
+        }
+    }
+
+    private File openAndLockInternal(String fname, int lmode, boolean create) throws ObjectStoreException {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("FileSystemStore.openAndLock(" + fname + ", " + FileLock.modeString(lmode) + ", " + create + ")");
+        }
+
+        File fd = null;
+
+        /*
+         * Consider re-introducing the FdCache concept from original Arjuna
+         * to save time on checking if exists etc.
+         */
+
+        if (fd == null) {
+            fd = new File(fname);
+
+            if (!fd.getParentFile().exists()) {
+                if (createHierarchy(fname)) {
+                    if (!lock(fd, lmode, create)) {
+                        return null;
+                    } else
+                        return fd;
+                } else
+                    throw new ObjectStoreException("FileSystemStore.openAndLock failed to create hierarchy " + fname);
+            }
+
+            if (!lock(fd, lmode, create))
+                fd = null;
+        }
+
+        return fd;
+    }
+
+    protected final synchronized boolean renameFromTo(final File from, final File to) {
+        if (System.getSecurityManager() == null) {
             return renameFromToInternal(from, to);
         } else {
             return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
@@ -559,12 +518,10 @@ public abstract class FileSystemStore extends ObjectStore
         }
     }
 
-    protected final boolean renameFromToInternal (File from, File to)
-    {
+    protected final boolean renameFromToInternal(File from, File to) {
         if (!isWindows)
             return from.renameTo(to);
-        else
-        {
+        else {
             //      FileLock fl = new FileLock(to);
 
             if (!from.exists()) {
@@ -617,25 +574,8 @@ public abstract class FileSystemStore extends ObjectStore
         }
     }
 
-    public FileSystemStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException
-    {
-        super(objectStoreEnvironmentBean);
-
-        fullStoreName = locateStore(_objectStoreRoot);
-
-        doSync = objectStoreEnvironmentBean.isObjectStoreSync();
-
-        scanZeroLengthFiles = objectStoreEnvironmentBean.isScanZeroLengthFiles();
-
-        /* The root of the objectstore must exist and be writable */
-
-        if ((fullStoreName == null) || !createHierarchy(fullStoreName)) {
-            throw new ObjectStoreException( tsLogger.i18NLogger.get_objectstore_FileSystemStore_1(fullStoreName) );
-        }
-    }
-
-    protected boolean allTypes (final OutputObjectState foundTypes, final String root) throws ObjectStoreException {
-        if(System.getSecurityManager() == null) {
+    protected boolean allTypes(final OutputObjectState foundTypes, final String root) throws ObjectStoreException {
+        if (System.getSecurityManager() == null) {
             return allTypesInternal(foundTypes, root);
         } else {
             try {
@@ -651,8 +591,7 @@ public abstract class FileSystemStore extends ObjectStore
         }
     }
 
-    private boolean allTypesInternal (OutputObjectState foundTypes, String root) throws ObjectStoreException
-    {
+    private boolean allTypesInternal(OutputObjectState foundTypes, String root) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.allTypes(" + foundTypes + ", " + root + ")");
         }
@@ -662,32 +601,24 @@ public abstract class FileSystemStore extends ObjectStore
         File f = new File(directory);
         String[] entry = f.list();
 
-        if ((entry != null) && (entry.length > 0))
-        {
-            for (int i = 0; i < entry.length; i++)
-            {
-                if (!supressEntry(entry[i]))
-                {
-                    try
-                    {
-                        File tmpFile = new File(directory+File.separator+entry[i]);
+        if ((entry != null) && (entry.length > 0)) {
+            for (int i = 0; i < entry.length; i++) {
+                if (!supressEntry(entry[i])) {
+                    try {
+                        File tmpFile = new File(directory + File.separator + entry[i]);
 
-                        if (tmpFile.isDirectory())
-                        {
+                        if (tmpFile.isDirectory()) {
                             String pack = truncate(entry[i]);
 
-                            if ( pack.length() > 0 )
-                            {
-                                foundTypes.packString(root+File.separator+pack);
+                            if (pack.length() > 0) {
+                                foundTypes.packString(root + File.separator + pack);
 
-                                result = allTypes(foundTypes, root+File.separator+pack);
+                                result = allTypes(foundTypes, root + File.separator + pack);
                             }
                         }
 
                         tmpFile = null;
-                    }
-                    catch (IOException e)
-                    {
+                    } catch (IOException e) {
                         throw new ObjectStoreException(tsLogger.i18NLogger.get_objectstore_FileSystemStore_7(), e);
                     }
                 }
@@ -699,15 +630,14 @@ public abstract class FileSystemStore extends ObjectStore
 
     /**
      * @return the file name for the state of the object
-     * identified by the Uid and TypeName. If the StateType argument
-     * is OS_SHADOW then the Uid part of the name includes # characters.
-     * The magic number SLOP below is the number of extra characters needed
-     * to make up the entire path.
+     *         identified by the Uid and TypeName. If the StateType argument
+     *         is OS_SHADOW then the Uid part of the name includes # characters.
+     *         The magic number SLOP below is the number of extra characters needed
+     *         to make up the entire path.
      */
 
-    protected String genPathName (Uid objUid,
-                                  String tName, int ostype) throws ObjectStoreException
-    {
+    protected String genPathName(Uid objUid,
+                                 String tName, int ostype) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.genPathName(" + objUid + ", " + tName + ", " + ostype + ")");
         }
@@ -719,16 +649,14 @@ public abstract class FileSystemStore extends ObjectStore
 
         if ((tName == null) || (tName.length() == 0))
             cPtr = "";
-        else
-        {
+        else {
             cPtr = tName;
 
             /*
              * Convert Unix separators to 'other', i.e., Windows!
              */
 
-            if (FileSystemStore.rewriteSeparator && (cPtr.indexOf(FileSystemStore.unixSeparator) != -1))
-            {
+            if (FileSystemStore.rewriteSeparator && (cPtr.indexOf(FileSystemStore.unixSeparator) != -1)) {
                 cPtr = cPtr.replace(FileSystemStore.unixSeparator, File.separatorChar);
             }
         }
@@ -741,7 +669,7 @@ public abstract class FileSystemStore extends ObjectStore
         if (cPtr.charAt(0) == File.separatorChar)
             cPtr = cPtr.substring(1, cPtr.length());
 
-        if (cPtr.charAt(cPtr.length() -1) != File.separatorChar)
+        if (cPtr.charAt(cPtr.length() - 1) != File.separatorChar)
             fname = storeName + cPtr + File.separator + os;
         else
             fname = storeName + cPtr + os;
@@ -750,22 +678,22 @@ public abstract class FileSystemStore extends ObjectStore
          * Make sure we don't end in a '/'.
          */
 
-        if (fname.charAt(fname.length() -1) == File.separatorChar)
-            fname = fname.substring(0, fname.length() -2);
+        if (fname.charAt(fname.length() - 1) == File.separatorChar)
+            fname = fname.substring(0, fname.length() - 2);
 
         return fname;
     }
 
-    protected boolean supressEntry (String name)
-    {
+    protected boolean supressEntry(String name) {
         if ((name.compareTo(".") == 0) || (name.compareTo("..") == 0))
             return true;
         else
             return false;
     }
 
-    protected String truncate (String value)
-    {
+    // allow derived classes to specify sync on a per instance basis
+
+    protected String truncate(String value) {
         return value;
     }
 
@@ -774,7 +702,7 @@ public abstract class FileSystemStore extends ObjectStore
      * This creates directories as required as new types are added to the
      * store. Note that we made sure the root object store was created and
      * writable at construction time.
-     *
+     * <p>
      * WARNING: on a multi-processor box it is possible that multiple threads may
      * try to create the same hierarchy at the same time. What will tend to happen
      * is that one thread will succeed and the other(s) will fail. However, if a failed
@@ -784,15 +712,13 @@ public abstract class FileSystemStore extends ObjectStore
      * created. So, we have to err on the side of caution and try to create the directory
      * a few times. (This can happen across processes too.)
      */
-    
-    protected final synchronized boolean createHierarchy (String path) throws ObjectStoreException
-    {
+
+    protected final synchronized boolean createHierarchy(String path) throws ObjectStoreException {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileSystemStore.createHierarchy(" + path + ")");
         }
 
-        if ((path != null) && (path.length() > 0))
-        {
+        if ((path != null) && (path.length() > 0)) {
             File f = null;
 
             /*
@@ -800,56 +726,44 @@ public abstract class FileSystemStore extends ObjectStore
              * absolute file name?
              */
 
-            if (path.charAt(path.length() -1) != File.separatorChar)
-            {
+            if (path.charAt(path.length() - 1) != File.separatorChar) {
                 int index = path.lastIndexOf(File.separator);
 
                 if (index <= 0)
                     return true;
                 else
                     f = new File(path.substring(0, index));
-            }
-            else
+            } else
                 f = new File(path);
 
             int retryLimit = FileSystemStore.createRetry;
 
-            do
-            {
-                if (f.exists())
-                {
+            do {
+                if (f.exists()) {
                     return true;
-                }
-                else
-                {
+                } else {
                     /*
                      * Assume problem is due to concurrent processes, since we're
                      * synchronized within the same VM.
                      */
-                    
-                    if (!f.mkdirs())
-                    {
+
+                    if (!f.mkdirs()) {
                         retryLimit--;
 
                         if (retryLimit == 0)
                             return false;
 
-                        try
-                        {
+                        try {
                             Thread.currentThread().sleep(FileSystemStore.createTimeout);
+                        } catch (Exception ex) {
                         }
-                        catch (Exception ex)
-                        {
-                        }
-                    }
-                    else
+                    } else
                         return true;
                 }
             } while (!f.exists() && (retryLimit > 0));
 
             return f.exists();
-        }
-        else
+        } else
             throw new ObjectStoreException(tsLogger.i18NLogger.get_objectstore_FileSystemStore_8());
     }
 
@@ -858,16 +772,14 @@ public abstract class FileSystemStore extends ObjectStore
      * object states, then this method will check a file cache first.
      * Otherwise, we must go back to the file system each time to check the
      * status of the file.
-     *
+     * <p>
      * If we add a FileDescriptor cache a la the C++ version then we would
      * be able to get rid of the state cache and simply check to see if we
      * had a fd for it.
      */
 
-    protected final boolean exists (String path)
-    {
-        if (super.shareStatus == StateType.OS_UNSHARED)
-        {
+    protected final boolean exists(String path) {
+        if (super.shareStatus == StateType.OS_UNSHARED) {
             if (FileSystemStore.fileCache.get(path) != null)
                 return true;
         }
@@ -887,16 +799,15 @@ public abstract class FileSystemStore extends ObjectStore
         return doesExist;
     }
 
-    protected final void addToCache (String fname)
-    {
-        if (super.shareStatus == StateType.OS_UNSHARED)
-        {
+    // global values (some of which may be reset on a per instance basis).
+
+    protected final void addToCache(String fname) {
+        if (super.shareStatus == StateType.OS_UNSHARED) {
             FileSystemStore.fileCache.put(fname, fname);
         }
     }
 
-    protected final void removeFromCache (String fname)
-    {
+    protected final void removeFromCache(String fname) {
         removeFromCache(fname, true);
     }
 
@@ -906,20 +817,16 @@ public abstract class FileSystemStore extends ObjectStore
      * @since 2.1.1.
      */
 
-    protected final void removeFromCache (String fname, boolean warn)
-    {
-        if (super.shareStatus == StateType.OS_UNSHARED)
-        {
+    protected final void removeFromCache(String fname, boolean warn) {
+        if (super.shareStatus == StateType.OS_UNSHARED) {
             if ((FileSystemStore.fileCache.remove(fname) == null) && warn) {
                 tsLogger.i18NLogger.warn_objectstore_FileSystemStore_2(fname);
             }
         }
     }
 
-    private final boolean present (String id, String[] list)
-    {
-        for (int i = 0; i < list.length; i++)
-        {
+    private final boolean present(String id, String[] list) {
+        for (int i = 0; i < list.length; i++) {
             if (list[i].equals(id))
                 return true;
         }
@@ -927,25 +834,15 @@ public abstract class FileSystemStore extends ObjectStore
         return false;
     }
 
-    static final char unixSeparator = '/';
+    class FileFilter implements FilenameFilter {
+        public boolean accept(File dir, String name) {
+            File f = new File(name);
 
-    static final boolean rewriteSeparator = (File.separatorChar != FileSystemStore.unixSeparator);
-
-    // allow derived classes to specify sync on a per instance basis
-
-    protected boolean syncWrites = true;
-
-    private final String fullStoreName;
-    protected volatile boolean doSync = true;
-
-    // global values (some of which may be reset on a per instance basis).
-
-    private static final Hashtable fileCache = new Hashtable();
-    private static final int       createRetry = arjPropertyManager.getObjectStoreEnvironmentBean().getHierarchyRetry();
-    private static final int       createTimeout = arjPropertyManager.getObjectStoreEnvironmentBean().getHierarchyTimeout();
-
-    protected boolean scanZeroLengthFiles = false;
-
-    private static final boolean isWindows = Utility.isWindows();
+            if (f.isDirectory())
+                return false;
+            else
+                return true;
+        }
+    }
 
 }

@@ -20,18 +20,17 @@
  */
 package com.hp.mwtests.ts.arjuna.common;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.hp.mwtests.ts.arjuna.resources.BasicObject;
+import org.junit.jupiter.api.Test;
 
-public class PersistenceUnitTest
-{
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+;
+
+public class PersistenceUnitTest {
     @Test
-    public void testSaveRestore()
-    {
+    public void testSaveRestore() {
         final BasicObject obj = new BasicObject();
         final Uid objUid = obj.get_uid();
 

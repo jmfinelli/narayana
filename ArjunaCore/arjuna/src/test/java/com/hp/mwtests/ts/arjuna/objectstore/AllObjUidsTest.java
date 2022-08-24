@@ -31,12 +31,6 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
 import com.arjuna.ats.arjuna.objectstore.RecoveryStore;
@@ -44,12 +38,17 @@ import com.arjuna.ats.arjuna.objectstore.StateStatus;
 import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
+import org.junit.jupiter.api.Test;
 
-public class AllObjUidsTest
-{
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+;
+
+public class AllObjUidsTest {
     @Test
-    public void test() throws IOException, ObjectStoreException
-    {
+    public void test() throws IOException, ObjectStoreException {
         RecoveryStore recoveryStore = StoreManager.getRecoveryStore();
         String type = "/StateManager/BasicAction/TwoPhaseCoordinator/AtomicAction/DummyAtomicAction";
 

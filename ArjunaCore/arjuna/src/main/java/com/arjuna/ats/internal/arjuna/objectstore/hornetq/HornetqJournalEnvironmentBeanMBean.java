@@ -25,8 +25,7 @@ package com.arjuna.ats.internal.arjuna.objectstore.hornetq;
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
-public interface HornetqJournalEnvironmentBeanMBean
-{
+public interface HornetqJournalEnvironmentBeanMBean {
     public int getFileSize();
 
     public int getMinFiles();

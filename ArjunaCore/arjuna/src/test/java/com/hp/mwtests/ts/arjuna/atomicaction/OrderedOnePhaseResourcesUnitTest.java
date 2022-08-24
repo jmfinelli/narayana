@@ -20,8 +20,6 @@
  */
 package com.hp.mwtests.ts.arjuna.atomicaction;
 
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
@@ -31,12 +29,13 @@ import com.arjuna.ats.arjuna.coordinator.abstractrecord.RecordTypeMap;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule;
 import com.hp.mwtests.ts.arjuna.abstractrecords.OrderedOnePhaseAbstractRecord;
+import org.junit.jupiter.api.Test;
 
-public class OrderedOnePhaseResourcesUnitTest
-{
+;
+
+public class OrderedOnePhaseResourcesUnitTest {
     @Test
-    public void testOrderedOnePhase() throws Exception
-    {
+    public void testOrderedOnePhase() throws Exception {
         System.setProperty("com.arjuna.ats.arjuna.common.propertiesFile", "jbossts-properties.xml");
 
         Uid firstToCommit = new Uid();

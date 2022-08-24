@@ -31,12 +31,6 @@
 
 package com.hp.mwtests.ts.arjuna.objectstore;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.WithByteman;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.arjuna.objectstore.RecoveryStore;
@@ -46,14 +40,19 @@ import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.arjuna.objectstore.LogStore;
+import org.jboss.byteman.contrib.bmunit.BMScript;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 @WithByteman
 @BMScript("objectstore")
-public class LogStoreTest2
-{
+public class LogStoreTest2 {
     @Test
-    public void test()
-    {
+    public void test() {
         arjPropertyManager.getObjectStoreEnvironmentBean().setObjectStoreType(LogStore.class.getName());
 
         // the byteman script will manage this
@@ -72,26 +71,24 @@ public class LogStoreTest2
                 dummyState.packInt(fakeData);
                 ids[i] = new Uid();
                 recoveryStore.write_committed(ids[i], type, dummyState);
-            }
-            catch (final Exception ex) {
+            } catch (final Exception ex) {
                 ex.printStackTrace();
             }
         }
 
         try {
             recoveryStore.remove_committed(ids[0], type);
-        }
-        catch (final Exception ex) {
+        } catch (final Exception ex) {
             ex.printStackTrace();
         }
 
         /*
         try {
         */
-            /*
-                * Give the purger thread a chance to run and delete
-                * the entry.
-                */
+        /*
+         * Give the purger thread a chance to run and delete
+         * the entry.
+         */
         /*
             Thread.sleep(12000);
         }
@@ -110,8 +107,7 @@ public class LogStoreTest2
                 do {
                     try {
                         id = UidHelper.unpackFrom(ios);
-                    }
-                    catch (Exception ex) {
+                    } catch (Exception ex) {
                         id = Uid.nullUid();
                     }
 
@@ -149,8 +145,7 @@ public class LogStoreTest2
                     System.err.println("Expected " + ids.length + " and got " + numberOfEntries);
                 }
             }
-        }
-        catch (final Exception ex) {
+        } catch (final Exception ex) {
             ex.printStackTrace();
         }
 

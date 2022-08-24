@@ -31,8 +31,6 @@
 
 package com.arjuna.ats.internal.arjuna.abstractrecords;
 
-import java.io.PrintWriter;
-
 import com.arjuna.ats.arjuna.StateManager;
 import com.arjuna.ats.arjuna.coordinator.AbstractRecord;
 import com.arjuna.ats.arjuna.coordinator.RecordType;
@@ -41,6 +39,8 @@ import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
 import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.objectstore.ParticipantStore;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
+
+import java.io.PrintWriter;
 
 /**
  * Cadaver records are created whenever a persistent object is deleted while
@@ -56,31 +56,51 @@ import com.arjuna.ats.arjuna.state.OutputObjectState;
  * @since JTS 1.0.
  */
 
-public class CadaverRecord extends PersistenceRecord
-{
+public class CadaverRecord extends PersistenceRecord {
+
+    private boolean newStateIsValid;
+    private OutputObjectState oldState;
+    private int oType;
 
     /**
      * Create a new instance, passing in the object that is being managed.
      *
-     * @param os the state of the object that is being
-     * removed.
+     * @param os               the state of the object that is being
+     *                         removed.
      * @param participantStore the object participantStore instance used to manipulate the
-     * persistent state.
-     * @param sm the object being removed.
+     *                         persistent state.
+     * @param sm               the object being removed.
      */
 
-    public CadaverRecord (OutputObjectState os, ParticipantStore participantStore,
-			  StateManager sm)
-    {
-	super(os, participantStore, sm);
+    public CadaverRecord(OutputObjectState os, ParticipantStore participantStore,
+                         StateManager sm) {
+        super(os, participantStore, sm);
 
-	newStateIsValid = ((os != null) ? true : false);
-	oldState = null;
-	oType = RecordType.NONE_RECORD;
+        newStateIsValid = ((os != null) ? true : false);
+        oldState = null;
+        oType = RecordType.NONE_RECORD;
 
-	if (tsLogger.logger.isTraceEnabled()) {
-        tsLogger.logger.trace("CadaverRecord::CadaverRecord(" + os + ", " + sm.get_uid() + ")");
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("CadaverRecord::CadaverRecord(" + os + ", " + sm.get_uid() + ")");
+        }
     }
+
+    /**
+     * Create a new instance using default values. Typically used during
+     * failure recovery.
+     */
+
+    public CadaverRecord() {
+        super();
+
+        newStateIsValid = false;
+        oldState = null;
+        oType = RecordType.NONE_RECORD;
+        targetParticipantStore = null;
+
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("CadaverRecord::CadaverRecord ()");
+        }
     }
 
     /**
@@ -90,9 +110,8 @@ public class CadaverRecord extends PersistenceRecord
      * @return <code>true</code>
      */
 
-    public boolean propagateOnAbort ()
-    {
-	return true;
+    public boolean propagateOnAbort() {
+        return true;
     }
 
     /**
@@ -102,9 +121,8 @@ public class CadaverRecord extends PersistenceRecord
      * @see com.arjuna.ats.arjuna.coordinator.RecordType
      */
 
-    public int typeIs ()
-    {
-	return RecordType.PERSISTENCE;
+    public int typeIs() {
+        return RecordType.PERSISTENCE;
     }
 
     /**
@@ -112,70 +130,67 @@ public class CadaverRecord extends PersistenceRecord
      * new state.
      */
 
-    public int nestedAbort ()
-    {
-	if (tsLogger.logger.isTraceEnabled()) {
-        tsLogger.logger.trace("CadaverRecord::nestedAbort() for " + order());
-    }
+    public int nestedAbort() {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("CadaverRecord::nestedAbort() for " + order());
+        }
 
-	if (oldState != null)
-	    newStateIsValid = false;
+        if (oldState != null)
+            newStateIsValid = false;
 
-	if (oType == RecordType.RECOVERY) {
-        tsLogger.i18NLogger.warn_CadaverRecord_1(order(), getTypeOfObject());
-    }
+        if (oType == RecordType.RECOVERY) {
+            tsLogger.i18NLogger.warn_CadaverRecord_1(order(), getTypeOfObject());
+        }
 
-	/*
-	 * No need to forget the action since this object is
-	 * being deleted so it is unlikely to have modified called
-	 * on it!
-	 */
+        /*
+         * No need to forget the action since this object is
+         * being deleted so it is unlikely to have modified called
+         * on it!
+         */
 
-	//	super.forgetAction(false);
+        //super.forgetAction(false);
 
-	return TwoPhaseOutcome.FINISH_OK;
+        return TwoPhaseOutcome.FINISH_OK;
     }
 
     /**
      * The nested transaction is preparing. If there is any new state for
      * the object being removed, and that state is valid, then this record
      * will call nestedPrepare on the object being removed.
-     *
+     * <p>
      * If we have no new state then we cannot commit and must force an
      * abort. Do this by failing the prepare phase.
      */
 
-    public int nestedPrepare ()
-    {
-	if (tsLogger.logger.isTraceEnabled()) {
-        tsLogger.logger.trace("CadaverRecord::nestedPrepare() for " + order());
-    }
+    public int nestedPrepare() {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("CadaverRecord::nestedPrepare() for " + order());
+        }
 
-	if (newStateIsValid)
-	    return super.nestedPrepare();
-	else
-	    return TwoPhaseOutcome.PREPARE_NOTOK;
+        if (newStateIsValid)
+            return super.nestedPrepare();
+        else
+            return TwoPhaseOutcome.PREPARE_NOTOK;
     }
 
     /**
      * The nested transaction has aborted. Invalidate any new state.
      */
 
-    public int topLevelAbort ()
-    {
-	if (tsLogger.logger.isTraceEnabled()) {
-        tsLogger.logger.trace("CadaverRecord::topLevelAbort() for " + order());
-    }
+    public int topLevelAbort() {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("CadaverRecord::topLevelAbort() for " + order());
+        }
 
-	newStateIsValid = false;
+        newStateIsValid = false;
 
-	if (oType == RecordType.RECOVERY) {
-        tsLogger.i18NLogger.warn_CadaverRecord_1(order(), getTypeOfObject());
-    }
+        if (oType == RecordType.RECOVERY) {
+            tsLogger.i18NLogger.warn_CadaverRecord_1(order(), getTypeOfObject());
+        }
 
-	// super.forgetAction(false);
+        // super.forgetAction(false);
 
-	return TwoPhaseOutcome.FINISH_OK;
+        return TwoPhaseOutcome.FINISH_OK;
     }
 
     /**
@@ -185,33 +200,28 @@ public class CadaverRecord extends PersistenceRecord
      * instead talk directly to the object participantStore itself.
      */
 
-    public int topLevelCommit ()
-    {
-	if (tsLogger.logger.isTraceEnabled()) {
-        tsLogger.logger.trace("CadaverRecord::topLevelCommit() for " + order());
-    }
+    public int topLevelCommit() {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("CadaverRecord::topLevelCommit() for " + order());
+        }
 
-	boolean res = true;
-	OutputObjectState oState = super.state;
+        boolean res = true;
+        OutputObjectState oState = super.state;
 
-	if ((oState != null) && (oType == RecordType.PERSISTENCE))
-	{
-	    if (targetParticipantStore == null)
-		return TwoPhaseOutcome.FINISH_ERROR;
+        if ((oState != null) && (oType == RecordType.PERSISTENCE)) {
+            if (targetParticipantStore == null)
+                return TwoPhaseOutcome.FINISH_ERROR;
 
-	    try
-	    {
-		res = targetParticipantStore.commit_state(oState.stateUid(), oState.type());
-	    }
-	    catch (ObjectStoreException e)
-	    {
-		res = false;
-	    }
-	}
+            try {
+                res = targetParticipantStore.commit_state(oState.stateUid(), oState.type());
+            } catch (ObjectStoreException e) {
+                res = false;
+            }
+        }
 
-	// super.forgetAction(false);
+        // super.forgetAction(false);
 
-	return ((res) ? TwoPhaseOutcome.FINISH_OK : TwoPhaseOutcome.FINISH_ERROR);
+        return ((res) ? TwoPhaseOutcome.FINISH_OK : TwoPhaseOutcome.FINISH_ERROR);
     }
 
     /**
@@ -220,40 +230,32 @@ public class CadaverRecord extends PersistenceRecord
      * instead talk directly to the object participantStore itself.
      */
 
-    public int topLevelPrepare ()
-    {
-	if (tsLogger.logger.isTraceEnabled()) {
-        tsLogger.logger.trace("CadaverRecord::topLevelPrepare() for " + order());
-    }
+    public int topLevelPrepare() {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace("CadaverRecord::topLevelPrepare() for " + order());
+        }
 
-	int tlpOk = TwoPhaseOutcome.PREPARE_NOTOK;
-	OutputObjectState oState = (newStateIsValid ? super.state : oldState);
+        int tlpOk = TwoPhaseOutcome.PREPARE_NOTOK;
+        OutputObjectState oState = (newStateIsValid ? super.state : oldState);
 
-	if (oState != null)
-	{
-	    if (oType == RecordType.PERSISTENCE)
-	    {
-		if (targetParticipantStore == null)
-		    return TwoPhaseOutcome.PREPARE_NOTOK;
+        if (oState != null) {
+            if (oType == RecordType.PERSISTENCE) {
+                if (targetParticipantStore == null)
+                    return TwoPhaseOutcome.PREPARE_NOTOK;
 
-		try
-		{
-		    if (targetParticipantStore.write_uncommitted(oState.stateUid(), oState.type(), oState))
-		    {
-			if (shadowForced())
-			    tlpOk = TwoPhaseOutcome.PREPARE_OK;
-		    }
-		}
-		catch (final ObjectStoreException e)
-		{
-		    e.printStackTrace();
-		}
-	    }
-	    else
-		tlpOk = TwoPhaseOutcome.PREPARE_OK;
-	}
+                try {
+                    if (targetParticipantStore.write_uncommitted(oState.stateUid(), oState.type(), oState)) {
+                        if (shadowForced())
+                            tlpOk = TwoPhaseOutcome.PREPARE_OK;
+                    }
+                } catch (final ObjectStoreException e) {
+                    e.printStackTrace();
+                }
+            } else
+                tlpOk = TwoPhaseOutcome.PREPARE_OK;
+        }
 
-	return tlpOk;
+        return tlpOk;
     }
 
     /**
@@ -263,10 +265,9 @@ public class CadaverRecord extends PersistenceRecord
      * @param strm the stream to use.
      */
 
-    public void print (PrintWriter strm)
-    {
-	strm.println("Cadaver for:");
-	super.print(strm);
+    public void print(PrintWriter strm) {
+        strm.println("Cadaver for:");
+        super.print(strm);
     }
 
     /**
@@ -274,25 +275,23 @@ public class CadaverRecord extends PersistenceRecord
      * hierarchical manner in the object participantStore.
      */
 
-    public String type()
-    {
-	return "/StateManager/AbstractRecord/RecoveryRecord/PersistenceRecord/CadaverRecord";
+    public String type() {
+        return "/StateManager/AbstractRecord/RecoveryRecord/PersistenceRecord/CadaverRecord";
     }
 
     /**
      * Override the AbstractRecord.doSave.
      *
      * @return <code>true</code> if the object being removed is a persistent
-     * object (RecordType.PERSISTENT). <code>false</code> otherwise.
+     *         object (RecordType.PERSISTENT). <code>false</code> otherwise.
      * @see com.arjuna.ats.arjuna.coordinator.RecordType
      */
 
-    public boolean doSave ()
-    {
-	if (oType == RecordType.PERSISTENCE)
-	    return true;
-	else
-	    return false;
+    public boolean doSave() {
+        if (oType == RecordType.PERSISTENCE)
+            return true;
+        else
+            return false;
     }
 
     /**
@@ -305,31 +304,26 @@ public class CadaverRecord extends PersistenceRecord
      * @param mergewith The record to merge with.
      */
 
-    public void merge (AbstractRecord mergewith)
-    {
-	/*
-	 *  Following assumes that value returns a pointer to the
-	 *  old state maintained in the PersistenceRecord (as an ObjectState).
-	 *  Here we create a copy of that state allowing the original
-	 *  to be deleted
-	 */
+    public void merge(AbstractRecord mergewith) {
+        /*
+         *  Following assumes that value returns a pointer to the
+         *  old state maintained in the PersistenceRecord (as an ObjectState).
+         *  Here we create a copy of that state allowing the original
+         *  to be deleted
+         */
 
-	oType = mergewith.typeIs();
+        oType = mergewith.typeIs();
 
-	if (oldState != null)
-	{
-	    if (newStateIsValid)
-	    {
-		oldState = null;
-	    }
-	    else
-	    {
-		setValue(oldState);
-		newStateIsValid = true;
-	    }
-	}
+        if (oldState != null) {
+            if (newStateIsValid) {
+                oldState = null;
+            } else {
+                setValue(oldState);
+                newStateIsValid = true;
+            }
+        }
 
-	oldState = new OutputObjectState((OutputObjectState)(mergewith.value()));
+        oldState = new OutputObjectState((OutputObjectState) (mergewith.value()));
     }
 
     /**
@@ -338,59 +332,34 @@ public class CadaverRecord extends PersistenceRecord
      * @param ar the record to potentially merge with.
      *
      * @return <code>true</code> if this instance and the parameter have the
-     * same id (order()) and the parameter is either persistent or recoverable.
-     * <code>false</code> otherwise.
+     *         same id (order()) and the parameter is either persistent or recoverable.
+     *         <code>false</code> otherwise.
      * @see com.arjuna.ats.arjuna.coordinator.RecordType
      */
 
-    public boolean shouldMerge (AbstractRecord ar)
-    {
-	return (((order().equals(ar.order())) &&
-		 ((ar.typeIs() == RecordType.PERSISTENCE) ||
-		  (ar.typeIs() == RecordType.RECOVERY)))
-		? true : false);
+    public boolean shouldMerge(AbstractRecord ar) {
+        return (((order().equals(ar.order())) &&
+                ((ar.typeIs() == RecordType.PERSISTENCE) ||
+                        (ar.typeIs() == RecordType.RECOVERY)))
+                ? true : false);
     }
 
     /**
      * Overrides AbstractRecord.shouldReplace
      *
      * @param ar the record to potentially replace this
-     * instance.
+     *           instance.
      *
      * @return <code>true</code> if this instance and the parameter have the
-     * same id (order()) and the parameter is either persistent or recoverable.
-     * <code>false</code> otherwise.
+     *         same id (order()) and the parameter is either persistent or recoverable.
+     *         <code>false</code> otherwise.
      * @see com.arjuna.ats.arjuna.coordinator.RecordType
      */
 
-    public boolean shouldReplace (AbstractRecord ar)
-    {
-	return (((order().equals(ar.order())) &&
-		 ((ar.typeIs() == RecordType.PERSISTENCE) ||
-		  (ar.typeIs() == RecordType.RECOVERY)))
-		? true : false);
+    public boolean shouldReplace(AbstractRecord ar) {
+        return (((order().equals(ar.order())) &&
+                ((ar.typeIs() == RecordType.PERSISTENCE) ||
+                        (ar.typeIs() == RecordType.RECOVERY)))
+                ? true : false);
     }
-
-    /**
-     * Create a new instance using default values. Typically used during
-     * failure recovery.
-     */
-
-    public CadaverRecord ()
-    {
-	super();
-
-	newStateIsValid = false;
-	oldState = null;
-	oType = RecordType.NONE_RECORD;
-	targetParticipantStore = null;
-
-	if (tsLogger.logger.isTraceEnabled()) {
-        tsLogger.logger.trace("CadaverRecord::CadaverRecord ()");
-    }
-    }
-
-    private boolean           newStateIsValid;
-    private OutputObjectState oldState;
-    private int               oType;
 }

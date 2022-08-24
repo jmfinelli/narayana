@@ -43,10 +43,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class SlotStore {
 
-    private final SlotStoreEnvironmentBean config;
-
-    private final String storeDirCanonicalPath;
-
     /*
      * The slotIdIndex tracks the key to slot mapping for all in-use slots,
      * whilst the free list tracks all unoccupied slots. Care must be taken with the
@@ -54,13 +50,15 @@ public class SlotStore {
      */
     public final ConcurrentHashMap<SlotStoreKey, Integer> slotIdIndex = new ConcurrentHashMap<>();
     public final Deque<Integer> freeList = new ConcurrentLinkedDeque<>();
-
     public final BackingSlots slots;
+    private final SlotStoreEnvironmentBean config;
+    private final String storeDirCanonicalPath;
 
     /**
      * Create a new instance with the given configuration.
      *
      * @param config The configuration parameters for the instance
+     *
      * @throws IOException if the required backing storage can't be initialized.
      */
     public SlotStore(SlotStoreEnvironmentBean config) throws IOException {
@@ -98,6 +96,7 @@ public class SlotStore {
      * Retrieve the serialized state for an entry.
      *
      * @param key The unique identifier for the entry
+     *
      * @return The serialized state
      * @throws IOException if the entry is not found
      */
@@ -126,6 +125,7 @@ public class SlotStore {
      * Depending on the configuration, this change may not be immediately persistent.
      *
      * @param key The unique identifier for the entry
+     *
      * @return true on success, false otherwise
      * @throws IOException unused for now in this impl.
      */
@@ -148,6 +148,7 @@ public class SlotStore {
      *
      * @param key               The unique identifier for the entry
      * @param outputObjectState The serialized state
+     *
      * @return true on success, false otherwise e.g. when the store is full.
      * @throws IOException if serialization fails
      */
@@ -187,6 +188,7 @@ public class SlotStore {
      * Determines if a given entry is present in the store.
      *
      * @param key The unique identifier for the entry
+     *
      * @return true if found, false otherwise
      */
     public boolean contains(SlotStoreKey key) {
@@ -213,6 +215,7 @@ public class SlotStore {
      * Return all keys in the store having the same typename and (matching or unknown) state as the provided key.
      *
      * @param templateKey a template key to match in the search. Uid part is ignored, typename and state are used in matching
+     *
      * @return an array, possible empty but non-null, of matching keys.
      */
     public SlotStoreKey[] getMatchingKeys(SlotStoreKey templateKey) {

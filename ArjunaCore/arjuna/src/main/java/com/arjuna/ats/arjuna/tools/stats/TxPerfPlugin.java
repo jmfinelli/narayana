@@ -20,21 +20,19 @@
  */
 package com.arjuna.ats.arjuna.tools.stats;
 
+import com.sun.tools.jconsole.JConsoleContext;
+import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
+import com.sun.tools.jconsole.JConsolePlugin;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.SwingWorker;
-
-import com.sun.tools.jconsole.JConsoleContext;
-import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
-import com.sun.tools.jconsole.JConsolePlugin;
-
-public class TxPerfPlugin extends JConsolePlugin implements PropertyChangeListener
-{
+public class TxPerfPlugin extends JConsolePlugin implements PropertyChangeListener {
     private TxPerfGraph graph;
     private Map<String, JPanel> tabs;
 
@@ -49,9 +47,9 @@ public class TxPerfPlugin extends JConsolePlugin implements PropertyChangeListen
     public synchronized Map<String, JPanel> getTabs() {
         if (tabs == null) {
             graph = new TxPerfGraph(new JFrame("TxPerf"));
-            
+
             graph.setMBeanServerConnection(
-                getContext().getMBeanServerConnection());
+                    getContext().getMBeanServerConnection());
             // use LinkedHashMap if you want a predictable order
             // of the tabs to be added in JConsole
             tabs = new LinkedHashMap<String, JPanel>();
@@ -63,15 +61,15 @@ public class TxPerfPlugin extends JConsolePlugin implements PropertyChangeListen
     public void propertyChange(PropertyChangeEvent ev) {
         String prop = ev.getPropertyName();
         if (prop == null ? JConsoleContext.CONNECTION_STATE_PROPERTY == null : prop.equals(JConsoleContext.CONNECTION_STATE_PROPERTY)) {
-            ConnectionState oldState = (ConnectionState)ev.getOldValue();
-            ConnectionState newState = (ConnectionState)ev.getNewValue();
+            ConnectionState oldState = (ConnectionState) ev.getOldValue();
+            ConnectionState newState = (ConnectionState) ev.getNewValue();
             // JConsole supports disconnection and reconnection
             // The MBeanServerConnection will become invalid when
             // disconnected. Need to use the new MBeanServerConnection object
             // created at reconnection time.
             if (newState == ConnectionState.CONNECTED && graph != null) {
                 graph.setMBeanServerConnection(
-                    getContext().getMBeanServerConnection());
+                        getContext().getMBeanServerConnection());
             }
         }
     }
@@ -83,7 +81,7 @@ public class TxPerfPlugin extends JConsolePlugin implements PropertyChangeListen
     }
 
     @Override
-    public SwingWorker<?,?> newSwingWorker() {
+    public SwingWorker<?, ?> newSwingWorker() {
         return graph.newSwingWorker();
     }
 }

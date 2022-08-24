@@ -20,15 +20,6 @@
  */
 package com.hp.mwtests.ts.arjuna.abstractrecords;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.ObjectType;
 import com.arjuna.ats.arjuna.common.arjPropertyManager;
 import com.arjuna.ats.arjuna.coordinator.RecordType;
@@ -40,40 +31,46 @@ import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
 import com.arjuna.ats.internal.arjuna.abstractrecords.PersistenceRecord;
 import com.hp.mwtests.ts.arjuna.resources.ExtendedObject;
+import org.junit.jupiter.api.Test;
 
-public class PersistenceRecordUnitTest
-{
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+;
+
+public class PersistenceRecordUnitTest {
     @Test
-    public void test ()
-    {
+    public void test() {
         ParticipantStore store = StoreManager.setupStore(null, StateType.OS_UNSHARED);
-        
+
         PersistenceRecord cr = new PersistenceRecord(new OutputObjectState(), store, new ExtendedObject());
-        
+
         arjPropertyManager.getCoordinatorEnvironmentBean().setClassicPrepare(true);
-        
+
         assertFalse(cr.propagateOnAbort());
         assertTrue(cr.propagateOnCommit());
         assertEquals(cr.typeIs(), RecordType.PERSISTENCE);
-        
+
         assertTrue(cr.type() != null);
         assertEquals(cr.doSave(), true);
 
         assertEquals(cr.topLevelPrepare(), TwoPhaseOutcome.PREPARE_OK);
         assertEquals(cr.topLevelAbort(), TwoPhaseOutcome.FINISH_ERROR);
- 
+
         cr = new PersistenceRecord(new OutputObjectState(), store, new ExtendedObject());
-        
+
         assertEquals(cr.topLevelPrepare(), TwoPhaseOutcome.PREPARE_OK);
         assertEquals(cr.topLevelCommit(), TwoPhaseOutcome.FINISH_OK);
 
         cr.print(new PrintWriter(new ByteArrayOutputStream()));
-        
+
         OutputObjectState os = new OutputObjectState();
-        
+
         assertTrue(cr.save_state(os, ObjectType.ANDPERSISTENT));
         assertTrue(cr.restore_state(new InputObjectState(os), ObjectType.ANDPERSISTENT));
-        
+
         assertEquals(cr.topLevelCleanup(), TwoPhaseOutcome.FINISH_OK);
     }
 }

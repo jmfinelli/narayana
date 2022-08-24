@@ -26,8 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Provides utilities to manage thread ids.
  */
-public class ThreadUtil
-{
+public class ThreadUtil {
     /**
      * The cached ID of the current thread.
      */
@@ -36,7 +35,7 @@ public class ThreadUtil
     /**
      * The ID associated with the thread.
      */
-    private static final WeakHashMap<Thread,String> THREAD_ID = new WeakHashMap<Thread,String>();
+    private static final WeakHashMap<Thread, String> THREAD_ID = new WeakHashMap<Thread, String>();
     /**
      * The thread id counter.
      */
@@ -44,25 +43,26 @@ public class ThreadUtil
 
     /**
      * Get the string ID for the current thread.
+     *
      * @return The thread id
      */
-    public static String getThreadId()
-    {
+    public static String getThreadId() {
         return getThreadId(Thread.currentThread());
     }
 
     /**
      * Get the string ID for the specified thread.
+     *
      * @param thread The thread.
+     *
      * @return The thread id
      */
-    public static String getThreadId(final Thread thread)
-    {
+    public static String getThreadId(final Thread thread) {
         // fastpath - if we have cached the result in a thread local,
         // we can avoid lock contention on the map.
-        if(thread == Thread.currentThread()) {
+        if (thread == Thread.currentThread()) {
             String id = LOCAL_ID.get();
-            if(id != null) {
+            if (id != null) {
                 return id;
             }
 
@@ -89,10 +89,10 @@ public class ThreadUtil
 
     /**
      * Get the next thread id to use.
+     *
      * @return The next thread id.
      */
-    private static String getNextId()
-    {
+    private static String getNextId() {
         return Long.toHexString(id.incrementAndGet());
     }
 }

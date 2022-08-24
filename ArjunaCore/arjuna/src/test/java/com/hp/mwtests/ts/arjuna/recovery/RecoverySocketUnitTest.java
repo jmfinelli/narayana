@@ -26,11 +26,11 @@ import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryDriver;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import org.jboss.logging.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,6 +45,8 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+
+;
 
 /**
  * Test cases which work with a direct connection to socket where RecoveryManager listens at.
@@ -62,7 +64,7 @@ public class RecoverySocketUnitTest {
     @BeforeAll
     public static void getInitialState() {
         socketRecoveryListenerInitialState = recoveryPropertyManager.getRecoveryEnvironmentBean().isRecoveryListener();
-        periodicRecoveryPeriodInitialState =  recoveryPropertyManager.getRecoveryEnvironmentBean().getPeriodicRecoveryPeriod();
+        periodicRecoveryPeriodInitialState = recoveryPropertyManager.getRecoveryEnvironmentBean().getPeriodicRecoveryPeriod();
         recoveryBackoffPeriodInitialState = recoveryPropertyManager.getRecoveryEnvironmentBean().getRecoveryBackoffPeriod();
     }
 
@@ -74,7 +76,7 @@ public class RecoverySocketUnitTest {
     }
 
     @BeforeEach
-    public void enableRecoveryListener() throws InterruptedException{
+    public void enableRecoveryListener() throws InterruptedException {
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryListener(true);
         recoveryPropertyManager.getRecoveryEnvironmentBean().setPeriodicRecoveryPeriod(1);
         recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryBackoffPeriod(1);
@@ -87,7 +89,7 @@ public class RecoverySocketUnitTest {
             recoveryManager.terminate();
         } catch (IllegalStateException ise) {
             // cannot terminate cleanly which may happen because some of the tests which terminated recovery manager before
-            log.debugf(ise,"Cannot terminate recovery manager. This is probably not a problem as the test may stopped it already. Check the prior errors.");
+            log.debugf(ise, "Cannot terminate recovery manager. This is probably not a problem as the test may stopped it already. Check the prior errors.");
         }
     }
 

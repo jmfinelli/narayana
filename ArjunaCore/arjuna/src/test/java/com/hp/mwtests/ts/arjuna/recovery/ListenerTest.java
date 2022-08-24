@@ -31,8 +31,9 @@ package com.hp.mwtests.ts.arjuna.recovery;
  * $Id: ListenerTest.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.arjuna.ats.arjuna.recovery.Service;
+import com.arjuna.ats.internal.arjuna.recovery.Listener;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -46,16 +47,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import org.junit.jupiter.api.Test;;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.arjuna.ats.arjuna.recovery.Service;
-import com.arjuna.ats.internal.arjuna.recovery.Listener;
+;
 
-class ListenerTestService implements Service
-{
+class ListenerTestService implements Service {
     public void doWork(InputStream is, OutputStream os)
-            throws IOException
-    {
+            throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(is));
         PrintWriter out = new PrintWriter(new OutputStreamWriter(os));
 
@@ -63,34 +62,30 @@ class ListenerTestService implements Service
             String test_string = in.readLine();
             out.println(test_string);
             out.flush();
-        }
-        catch (SocketException ex) {
-            ; // socket closed
-        }
-        catch (IOException ex) {
+        } catch (SocketException ex) {
+            // socket closed
+        } catch (IOException ex) {
             System.err.println("testService: failed");
         }
     }
 }
 
-public class ListenerTest
-{
-    @Test
-    public void test()
-    {
-        assertTrue(test_setup());
-
-        test1();
-
-        assertEquals(0, _tests_failed);
-        assertEquals(1, _tests_passed);
-    }
+public class ListenerTest {
+    private static final String _unit_test = "com.hp.mwtests.ts.arjuna.recovery.ListenerTest: ";
+    private static final int _test_port = 4321;
+    private static String _test_host;
+    private static ListenerTestService _test_service;
+    private static Socket _test_socket;
+    private static ServerSocket _test_service_socket;
+    private static BufferedReader _from_test_service;
+    private static PrintWriter _to_test_service;
+    private static int _tests_passed = 0;
+    private static int _tests_failed = 0;
 
     /**
      * Pre-test setup.
      */
-    private static boolean test_setup()
-    {
+    private static boolean test_setup() {
         boolean setupOk = false;
 
         try {
@@ -109,8 +104,7 @@ public class ListenerTest
                     (_test_socket.getOutputStream()));
 
             setupOk = true;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             System.err.println("test_setup: Failed " + ex);
         }
 
@@ -120,8 +114,7 @@ public class ListenerTest
     /**
      * Check that listener can be created and a simlple service ran.
      */
-    private static void test1()
-    {
+    private static void test1() {
         try {
             Listener testListener = new Listener(_test_service_socket,
                     _test_service);
@@ -142,33 +135,25 @@ public class ListenerTest
                     System.out.println(_unit_test + "test1: failed");
                     _tests_failed++;
                 }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 System.err.println(_unit_test + " test1 " + ex);
                 _tests_failed++;
             }
 
             testListener.stopListener();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             System.err.println(_unit_test + " test1 " + ex);
             _tests_failed++;
         }
     }
 
-    private static final String _unit_test = "com.hp.mwtests.ts.arjuna.recovery.ListenerTest: ";
+    @Test
+    public void test() {
+        assertTrue(test_setup());
 
-    private static String _test_host;
-    private static final int _test_port = 4321;
+        test1();
 
-    private static ListenerTestService _test_service;
-
-    private static Socket _test_socket;
-    private static ServerSocket _test_service_socket;
-
-    private static BufferedReader _from_test_service;
-    private static PrintWriter _to_test_service;
-
-    private static int _tests_passed = 0;
-    private static int _tests_failed = 0;
+        assertEquals(0, _tests_failed);
+        assertEquals(1, _tests_passed);
+    }
 }

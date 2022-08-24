@@ -20,15 +20,11 @@
  */
 package com.arjuna.ats.arjuna.tools.stats;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
+import com.arjuna.ats.arjuna.common.CoordinatorEnvironmentBeanMBean;
+import com.arjuna.ats.arjuna.coordinator.TxStatsMBean;
+import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
@@ -45,69 +41,91 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
-
-import org.jfree.data.general.DefaultPieDataset;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-
-import com.arjuna.ats.arjuna.common.CoordinatorEnvironmentBeanMBean;
-import com.arjuna.ats.arjuna.coordinator.TxStatsMBean;
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
-    private final static int NUMBER_OF_SAMPLES = 100;
-
-    private int POLL_PERIOD = 4000; // in ms
-
-    public final static int NUMBER_OF_TRANSACTIONS_SERIES = 0;
-    public final static int NUMBER_OF_INFLIGHT_SERIES = 1;
-    public final static int NUMBER_OF_COMMITTED_SERIES = 2;
-    public final static int NUMBER_OF_ABORTED_SERIES = 3;
-    public final static int NUMBER_OF_HEURISTICS_SERIES = 4;
-    public final static int NUMBER_OF_NESTED_SERIES = 5;
-    public final static int NUMBER_OF_TIMEDOUT_SERIES = 6;
-
-    private final static String[] SERIES_LABELS = {
-        "Transactions Created",
-        "In Flight Transactions",
-        "Committed Transactions",
-        "Aborted Transactions",
-        "Heuristics Raised",
-        "Nested Transactions Created",
-        "Timed Out Transactions",
+    public static final int NUMBER_OF_TRANSACTIONS_SERIES = 0;
+    public static final int NUMBER_OF_INFLIGHT_SERIES = 1;
+    public static final int NUMBER_OF_COMMITTED_SERIES = 2;
+    public static final int NUMBER_OF_ABORTED_SERIES = 3;
+    public static final int NUMBER_OF_HEURISTICS_SERIES = 4;
+    public static final int NUMBER_OF_NESTED_SERIES = 5;
+    public static final int NUMBER_OF_TIMEDOUT_SERIES = 6;
+    private static final int NUMBER_OF_SAMPLES = 100;
+    private static final String[] SERIES_LABELS = {
+            "Transactions Created",
+            "In Flight Transactions",
+            "Committed Transactions",
+            "Aborted Transactions",
+            "Heuristics Raised",
+            "Nested Transactions Created",
+            "Timed Out Transactions",
     };
-
-    private final static String[] PIE_CHART_LABELS = {
-        "Nested",
-        "Heuristic",
-        "Committed",
-        "Aborted",
+    private static final String[] PIE_CHART_LABELS = {
+            "Nested",
+            "Heuristic",
+            "Committed",
+            "Aborted",
     };
-
-    private final static int[] PIE_CHART_SERIES = new int[] {
-         NUMBER_OF_NESTED_SERIES,
-         NUMBER_OF_HEURISTICS_SERIES,
-         NUMBER_OF_COMMITTED_SERIES,
-         NUMBER_OF_ABORTED_SERIES,
+    private static final int[] PIE_CHART_SERIES = new int[]{
+            NUMBER_OF_NESTED_SERIES,
+            NUMBER_OF_HEURISTICS_SERIES,
+            NUMBER_OF_COMMITTED_SERIES,
+            NUMBER_OF_ABORTED_SERIES,
     };
-
     private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
     private static SimpleDateFormat timeFormatter = new SimpleDateFormat("HH:mm:ss");
-
+    //   TimerTask timerTask;
+    //   Timer timer = new Timer("TxPerf Sampling thread");
+    javax.swing.Timer swingTimer;
+    ActionListener taskPerformer;
+    private int POLL_PERIOD = 4000; // in ms
     private MBeanServerConnection server;
     private JFrame frame;
     private TxStatsMBean txMBean;
     private CoordinatorEnvironmentBeanMBean coordMBean;
-
     private XYSeries[] _dataSeries = new XYSeries[7];
-    private XYSeriesCollection _tsDS[] = new XYSeriesCollection[7];
+    private XYSeriesCollection[] _tsDS = new XYSeriesCollection[7];
     private long counter = 0L;
     private DefaultPieDataset pieDS;
- //   TimerTask timerTask;
- //   Timer timer = new Timer("TxPerf Sampling thread");
-    javax.swing.Timer swingTimer;
-    ActionListener taskPerformer;
-
-    /** Creates new form TxPerfGraph */
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JRadioButton abortedTxnBtn;
+    private javax.swing.JRadioButton allTxnBtn;
+    private javax.swing.JPanel btnPanel;
+    private org.jfree.beans.JLineChart chart1;
+    private javax.swing.JTabbedPane chartsPane;
+    private javax.swing.JRadioButton committedTxnBtn;
+    private javax.swing.ButtonGroup configBtnGroup;
+    private javax.swing.JPanel configTab;
+    private javax.swing.JCheckBox enableStatsCB;
+    private javax.swing.JRadioButton heuristicTxnBtn;
+    private javax.swing.JRadioButton inFlightTxnBtn;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JMenuBar menuBar;
+    private javax.swing.JRadioButton nestedTxnBtn;
+    private javax.swing.JPanel periodSelectPanel;
+    private javax.swing.JSlider periodSelectSlider;
+    private javax.swing.JButton pollIntervalBtn;
+    private javax.swing.JSpinner pollIntervalSpinner;
+    private javax.swing.JButton resetStatsBtn;
+    private javax.swing.JButton sampleSizeBtn1;
+    private javax.swing.JSpinner sampleSizeSpinner;
+    private javax.swing.ButtonGroup seriesSelectBtnGroup;
+    private javax.swing.JRadioButton timedoutTxnBtn;
+    private org.jfree.beans.JPieChart txnPieChart;
+    /**
+     * Creates new form TxPerfGraph
+     */
     public TxPerfGraph(JFrame frame) {
         this.frame = frame;
         timeFormatter.setTimeZone(GMT);
@@ -124,11 +142,11 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         chart1.setTitle(SERIES_LABELS[NUMBER_OF_TRANSACTIONS_SERIES]);
         chart1.setSubtitle("");
 
- //       DateAxis xAxis = new DateAxis("Time (hh:mm) Zulu", GMT);
- //       xAxis.setAutoRange(true);
- //       xAxis.setTickUnit(new DateTickUnit(DateTickUnit.MINUTE, 60, timeFormatter));
- //       xAxis.setVerticalTickLabels(true);
- //       xAxis.setDateFormatOverride(timeFormatter);
+        //       DateAxis xAxis = new DateAxis("Time (hh:mm) Zulu", GMT);
+        //       xAxis.setAutoRange(true);
+        //       xAxis.setTickUnit(new DateTickUnit(DateTickUnit.MINUTE, 60, timeFormatter));
+        //       xAxis.setVerticalTickLabels(true);
+        //       xAxis.setDateFormatOverride(timeFormatter);
 
 
         allTxnBtn.setSelected(true);
@@ -141,7 +159,7 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
 
         periodSelectSlider.setMajorTickSpacing(10);
         periodSelectSlider.setToolTipText(
-			"Select the number of (" + POLL_PERIOD + "ms) time slices over which to show the pie chart");
+                "Select the number of (" + POLL_PERIOD + "ms) time slices over which to show the pie chart");
 
         SpinnerModel sm1 = new SpinnerNumberModel(POLL_PERIOD / 1000, 1, 10000, 1);
         SpinnerModel sm2 = new SpinnerNumberModel(NUMBER_OF_SAMPLES, 10, 1000, 1);
@@ -155,8 +173,8 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         sampleSizeSpinner.setVisible(false);
         enableStatsCB.setSelected(false);
         resetStatsBtn.setVisible(false);
-	pollIntervalBtn.setVisible(false);
-	sampleSizeBtn1.setVisible(false);
+        pollIntervalBtn.setVisible(false);
+        sampleSizeBtn1.setVisible(false);
 
         taskPerformer = new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -169,6 +187,70 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         chartsPane.setSelectedIndex(1);
     }
 
+    private static void createAndShowGUI(TxPerfGraph perfPanel) {
+        JFrame frame = perfPanel.getFrame();
+        // Create and set up the window.
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Create and set up the content pane.
+        JComponent contentPane = (JComponent) frame.getContentPane();
+        contentPane.add(perfPanel, BorderLayout.CENTER);
+        contentPane.setOpaque(true); //content panes must be opaque
+        contentPane.setBorder(new EmptyBorder(12, 12, 12, 12));
+        frame.setContentPane(contentPane);
+
+        // Display the window.
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    private static MBeanServerConnection connect(String hostname, int port) {
+        String urlPath = "/jndi/rmi://" + hostname + ":" + port + "/jmxrmi";
+        MBeanServerConnection server = null;
+
+        try {
+            JMXServiceURL url = new JMXServiceURL("rmi", "", 0, urlPath);
+            JMXConnector jmxc = JMXConnectorFactory.connect(url);
+            server = jmxc.getMBeanServerConnection();
+        } catch (MalformedURLException e) {
+        } catch (IOException e) {
+            System.err.println("Unable to get an MBean Server connection: " + e.getMessage());
+            System.exit(1);
+        }
+
+        return server;
+    }
+
+    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
+        final TxPerfGraph graphPanel = new TxPerfGraph(new JFrame("TxPerf"));
+        String hostname = "localhost";
+        int port = 1090;
+
+        if (args.length > 0) {
+            String[] opts = args[0].split(":");
+
+            hostname = opts[0];
+
+            if (opts.length > 1)
+                port = Integer.parseInt(opts[1]);
+        }
+
+        System.out.println("Connecting to MBeanServer on endpoint " + hostname + ":" + port);
+
+        MBeanServerConnection server = connect(hostname, port);
+        graphPanel.setMBeanServerConnection(server);
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+
+            public void run() {
+                createAndShowGUI(graphPanel);
+            }
+        });
+
+        graphPanel.startPolling();
+
+    }
+
     public void setMBeanServerConnection(MBeanServerConnection mbs) {
         this.server = mbs;
         try {
@@ -176,7 +258,7 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
                     new ObjectName("jboss.jta:name=TransactionStatistics"), TxStatsMBean.class);
             coordMBean = JMX.newMBeanProxy(server,
                     new ObjectName("jboss.jta:name=CoordinatorEnvironmentBean"),
-                        CoordinatorEnvironmentBeanMBean.class);
+                    CoordinatorEnvironmentBeanMBean.class);
 
             coordMBean.setEnableStatistics(true);
             enableStatsCB.setSelected(true);
@@ -196,7 +278,7 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         try {
             counter += 1;
 
-            long [] stats = new long[7];
+            long[] stats = new long[7];
 
             stats[NUMBER_OF_TRANSACTIONS_SERIES] = txMBean.getNumberOfTransactions();
             stats[NUMBER_OF_INFLIGHT_SERIES] = txMBean.getNumberOfInflightTransactions();
@@ -231,7 +313,8 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         }
     }
 
-    /** This method is called from within the constructor to
+    /**
+     * This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
      * always regenerated by the Form Editor.
@@ -337,45 +420,45 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         javax.swing.GroupLayout btnPanelLayout = new javax.swing.GroupLayout(btnPanel);
         btnPanel.setLayout(btnPanelLayout);
         btnPanelLayout.setHorizontalGroup(
-            btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(btnPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(btnPanelLayout.createSequentialGroup()
-                        .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(inFlightTxnBtn)
-                            .addComponent(allTxnBtn)
-                            .addComponent(abortedTxnBtn)
-                            .addComponent(committedTxnBtn))
-                        .addGap(35, 35, 35)
-                        .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(nestedTxnBtn)
-                            .addComponent(heuristicTxnBtn)
-                            .addComponent(timedoutTxnBtn)))
-                    .addComponent(jLabel1))
-                .addContainerGap(188, Short.MAX_VALUE))
+                btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(btnPanelLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(btnPanelLayout.createSequentialGroup()
+                                                .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(inFlightTxnBtn)
+                                                        .addComponent(allTxnBtn)
+                                                        .addComponent(abortedTxnBtn)
+                                                        .addComponent(committedTxnBtn))
+                                                .addGap(35, 35, 35)
+                                                .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(nestedTxnBtn)
+                                                        .addComponent(heuristicTxnBtn)
+                                                        .addComponent(timedoutTxnBtn)))
+                                        .addComponent(jLabel1))
+                                .addContainerGap(188, Short.MAX_VALUE))
         );
         btnPanelLayout.setVerticalGroup(
-            btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, btnPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(btnPanelLayout.createSequentialGroup()
-                        .addComponent(heuristicTxnBtn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(nestedTxnBtn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(timedoutTxnBtn))
-                    .addGroup(btnPanelLayout.createSequentialGroup()
-                        .addComponent(allTxnBtn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(inFlightTxnBtn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(committedTxnBtn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(abortedTxnBtn))))
+                btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, btnPanelLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(btnPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(btnPanelLayout.createSequentialGroup()
+                                                .addComponent(heuristicTxnBtn)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(nestedTxnBtn)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(timedoutTxnBtn))
+                                        .addGroup(btnPanelLayout.createSequentialGroup()
+                                                .addComponent(allTxnBtn)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(inFlightTxnBtn)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(committedTxnBtn)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(abortedTxnBtn))))
         );
 
         chartsPane.addChangeListener(new javax.swing.event.ChangeListener() {
@@ -423,41 +506,41 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         javax.swing.GroupLayout configTabLayout = new javax.swing.GroupLayout(configTab);
         configTab.setLayout(configTabLayout);
         configTabLayout.setHorizontalGroup(
-            configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(configTabLayout.createSequentialGroup()
-                .addGap(23, 23, 23)
-                .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(resetStatsBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 246, Short.MAX_VALUE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, configTabLayout.createSequentialGroup()
-                        .addComponent(pollIntervalBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(pollIntervalSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(configTabLayout.createSequentialGroup()
-                        .addGap(2, 2, 2)
-                        .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(enableStatsCB)
-                            .addGroup(configTabLayout.createSequentialGroup()
-                                .addComponent(sampleSizeBtn1)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(sampleSizeSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addGap(149, 149, 149))
+                configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(configTabLayout.createSequentialGroup()
+                                .addGap(23, 23, 23)
+                                .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(resetStatsBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 246, Short.MAX_VALUE)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, configTabLayout.createSequentialGroup()
+                                                .addComponent(pollIntervalBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addComponent(pollIntervalSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(configTabLayout.createSequentialGroup()
+                                                .addGap(2, 2, 2)
+                                                .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(enableStatsCB)
+                                                        .addGroup(configTabLayout.createSequentialGroup()
+                                                                .addComponent(sampleSizeBtn1)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                                .addComponent(sampleSizeSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addGap(149, 149, 149))
         );
         configTabLayout.setVerticalGroup(
-            configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(configTabLayout.createSequentialGroup()
-                .addGap(38, 38, 38)
-                .addComponent(enableStatsCB)
-                .addGap(29, 29, 29)
-                .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(sampleSizeBtn1)
-                    .addComponent(sampleSizeSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(pollIntervalBtn)
-                    .addComponent(pollIntervalSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(resetStatsBtn)
-                .addContainerGap(47, Short.MAX_VALUE))
+                configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(configTabLayout.createSequentialGroup()
+                                .addGap(38, 38, 38)
+                                .addComponent(enableStatsCB)
+                                .addGap(29, 29, 29)
+                                .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(sampleSizeBtn1)
+                                        .addComponent(sampleSizeSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(configTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(pollIntervalBtn)
+                                        .addComponent(pollIntervalSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(resetStatsBtn)
+                                .addContainerGap(47, Short.MAX_VALUE))
         );
 
         chartsPane.addTab("Settings", configTab);
@@ -470,12 +553,12 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         javax.swing.GroupLayout chart1Layout = new javax.swing.GroupLayout(chart1);
         chart1.setLayout(chart1Layout);
         chart1Layout.setHorizontalGroup(
-            chart1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 418, Short.MAX_VALUE)
+                chart1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 418, Short.MAX_VALUE)
         );
         chart1Layout.setVerticalGroup(
-            chart1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 235, Short.MAX_VALUE)
+                chart1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 235, Short.MAX_VALUE)
         );
 
         chartsPane.addTab("Transactions", null, chart1, "View Transaction Statistics");
@@ -483,12 +566,12 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         javax.swing.GroupLayout txnPieChartLayout = new javax.swing.GroupLayout(txnPieChart);
         txnPieChart.setLayout(txnPieChartLayout);
         txnPieChartLayout.setHorizontalGroup(
-            txnPieChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 418, Short.MAX_VALUE)
+                txnPieChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 418, Short.MAX_VALUE)
         );
         txnPieChartLayout.setVerticalGroup(
-            txnPieChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 235, Short.MAX_VALUE)
+                txnPieChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 235, Short.MAX_VALUE)
         );
 
         chartsPane.addTab("Pie Chart", null, txnPieChart, "View Transactions as a Pie Chart");
@@ -504,45 +587,45 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         javax.swing.GroupLayout periodSelectPanelLayout = new javax.swing.GroupLayout(periodSelectPanel);
         periodSelectPanel.setLayout(periodSelectPanelLayout);
         periodSelectPanelLayout.setHorizontalGroup(
-            periodSelectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(periodSelectPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel2)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(periodSelectSlider, javax.swing.GroupLayout.DEFAULT_SIZE, 334, Short.MAX_VALUE))
+                periodSelectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(periodSelectPanelLayout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(jLabel2)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(periodSelectSlider, javax.swing.GroupLayout.DEFAULT_SIZE, 334, Short.MAX_VALUE))
         );
         periodSelectPanelLayout.setVerticalGroup(
-            periodSelectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(periodSelectPanelLayout.createSequentialGroup()
-                .addGroup(periodSelectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(periodSelectPanelLayout.createSequentialGroup()
-                        .addGap(12, 12, 12)
-                        .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 36, Short.MAX_VALUE))
-                    .addComponent(periodSelectSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap())
+                periodSelectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(periodSelectPanelLayout.createSequentialGroup()
+                                .addGroup(periodSelectPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(periodSelectPanelLayout.createSequentialGroup()
+                                                .addGap(12, 12, 12)
+                                                .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 36, Short.MAX_VALUE))
+                                        .addComponent(periodSelectSlider, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap())
         );
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(periodSelectPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(chartsPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 430, Short.MAX_VALUE)
-                    .addComponent(btnPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(periodSelectPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(chartsPane, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 430, Short.MAX_VALUE)
+                                        .addComponent(btnPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(chartsPane, javax.swing.GroupLayout.PREFERRED_SIZE, 278, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(periodSelectPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(14, Short.MAX_VALUE))
+                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(chartsPane, javax.swing.GroupLayout.PREFERRED_SIZE, 278, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(periodSelectPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap(14, Short.MAX_VALUE))
         );
 
         add(jPanel1);
@@ -553,6 +636,7 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         chart1.setDataset(_tsDS[series]);
         chart1.setTitle(SERIES_LABELS[series]);
     }
+
     private void allTxnBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_allTxnBtnActionPerformed
         btnActionPerformed(NUMBER_OF_TRANSACTIONS_SERIES);
     }//GEN-LAST:event_allTxnBtnActionPerformed
@@ -588,8 +672,12 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
         periodSelectPanel.setVisible(false);
 
         switch (tab) {
-            case 1: btnPanel.setVisible(true); break;
-            case 2: periodSelectPanel.setVisible(true); break;
+            case 1:
+                btnPanel.setVisible(true);
+                break;
+            case 2:
+                periodSelectPanel.setVisible(true);
+                break;
             default:
                 break;
         }
@@ -605,7 +693,7 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
 
     private void resetStatsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetStatsBtnActionPerformed
         resetStats();
-}//GEN-LAST:event_resetStatsBtnActionPerformed
+    }//GEN-LAST:event_resetStatsBtnActionPerformed
 
     private void enableStatsCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_enableStatsCBActionPerformed
         coordMBean.setEnableStatistics(enableStatsCB.isSelected());
@@ -616,47 +704,13 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
     }//GEN-LAST:event_sampleSizeBtn1ActionPerformed
 
     private void startPolling() {
-       // timer.cancel();       
+        // timer.cancel();
 
         //timer.schedule(timerTask, 0, POLL_PERIOD);
         if (swingTimer.isRunning())
             swingTimer.restart();
         else
             swingTimer.start();
-    }
-
-    private static void createAndShowGUI(TxPerfGraph perfPanel) {
-        JFrame frame = perfPanel.getFrame();
-        // Create and set up the window.
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Create and set up the content pane.
-        JComponent contentPane = (JComponent) frame.getContentPane();
-        contentPane.add(perfPanel, BorderLayout.CENTER);
-        contentPane.setOpaque(true); //content panes must be opaque
-        contentPane.setBorder(new EmptyBorder(12, 12, 12, 12));
-        frame.setContentPane(contentPane);
-
-        // Display the window.
-        frame.pack();
-        frame.setVisible(true);
-    }
-
-    private static MBeanServerConnection connect(String hostname, int port) {
-        String urlPath = "/jndi/rmi://" + hostname + ":" + port + "/jmxrmi";
-        MBeanServerConnection server = null;
-
-        try {
-            JMXServiceURL url = new JMXServiceURL("rmi", "", 0, urlPath);
-            JMXConnector jmxc = JMXConnectorFactory.connect(url);
-            server = jmxc.getMBeanServerConnection();
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-            System.err.println("Unable to get an MBean Server connection: " + e.getMessage());
-            System.exit(1);
-        }
-
-        return server;
     }
 
     /*
@@ -671,79 +725,13 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
 //            coordMBean.setEnableStatistics(false);
     }
 
-    class Worker extends SwingWorker<XYSeries[], Object> {
-
-        @Override
-        protected XYSeries[] doInBackground() throws Exception {
-            sample();
-            return _dataSeries;
-        }
-    }
-
-    public static void main(String args[]) throws InterruptedException, InvocationTargetException {
-        final TxPerfGraph graphPanel = new TxPerfGraph(new JFrame("TxPerf"));
-        String hostname = "localhost";
-        int port = 1090;
-
-        if (args.length > 0) {
-            String[] opts = args[0].split(":");
-
-            hostname = opts[0];
-
-            if (opts.length > 1)
-                port = Integer.parseInt(opts[1]);
-        }
-
-        System.out.println("Connecting to MBeanServer on endpoint " + hostname + ":" + port);
-
-        MBeanServerConnection server = connect(hostname, port);
-        graphPanel.setMBeanServerConnection(server);
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            public void run() {
-                createAndShowGUI(graphPanel);
-            }
-        });
-
-        graphPanel.startPolling();
-
-    }
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JRadioButton abortedTxnBtn;
-    private javax.swing.JRadioButton allTxnBtn;
-    private javax.swing.JPanel btnPanel;
-    private org.jfree.beans.JLineChart chart1;
-    private javax.swing.JTabbedPane chartsPane;
-    private javax.swing.JRadioButton committedTxnBtn;
-    private javax.swing.ButtonGroup configBtnGroup;
-    private javax.swing.JPanel configTab;
-    private javax.swing.JCheckBox enableStatsCB;
-    private javax.swing.JRadioButton heuristicTxnBtn;
-    private javax.swing.JRadioButton inFlightTxnBtn;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JMenuBar menuBar;
-    private javax.swing.JRadioButton nestedTxnBtn;
-    private javax.swing.JPanel periodSelectPanel;
-    private javax.swing.JSlider periodSelectSlider;
-    private javax.swing.JButton pollIntervalBtn;
-    private javax.swing.JSpinner pollIntervalSpinner;
-    private javax.swing.JButton resetStatsBtn;
-    private javax.swing.JButton sampleSizeBtn1;
-    private javax.swing.JSpinner sampleSizeSpinner;
-    private javax.swing.ButtonGroup seriesSelectBtnGroup;
-    private javax.swing.JRadioButton timedoutTxnBtn;
-    private org.jfree.beans.JPieChart txnPieChart;
-    // End of variables declaration//GEN-END:variables
-
     /**
      * @return the frame
      */
     public JFrame getFrame() {
         return frame;
     }
+    // End of variables declaration//GEN-END:variables
 
     private void setDefaultCloseOperation(int operation) {
         frame.setDefaultCloseOperation(operation);
@@ -758,5 +746,14 @@ public class TxPerfGraph extends javax.swing.JPanel { //JFrame {
     }
 
     private void pack() {
+    }
+
+    class Worker extends SwingWorker<XYSeries[], Object> {
+
+        @Override
+        protected XYSeries[] doInBackground() throws Exception {
+            sample();
+            return _dataSeries;
+        }
     }
 }

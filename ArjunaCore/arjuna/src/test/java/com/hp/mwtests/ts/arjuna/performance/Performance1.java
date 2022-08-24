@@ -39,31 +39,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class Performance1
-{
-    @Test
-    public void test() {
-        int warmUpCount = 10;
-        int numberOfTransactions = 1000000;
-        int threadCount =  1;
-        int batchSize = 100;
-
-        Measurement measurement = new Measurement.Builder(getClass().getName() + "_test1")
-                .maxTestTime(0L).numberOfCalls(numberOfTransactions)
-                .numberOfThreads(threadCount).batchSize(batchSize)
-                .numberOfWarmupCalls(warmUpCount).build().measure(worker);
-
-        assertEquals(0, measurement.getNumberOfErrors());
-        assertFalse(measurement.shouldFail(), measurement.getInfo());
-
-        System.out.printf("%s%n", measurement.getInfo());
-
-        System.out.println("time for " + numberOfTransactions + " write transactions is " + measurement.getTotalMillis());
-        System.out.println("number of transactions: " + numberOfTransactions);
-        System.out.println("throughput: " + measurement.getThroughput());
-    }
-
-    WorkerWorkload <Void> worker = new WorkerWorkload<Void>() {
+public class Performance1 {
+    WorkerWorkload<Void> worker = new WorkerWorkload<Void>() {
         @Override
         public Void doWork(Void context, int batchSize, Measurement<Void> config) {
             for (int i = 0; i < batchSize; i++) {
@@ -80,4 +57,26 @@ public class Performance1
         public void finishWork(Measurement<Void> measurement) {
         }
     };
+
+    @Test
+    public void test() {
+        int warmUpCount = 10;
+        int numberOfTransactions = 1000000;
+        int threadCount = 1;
+        int batchSize = 100;
+
+        Measurement measurement = new Measurement.Builder(getClass().getName() + "_test1")
+                .maxTestTime(0L).numberOfCalls(numberOfTransactions)
+                .numberOfThreads(threadCount).batchSize(batchSize)
+                .numberOfWarmupCalls(warmUpCount).build().measure(worker);
+
+        assertEquals(0, measurement.getNumberOfErrors());
+        assertFalse(measurement.shouldFail(), measurement.getInfo());
+
+        System.out.printf("%s%n", measurement.getInfo());
+
+        System.out.println("time for " + numberOfTransactions + " write transactions is " + measurement.getTotalMillis());
+        System.out.println("number of transactions: " + numberOfTransactions);
+        System.out.println("throughput: " + measurement.getThroughput());
+    }
 }

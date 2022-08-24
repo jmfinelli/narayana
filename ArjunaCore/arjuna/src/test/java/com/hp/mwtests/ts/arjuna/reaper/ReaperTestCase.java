@@ -20,20 +20,21 @@
  */
 package com.hp.mwtests.ts.arjuna.reaper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import org.jboss.byteman.contrib.bmunit.BMScript;
-import org.jboss.byteman.contrib.bmunit.WithByteman;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.coordinator.Reapable;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 import com.arjuna.ats.internal.arjuna.coordinator.ReaperElement;
+import org.jboss.byteman.contrib.bmunit.BMScript;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
+import org.junit.jupiter.api.Test;
+
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+;
 
 /**
  * Exercises some aspects of the TransactionReaper functionality.
@@ -43,11 +44,9 @@ import com.arjuna.ats.internal.arjuna.coordinator.ReaperElement;
 
 @WithByteman
 @BMScript("reaper")
-public class ReaperTestCase extends ReaperTestCaseControl
-{
+public class ReaperTestCase extends ReaperTestCaseControl {
     @Test
-    public void testReaper() throws Exception
-    {
+    public void testReaper() throws Exception {
 
         TransactionReaper reaper = TransactionReaper.transactionReaper();
 
@@ -82,7 +81,7 @@ public class ReaperTestCase extends ReaperTestCaseControl
         try {
             reaper.insert(reapable, 10);
             fail("duplicate insert failed to blow up");
-        } catch(Exception e) {
+        } catch (Exception e) {
         }
         reaper.remove(reapable);
         assertEquals(0, reaper.numberOfTransactions());
@@ -93,7 +92,7 @@ public class ReaperTestCase extends ReaperTestCaseControl
         try {
             reaper.insert(reapable, 20);
             fail("timeout change insert failed to blow up");
-        } catch(Exception e) {
+        } catch (Exception e) {
         }
         assertEquals(1, reaper.numberOfTransactions());
         assertEquals(1, reaper.numberOfTimeouts());
@@ -159,33 +158,27 @@ public class ReaperTestCase extends ReaperTestCaseControl
         assertEquals(0, reaper.numberOfTimeouts());
     }
 
-    public class MockReapable implements Reapable
-    {
-        public MockReapable(Uid uid)
-        {
+    public class MockReapable implements Reapable {
+        private Uid uid;
+
+        public MockReapable(Uid uid) {
             this.uid = uid;
         }
 
-        public boolean running()
-        {
+        public boolean running() {
             return false;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public boolean preventCommit()
-        {
+        public boolean preventCommit() {
             return false;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public int cancel()
-        {
+        public int cancel() {
             return 0;  //To change body of implemented methods use File | Settings | File Templates.
         }
 
-        public Uid get_uid()
-        {
+        public Uid get_uid() {
             return uid;
         }
-
-        private Uid uid;
     }
 }

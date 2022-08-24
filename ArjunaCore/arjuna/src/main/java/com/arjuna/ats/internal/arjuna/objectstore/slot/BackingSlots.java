@@ -51,6 +51,7 @@ public interface BackingSlots {
      * Read the given slot, returning its contents.
      *
      * @param slot the index, from 0 to config numberOfSlots-1
+     *
      * @return the content, or null if the slot has not been written or has been cleared.
      */
     byte[] read(int slot) throws IOException;

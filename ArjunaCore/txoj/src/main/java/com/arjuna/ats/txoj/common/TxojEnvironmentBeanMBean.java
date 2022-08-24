@@ -25,8 +25,7 @@ package com.arjuna.ats.txoj.common;
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com)
  */
-public interface TxojEnvironmentBeanMBean
-{
+public interface TxojEnvironmentBeanMBean {
     @Deprecated
     String getLockStoreDir();
 

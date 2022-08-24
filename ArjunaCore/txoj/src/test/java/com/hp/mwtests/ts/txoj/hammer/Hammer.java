@@ -31,16 +31,13 @@ package com.hp.mwtests.ts.txoj.hammer;
  * $Id: Hammer.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import org.junit.jupiter.api.Test;
-
 import com.hp.mwtests.ts.txoj.common.resources.AtomicObject;
 import com.hp.mwtests.ts.txoj.common.resources.HammerThreadedObject;
+import org.junit.jupiter.api.Test;
 
-public class Hammer
-{
+public class Hammer {
     @Test
-    public void test()
-    {
+    public void test() {
         HammerThreadedObject.object = new AtomicObject();
         HammerThreadedObject object1 = new HammerThreadedObject(2);
         HammerThreadedObject object2 = new HammerThreadedObject(-2);
@@ -48,13 +45,10 @@ public class Hammer
         object1.start();
         object2.start();
 
-        try
-        {
+        try {
             object1.join();
             object2.join();
-        }
-        catch (InterruptedException e)
-        {
+        } catch (InterruptedException e) {
         }
     }
 }

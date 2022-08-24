@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -56,8 +56,8 @@ import com.arjuna.ats.txoj.logging.txojLogger;
  * information in the header ( see
  * {@link com.arjuna.ats.arjuna.StateManager#packHeader StateManager.packHeader}
  * ), which is overridden by this class).
- * <P>
- * 
+ * <p>
+ *
  * @author Peter Furniss (peter.furniss@arjuna.com), Mark Little
  *         (mark_little@hp.com)
  * @version $Id: RecoveredTransactionalObject.java 2342 2006-03-30 13:06:17Z $
@@ -69,24 +69,27 @@ import com.arjuna.ats.txoj.logging.txojLogger;
  * uncommitted.
  */
 
-public class RecoveredTransactionalObject extends StateManager
-{
-    protected RecoveredTransactionalObject(Uid objectUid, String originalType, ParticipantStore participantStore)
-    {
+public class RecoveredTransactionalObject extends StateManager {
+    private Uid _ourUid;
+    private Uid _owningTransactionUid;
+    private Uid _originalProcessUid;
+    private ParticipantStore _participantStore;
+    private String _type;
+    private TransactionStatusConnectionManager _transactionStatusConnectionMgr;
+
+    protected RecoveredTransactionalObject(Uid objectUid, String originalType, ParticipantStore participantStore) {
         _ourUid = objectUid;
         _type = originalType;
         _participantStore = participantStore;
         _transactionStatusConnectionMgr = new TransactionStatusConnectionManager();
 
         if (txojLogger.logger.isDebugEnabled()) {
-            txojLogger.logger.debug("RecoveredTransactionalObject created for "+_ourUid);
+            txojLogger.logger.debug("RecoveredTransactionalObject created for " + _ourUid);
         }
     }
 
-    protected final void replayPhase2 ()
-    {
-        if (findHoldingTransaction())
-        {
+    protected final void replayPhase2() {
+        if (findHoldingTransaction()) {
             /*
              * There is a transaction holding this in uncommitted state find out
              * what the Status is. We have no idea what type of transaction it
@@ -94,14 +97,14 @@ public class RecoveredTransactionalObject extends StateManager
              */
 
             if (txojLogger.logger.isDebugEnabled()) {
-                txojLogger.logger.debug("TO held by transaction "+_owningTransactionUid);
+                txojLogger.logger.debug("TO held by transaction " + _owningTransactionUid);
             }
 
             int tranStatus = _transactionStatusConnectionMgr
                     .getTransactionStatus(_owningTransactionUid);
 
             if (txojLogger.logger.isDebugEnabled()) {
-                txojLogger.logger.debug("RecoveredTransactionalObject - transaction status "+ActionStatus.stringForm(tranStatus));
+                txojLogger.logger.debug("RecoveredTransactionalObject - transaction status " + ActionStatus.stringForm(tranStatus));
             }
 
             /*
@@ -110,28 +113,22 @@ public class RecoveredTransactionalObject extends StateManager
              * otherwise the transaction should recover and do the committment
              * eventually.
              */
-			if ((tranStatus == ActionStatus.PREPARED) ||
-				(tranStatus == ActionStatus.COMMITTING) ||
-				(tranStatus == ActionStatus.COMMITTED) ||
-				(tranStatus == ActionStatus.H_COMMIT) ||
-				(tranStatus == ActionStatus.H_MIXED) ||
-				(tranStatus == ActionStatus.H_HAZARD))
-			{
-				commit();
-			}
-			else if ((tranStatus == ActionStatus.ABORTED) ||
-				(tranStatus == ActionStatus.H_ROLLBACK) ||
-				(tranStatus == ActionStatus.ABORTING) ||
-				(tranStatus == ActionStatus.ABORT_ONLY))
-			{
-				rollback();
-			}
-			else {
-				txojLogger.logger.debug("RecoveredTransactionalObject.replayPhase2 - cannot find state to complete");
-			}
-        }
-        else
-        {
+            if ((tranStatus == ActionStatus.PREPARED) ||
+                    (tranStatus == ActionStatus.COMMITTING) ||
+                    (tranStatus == ActionStatus.COMMITTED) ||
+                    (tranStatus == ActionStatus.H_COMMIT) ||
+                    (tranStatus == ActionStatus.H_MIXED) ||
+                    (tranStatus == ActionStatus.H_HAZARD)) {
+                commit();
+            } else if ((tranStatus == ActionStatus.ABORTED) ||
+                    (tranStatus == ActionStatus.H_ROLLBACK) ||
+                    (tranStatus == ActionStatus.ABORTING) ||
+                    (tranStatus == ActionStatus.ABORT_ONLY)) {
+                rollback();
+            } else {
+                txojLogger.logger.debug("RecoveredTransactionalObject.replayPhase2 - cannot find state to complete");
+            }
+        } else {
             if (txojLogger.logger.isDebugEnabled()) {
                 txojLogger.logger.debug("RecoveredTransactionalObject.replayPhase2 - cannot find/no holding transaction");
             }
@@ -143,18 +140,14 @@ public class RecoveredTransactionalObject extends StateManager
      * if there is such a transaction
      */
 
-    private final boolean findHoldingTransaction ()
-    {
+    private final boolean findHoldingTransaction() {
         InputObjectState uncommittedState = null;
 
         _originalProcessUid = new Uid(Uid.nullUid());
 
-        try
-        {
+        try {
             uncommittedState = _participantStore.read_uncommitted(_ourUid, _type);
-        }
-        catch (ObjectStoreException e)
-        {
+        } catch (ObjectStoreException e) {
             txojLogger.i18NLogger.warn_recovery_RecoveredTransactionalObject_6(e);
 
             return false; // probably
@@ -168,63 +161,40 @@ public class RecoveredTransactionalObject extends StateManager
         _originalProcessUid = null;
         _owningTransactionUid = null;
 
-        try
-        {
+        try {
             Header hdr = new Header();
-            
+
             unpackHeader(uncommittedState, hdr);
 
             _originalProcessUid = hdr.getProcessId();
             _owningTransactionUid = hdr.getTxId();
-            
+
             if (txojLogger.logger.isDebugEnabled()) {
-                txojLogger.logger.debug("RecoveredTransactionalObject::findHoldingTransaction - uid is "+_owningTransactionUid);
+                txojLogger.logger.debug("RecoveredTransactionalObject::findHoldingTransaction - uid is " + _owningTransactionUid);
             }
 
             return _owningTransactionUid.notEquals(Uid.nullUid());
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             txojLogger.i18NLogger.warn_recovery_RecoveredTransactionalObject_8(e);
         }
 
         return false;
     }
 
-    private final void rollback ()
-    {
-        try
-        {
+    private final void rollback() {
+        try {
             _participantStore.remove_uncommitted(_ourUid, _type);
-        }
-        catch (ObjectStoreException e)
-        {
+        } catch (ObjectStoreException e) {
             txojLogger.i18NLogger.warn_recovery_RecoveredTransactionalObject_9(_ourUid, e);
         }
     }
 
-    private final void commit ()
-    {
-        try
-        {
+    private final void commit() {
+        try {
             _participantStore.commit_state(_ourUid, _type);
-        }
-        catch (ObjectStoreException e)
-        {
+        } catch (ObjectStoreException e) {
             txojLogger.i18NLogger.warn_recovery_RecoveredTransactionalObject_10(_ourUid, e);
         }
     }
-
-    private Uid _ourUid;
-
-    private Uid _owningTransactionUid;
-
-    private Uid _originalProcessUid;
-
-    private ParticipantStore _participantStore;
-
-    private String _type;
-
-    private TransactionStatusConnectionManager _transactionStatusConnectionMgr;
 
 }

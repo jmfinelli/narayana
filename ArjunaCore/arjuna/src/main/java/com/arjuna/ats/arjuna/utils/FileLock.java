@@ -1,20 +1,20 @@
 /*
  * JBoss, Home of Professional Open Source
- * Copyright 2006, Red Hat Middleware LLC, and individual contributors 
- * as indicated by the @author tags. 
+ * Copyright 2006, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags.
  * See the copyright.txt in the distribution for a
- * full listing of individual contributors. 
+ * full listing of individual contributors.
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions
  * of the GNU Lesser General Public License, v. 2.1.
- * This program is distributed in the hope that it will be useful, but WITHOUT A 
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+ * This program is distributed in the hope that it will be useful, but WITHOUT A
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
  * PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
  * You should have received a copy of the GNU Lesser General Public License,
  * v.2.1 along with this distribution; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA  02110-1301, USA.
- * 
+ *
  * (C) 2005-2006,
  * @author JBoss Inc.
  */
@@ -31,6 +31,8 @@
 
 package com.arjuna.ats.arjuna.utils;
 
+import com.arjuna.ats.arjuna.logging.tsLogger;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -38,8 +40,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
-import com.arjuna.ats.arjuna.logging.tsLogger;
 
 /**
  * Sometimes it is necessary to lock a file at the disk level. Since there is no
@@ -53,14 +53,13 @@ import com.arjuna.ats.arjuna.logging.tsLogger;
  * update the lock file. When this is done, we move (rename) it back. Almost
  * like a two-phase commit protocol! Currently we don't support re-entrant
  * locking.
- * 
+ *
  * @author Mark Little (mark@arjuna.com)
  * @version $Id: FileLock.java 2342 2006-03-30 13:06:17Z $
  * @since JTS 1.0.
  */
 
-public class FileLock
-{
+public class FileLock {
 
     public static final int F_RDLCK = 0;
 
@@ -69,21 +68,23 @@ public class FileLock
     public static final int defaultTimeout = 10; // milliseconds
 
     public static final int defaultRetry = 10;
+    private File _theFile;
+    private File _lockFile;
+    private File _lockFileLock;
+    private long _timeout;
+    private long _retry;
 
-    public FileLock (String name)
-    {
+    public FileLock(String name) {
         this(new File(name));
-        
+
         _theFile.deleteOnExit();
     }
-    
-    public FileLock(File name)
-    {
+
+    public FileLock(File name) {
         this(name, FileLock.defaultTimeout, FileLock.defaultRetry);
     }
 
-    public FileLock(File name, long timeout, long retry)
-    {
+    public FileLock(File name, long timeout, long retry) {
         if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("FileLock ( " + name
                     + ", " + timeout + ", " + retry + " )");
@@ -94,32 +95,40 @@ public class FileLock
         _lockFileLock = new File(name.toString() + "_lock.lock");
         _timeout = timeout;
         _retry = retry;
-        
+
         _lockFile.deleteOnExit();
         _lockFileLock.deleteOnExit();
+    }
+
+    public static String modeString(int mode) {
+        switch (mode) {
+            case FileLock.F_RDLCK:
+                return "FileLock.F_RDLCK";
+            case FileLock.F_WRLCK:
+                return "FileLock.F_WRLCK";
+            default:
+                return "Unknown";
+        }
     }
 
     /**
      * @since JTS 2.1.1.
      */
 
-    public boolean lock (int lmode)
-    {
+    public boolean lock(int lmode) {
         return lock(lmode, false);
     }
 
-    public synchronized boolean lock (int lmode, boolean create)
-    {
+    public synchronized boolean lock(int lmode, boolean create) {
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("FileLock.lock called for "+_lockFile);
+            tsLogger.logger.trace("FileLock.lock called for " + _lockFile);
         }
 
         boolean created = false;
-        
-        if (create && !_theFile.exists())
-        {
+
+        if (create && !_theFile.exists()) {
             createFile();
-            
+
             created = true;
         }
 
@@ -136,8 +145,7 @@ public class FileLock
 
         if (lockFile()) // have we moved the file (if it exists)?
         {
-            try
-            {
+            try {
                 DataInputStream ifile = new DataInputStream(
                         new FileInputStream(_lockFile));
                 int value = ifile.readInt();
@@ -146,23 +154,17 @@ public class FileLock
                  * Already exclusively locked.
                  */
 
-                if (value == FileLock.F_WRLCK)
-                {
+                if (value == FileLock.F_WRLCK) {
                     ifile.close();
                     unlockFile();
 
                     return false;
-                }
-                else
+                } else
                     number = ifile.readInt();
 
                 ifile.close();
-            }
-            catch (FileNotFoundException e)
-            {
-            }
-            catch (IOException e)
-            {
+            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                 /*
                  * Something went wrong. Abandon.
                  */
@@ -172,8 +174,7 @@ public class FileLock
                 return false;
             }
 
-            try
-            {
+            try {
                 DataOutputStream ofile = new DataOutputStream(
                         new FileOutputStream(_lockFile));
 
@@ -187,9 +188,7 @@ public class FileLock
                 unlockFile();
 
                 return true;
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 /*
                  * Something went wrong. Abandon. Lock file is ok since we
                  * haven't touched it.
@@ -204,21 +203,18 @@ public class FileLock
         return false;
     }
 
-    public synchronized boolean unlock ()
-    {
+    public synchronized boolean unlock() {
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("FileLock.unlock called "+_lockFile);
+            tsLogger.logger.trace("FileLock.unlock called " + _lockFile);
         }
 
         if (!_lockFile.exists())
             return false;
 
-        if (lockFile())
-        {
+        if (lockFile()) {
             int number = 0, mode = 0;
 
-            try
-            {
+            try {
                 DataInputStream ifile = new DataInputStream(
                         new FileInputStream(_lockFile));
 
@@ -228,30 +224,24 @@ public class FileLock
 
                 number--;
 
-                if (number == 0)
-                {
+                if (number == 0) {
                     _lockFile.delete();
 
                     unlockFile();
 
                     return true;
                 }
-            }
-            catch (FileNotFoundException e)
-            {
+            } catch (FileNotFoundException e) {
+                unlockFile();
+
+                return false;
+            } catch (IOException e) {
                 unlockFile();
 
                 return false;
             }
-            catch (IOException e)
-            {
-                unlockFile();
 
-                return false;
-            }
-
-            try
-            {
+            try {
                 DataOutputStream ofile = new DataOutputStream(
                         new FileOutputStream(_lockFile));
 
@@ -262,9 +252,7 @@ public class FileLock
                 unlockFile();
 
                 return true;
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 unlockFile();
 
                 return false;
@@ -274,39 +262,21 @@ public class FileLock
         return false;
     }
 
-    public static String modeString (int mode)
-    {
-        switch (mode)
-        {
-        case FileLock.F_RDLCK:
-            return "FileLock.F_RDLCK";
-        case FileLock.F_WRLCK:
-            return "FileLock.F_WRLCK";
-        default:
-            return "Unknown";
-        }
-    }
-
-    private final boolean createFile ()
-    {
+    private final boolean createFile() {
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("FileLock.createFile "+_lockFile);
+            tsLogger.logger.trace("FileLock.createFile " + _lockFile);
         }
 
-        byte b[] = new byte[1];
+        byte[] b = new byte[1];
 
-        try
-        {
-            if (!_theFile.exists())
-            {
+        try {
+            if (!_theFile.exists()) {
                 _theFile.createNewFile();
 
                 return true;
-            }
-            else
+            } else
                 return false;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
 
             tsLogger.i18NLogger.warn_utils_FileLock_4(_lockFile.getName());
 
@@ -314,33 +284,22 @@ public class FileLock
         }
     }
 
-    private final boolean lockFile ()
-    {
+    private final boolean lockFile() {
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("FileLock.lockFile called "+_lockFile);
+            tsLogger.logger.trace("FileLock.lockFile called " + _lockFile);
         }
-        
-        for (int i = 0; i < _retry; i++)
-        {
-            try
-            {
-                if (_lockFileLock.createNewFile())
-                {
+
+        for (int i = 0; i < _retry; i++) {
+            try {
+                if (_lockFileLock.createNewFile()) {
                     return true;
-                }
-                else
-                {
-                    try
-                    {
+                } else {
+                    try {
                         Thread.sleep(_timeout);
-                    }
-                    catch (InterruptedException e)
-                    {
+                    } catch (InterruptedException e) {
                     }
                 }
-            }
-            catch (IOException ex)
-            {
+            } catch (IOException ex) {
                 // already created, so locked!
             }
         }
@@ -348,22 +307,11 @@ public class FileLock
         return false;
     }
 
-    private final boolean unlockFile ()
-    {
+    private final boolean unlockFile() {
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("FileLock.unlockFile called for "+_lockFile);
+            tsLogger.logger.trace("FileLock.unlockFile called for " + _lockFile);
         }
         return _lockFileLock.delete();
     }
-
-    private File _theFile;
-
-    private File _lockFile;
-
-    private File _lockFileLock;
-
-    private long _timeout;
-
-    private long _retry;
 
 }

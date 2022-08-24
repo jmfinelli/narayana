@@ -43,16 +43,14 @@ import com.arjuna.ats.arjuna.exceptions.ObjectStoreException;
  * attempt to keep the number of files in a given directory low, thus improving
  * performance as the number of object states grows. Currently the hash number
  * is set for both user hashed stores and action hashed stores.
- * 
+ *
  * @author Mark Little (mark@arjuna.com)
  * @version $Id: HashedActionStore.java 2342 2006-03-30 13:06:17Z $
  * @since JTS 2.1.
  */
 
-public class HashedActionStore extends HashedStore
-{
-    public HashedActionStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException
-    {
+public class HashedActionStore extends HashedStore {
+    public HashedActionStore(ObjectStoreEnvironmentBean objectStoreEnvironmentBean) throws ObjectStoreException {
         super(objectStoreEnvironmentBean);
 
         // overrides parents use of isObjectStoreSync

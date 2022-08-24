@@ -20,11 +20,11 @@
  */
 package com.arjuna.ats.arjuna.tools.osb.api.mbeans;
 
-import java.io.Serializable;
-
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.arjuna.state.OutputObjectState;
+
+import java.io.Serializable;
 
 /**
  * Wrapper for ObjectInputState and ObjectOutputState to facilitate use in JMX invocations
@@ -83,7 +83,7 @@ public class ObjectStateWrapper implements Serializable {
         byte[] b = getBuff() == null ? new byte[0] : getBuff();
         return new InputObjectState(u, t, b);
     }
-    
+
     public OutputObjectState getOOS() {
         if (getBuff() == null || getBuff().length == 0)
             return null;

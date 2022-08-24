@@ -31,18 +31,17 @@ package com.hp.mwtests.ts.arjuna.atomicaction;
  * $Id: ActionScope.java 2342 2006-03-30 13:06:17Z  $
  */
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.coordinator.ActionStatus;
+import org.junit.jupiter.api.Test;
 
-public class ActionScope
-{
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+;
+
+public class ActionScope {
     @Test
-    public void test() throws Exception
-    {
+    public void test() throws Exception {
         AtomicAction atomicAction = new AtomicAction();
 
         atomicAction.begin();

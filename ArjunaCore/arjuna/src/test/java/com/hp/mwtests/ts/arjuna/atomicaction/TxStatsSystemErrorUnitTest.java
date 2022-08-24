@@ -32,13 +32,15 @@ import com.arjuna.ats.arjuna.objectstore.ParticipantStore;
 import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;;
+import org.junit.jupiter.api.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+;
 
 public class TxStatsSystemErrorUnitTest {
     private static final String storeClassName = com.arjuna.ats.internal.arjuna.objectstore.VolatileStore.class.getName();
@@ -51,8 +53,7 @@ public class TxStatsSystemErrorUnitTest {
     }
 
     @Test
-    public void test() throws Exception
-    {
+    public void test() throws Exception {
         final int loopCnt = 100;
         final int sysErrCnt = loopCnt / 10;
         final int commitCnt = loopCnt * 2 - sysErrCnt; // first loops includes a nested transaction
@@ -64,15 +65,14 @@ public class TxStatsSystemErrorUnitTest {
         UnreliableTestStore store = (UnreliableTestStore) pstore;
 
         long startTime = System.nanoTime();
-        
-        for (int i = 0; i < loopCnt; i++)
-        {
+
+        for (int i = 0; i < loopCnt; i++) {
             if (i % 10 == 0)
                 store.setWriteError(true);
 
             AtomicAction A = new AtomicAction();
             AtomicAction B = new AtomicAction();
-            
+
             A.begin();
             B.begin();
 
@@ -88,8 +88,7 @@ public class TxStatsSystemErrorUnitTest {
 
         long avgTxnTime = (System.nanoTime() - startTime) / commitCnt;
 
-        for (int i = 0; i < abortCnt; i++)
-        {
+        for (int i = 0; i < abortCnt; i++) {
             AtomicAction A = new AtomicAction();
 
             A.begin();
@@ -100,7 +99,7 @@ public class TxStatsSystemErrorUnitTest {
         AtomicAction B = new AtomicAction();
 
         B.begin();
-        
+
         assertTrue(TxStats.enabled());
         assertEquals(abortCnt + sysErrCnt, TxStats.getInstance().getNumberOfAbortedTransactions());
         assertEquals(abortCnt, TxStats.getInstance().getNumberOfApplicationRollbacks());
@@ -113,9 +112,9 @@ public class TxStatsSystemErrorUnitTest {
         assertEquals(0, TxStats.getInstance().getNumberOfTimedOutTransactions());
         assertEquals(txnCnt, TxStats.getInstance().getNumberOfTransactions());
         assertTrue(TxStats.getInstance().getAverageCommitTime() < avgTxnTime);
-        
+
         PrintWriter pw = new PrintWriter(new StringWriter());
-        
+
         TxStats.getInstance().printStatus(pw);
     }
 

@@ -20,16 +20,6 @@
  */
 package com.hp.mwtests.ts.arjuna.tools;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;;
-
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
@@ -38,8 +28,6 @@ import com.arjuna.ats.arjuna.coordinator.ActionStatus;
 import com.arjuna.ats.arjuna.coordinator.RecordType;
 import com.arjuna.ats.arjuna.coordinator.abstractrecord.RecordTypeManager;
 import com.arjuna.ats.arjuna.coordinator.abstractrecord.RecordTypeMap;
-import com.arjuna.ats.arjuna.recovery.RecoveryDriver;
-import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.arjuna.tools.osb.mbean.ActionBean;
 import com.arjuna.ats.arjuna.tools.osb.mbean.LogRecordWrapper;
 import com.arjuna.ats.arjuna.tools.osb.mbean.OSEntryBean;
@@ -50,230 +38,244 @@ import com.arjuna.ats.arjuna.tools.osb.util.JMXServer;
 import com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule;
 import com.arjuna.ats.internal.arjuna.recovery.RecoveryManagerImple;
 import com.hp.mwtests.ts.arjuna.resources.CrashRecord;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+;
 
 /**
- * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to 
- * provide a better separation between public and internal classes.
+ * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to
+ *         provide a better separation between public and internal classes.
  */
 @Deprecated // in order to provide a better separation between public and internal classes.
 public class ObjStoreBrowserTest {
-	private RecoveryManagerImple rcm;
+    private RecoveryManagerImple rcm;
 
-	@BeforeEach
-	public void setUp () throws Exception
-	{
-		recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryBackoffPeriod(1);
+    @BeforeEach
+    public void setUp() throws Exception {
+        recoveryPropertyManager.getRecoveryEnvironmentBean().setRecoveryBackoffPeriod(1);
 
-		rcm = new RecoveryManagerImple(false);
-		rcm.addModule(new AtomicActionRecoveryModule());
-	}
+        rcm = new RecoveryManagerImple(false);
+        rcm.addModule(new AtomicActionRecoveryModule());
+    }
 
-	@AfterEach
-	public void tearDown () throws Exception
-	{
-		rcm.removeAllModules(false);
-		rcm.stop(false);
-	}
+    @AfterEach
+    public void tearDown() throws Exception {
+        rcm.removeAllModules(false);
+        rcm.stop(false);
+    }
 
-	/**
-	 * create an MBean to represent an ObjectStore
-	 * @return An object that maintains MBeans representing completing transactions
-	 */
-	private ObjStoreBrowser createObjStoreBrowser() {
+    /**
+     * create an MBean to represent an ObjectStore
+     *
+     * @return An object that maintains MBeans representing completing transactions
+     */
+    private ObjStoreBrowser createObjStoreBrowser() {
         ObjStoreBrowser osb = new ObjStoreBrowser();
 
-		// define which object store types we are prepared to represent by mbeans
+        // define which object store types we are prepared to represent by mbeans
         osb.setType("com.arjuna.ats.arjuna.AtomicAction", "com.arjuna.ats.arjuna.tools.osb.mbean.ActionBean");
 
-		return osb;
-	}
+        return osb;
+    }
 
-	@Test
-	public void testOSEntryBean() throws Exception {
-		com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new OSEntryBean());
-	}
+    @Test
+    public void testOSEntryBean() throws Exception {
+        com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new OSEntryBean());
+    }
 
-	@Test
-	public void testLogRecordWrapper() throws Exception {
-		com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new LogRecordWrapper(Uid.nullUid()));
-	}
+    @Test
+    public void testLogRecordWrapper() throws Exception {
+        com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(new LogRecordWrapper(Uid.nullUid()));
+    }
 
-	@Test
-	public void testObjectStoreBrowser() throws Exception {
-		com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(createObjStoreBrowser());
-	}
+    @Test
+    public void testObjectStoreBrowser() throws Exception {
+        com.arjuna.common.tests.simple.EnvironmentBeanTest.testBeanByReflection(createObjStoreBrowser());
+    }
 
-	@Test
-	public void basicOSBTest () throws Exception
-	{
-		ObjStoreBrowser osb = new ObjStoreBrowser("os");
+    @Test
+    public void basicOSBTest() throws Exception {
+        ObjStoreBrowser osb = new ObjStoreBrowser("os");
 
-		osb.start();
-		osb.probe();
+        osb.start();
+        osb.probe();
 
-		// there should not be any MBeans
-		assertNull(osb.findUid(Uid.nullUid()));
+        // there should not be any MBeans
+        assertNull(osb.findUid(Uid.nullUid()));
 
-		// listing beans of an invalid type returns null
-		assertNull(osb.probe("InvalidType"));
-		
-		// JBTM-1230
-		// This does not work on the JDBC object store as this test assumes a previous
-		// run has left the "Recovery" entry on disk which won't happen in a JDBC store 
-//		// TODO windows
-//		if (System.getProperty("os.name").toLowerCase().indexOf("windows") == -1) {
-//			// listing beans of a valid type returns an empty list
-//			assertNotNull(osb.probe("Recovery"));
-//		}
+        // listing beans of an invalid type returns null
+        assertNull(osb.probe("InvalidType"));
 
-		osb.stop();
-	}
+        // JBTM-1230
+        // This does not work on the JDBC object store as this test assumes a previous
+        // run has left the "Recovery" entry on disk which won't happen in a JDBC store
+        // TODO windows
+//      if (System.getProperty("os.name").toLowerCase().indexOf("windows") == -1) {
+//             listing beans of a valid type returns an empty list
+//          assertNotNull(osb.probe("Recovery"));
+//      }
 
-	/**
-	 * Create an atomic action with two participants, one of which will generate a heuristic during phase 2.
-	 * The test will move the heuristic back into the prepared state and trigger recovery to replay phase 2.
-	 * The test then asserts that the corresponding MBeans have been unregistered.
-	 * @throws Exception if test fails unexpectedly
-	 */
-	@Test
-	public void aaReplayTest() throws Exception {
-		// TODO windows
-		aaTest(true);
+        osb.stop();
+    }
 
-	}
-	
-	/**
-	 * Similar to aaReplayTest except that the whole transaction record is removed from the object store
-	 * (instead of replaying the record that generates a heuristic).
-	 * @throws Exception if test fails unexpectedly
-	 */
-	@Test
-	public void aaRemoveTest() throws Exception {
-		// TODO windows
-		aaTest(false);
-	}
+    /**
+     * Create an atomic action with two participants, one of which will generate a heuristic during phase 2.
+     * The test will move the heuristic back into the prepared state and trigger recovery to replay phase 2.
+     * The test then asserts that the corresponding MBeans have been unregistered.
+     *
+     * @throws Exception if test fails unexpectedly
+     */
+    @Test
+    public void aaReplayTest() throws Exception {
+        // TODO windows
+        aaTest(true);
 
-	public void aaTest(boolean replay) throws Exception {
-		ObjStoreBrowser osb = createObjStoreBrowser();
-		AtomicAction A = new AtomicAction();
-		CrashRecord recs[] = {
-				new CrashRecord(CrashRecord.CrashLocation.NoCrash, CrashRecord.CrashType.Normal),
-				new CrashRecord(CrashRecord.CrashLocation.CrashInCommit, CrashRecord.CrashType.HeuristicHazard)
-		};
+    }
 
-		// register CrashRecord record type so that it is persisted in the object store correctly
-		RecordTypeManager.manager().add(new RecordTypeMap() {
-			public Class<? extends AbstractRecord> getRecordClass () { return CrashRecord.class;}
-			public int getType () {return RecordType.USER_DEF_FIRST0;}
-		});
+    /**
+     * Similar to aaReplayTest except that the whole transaction record is removed from the object store
+     * (instead of replaying the record that generates a heuristic).
+     *
+     * @throws Exception if test fails unexpectedly
+     */
+    @Test
+    public void aaRemoveTest() throws Exception {
+        // TODO windows
+        aaTest(false);
+    }
 
-		// create an atomic action, register crash records with it and then commit
-		A.begin();
+    public void aaTest(boolean replay) throws Exception {
+        ObjStoreBrowser osb = createObjStoreBrowser();
+        AtomicAction A = new AtomicAction();
+        CrashRecord[] recs = {
+                new CrashRecord(CrashRecord.CrashLocation.NoCrash, CrashRecord.CrashType.Normal),
+                new CrashRecord(CrashRecord.CrashLocation.CrashInCommit, CrashRecord.CrashType.HeuristicHazard)
+        };
 
-		for (CrashRecord rec : recs)
-			A.add(rec);
+        // register CrashRecord record type so that it is persisted in the object store correctly
+        RecordTypeManager.manager().add(new RecordTypeMap() {
+            public Class<? extends AbstractRecord> getRecordClass() {
+                return CrashRecord.class;
+            }
 
-		int outcome = A.commit();
+            public int getType() {
+                return RecordType.USER_DEF_FIRST0;
+            }
+        });
 
-		// the second participant should have generated a heuristic during commit
-		assertEquals(ActionStatus.H_HAZARD, outcome);
+        // create an atomic action, register crash records with it and then commit
+        A.begin();
 
-		// generate MBeans representing the atomic action that was just committed
-		osb.start();
-		osb.probe();
+        for (CrashRecord rec : recs)
+            A.add(rec);
 
-		// there should be one MBean corresponding to the AtomicAction A
-		UidWrapper w = osb.findUid(A.get_uid());
-		assertNotNull(w);
-		OSEntryBean ai = w.getMBean();
-		assertNotNull(ai);
+        int outcome = A.commit();
 
-		// the MBean should wrap an ActionBean
-		assertTrue(ai instanceof ActionBean);
-		ActionBean actionBean = (ActionBean) ai;
+        // the second participant should have generated a heuristic during commit
+        assertEquals(ActionStatus.H_HAZARD, outcome);
 
-		// and there should be one MBean corresponding to the CrashRecord that got the heuristic:
-		int recCount = 0;
-		for (CrashRecord rec : recs) {
-			LogRecordWrapper lw = actionBean.getParticipant(rec);
+        // generate MBeans representing the atomic action that was just committed
+        osb.start();
+        osb.probe();
 
-			if (lw != null) {
-				recCount += 1;
+        // there should be one MBean corresponding to the AtomicAction A
+        UidWrapper w = osb.findUid(A.get_uid());
+        assertNotNull(w);
+        OSEntryBean ai = w.getMBean();
+        assertNotNull(ai);
 
-				assertTrue(lw.isHeuristic());
+        // the MBean should wrap an ActionBean
+        assertTrue(ai instanceof ActionBean);
+        ActionBean actionBean = (ActionBean) ai;
 
-				// put the participant back onto the pending list
-				lw.setStatus("PREPARED");
-				// and check that the record is no longer in a heuristic state
-				assertFalse(lw.isHeuristic());
-			}
-		}
+        // and there should be one MBean corresponding to the CrashRecord that got the heuristic:
+        int recCount = 0;
+        for (CrashRecord rec : recs) {
+            LogRecordWrapper lw = actionBean.getParticipant(rec);
 
-		assertEquals(1, recCount);
+            if (lw != null) {
+                recCount += 1;
 
-		if (!replay) {
-			actionBean.remove();
-		} else {
-			/*
-			* prompt the recovery manager to replay the record that was
-			* moved off the heuristic list and back onto the prepared list
-			*/
-			rcm.scan();
-		}
+                assertTrue(lw.isHeuristic());
 
-		/*
-		 * Since the recovery scan (or explicit remove request) will have successfully removed the record from
-		 * the object store another probe should cause the MBean representing the record to be unregistered
-		 */
-		osb.probe();
+                // put the participant back onto the pending list
+                lw.setStatus("PREPARED");
+                // and check that the record is no longer in a heuristic state
+                assertFalse(lw.isHeuristic());
+            }
+        }
 
-		// look up the MBean and verify that it no longer exists
-		w = osb.findUid(A.get_uid());
-		assertNull(w);
+        assertEquals(1, recCount);
 
-		osb.dump(new StringBuilder());
-		osb.stop();
-	}
+        if (!replay) {
+            actionBean.remove();
+        } else {
+            /*
+             * prompt the recovery manager to replay the record that was
+             * moved off the heuristic list and back onto the prepared list
+             */
+            rcm.scan();
+        }
 
-	// define an MBean interface for use in the next test
-	public interface NotAnotherMBean extends ObjStoreItemMBean {}
+        /*
+         * Since the recovery scan (or explicit remove request) will have successfully removed the record from
+         * the object store another probe should cause the MBean representing the record to be unregistered
+         */
+        osb.probe();
 
-	@Test
-	public void testJMXServer() throws Exception {
+        // look up the MBean and verify that it no longer exists
+        w = osb.findUid(A.get_uid());
+        assertNull(w);
 
-		class NonCompliantBean implements NotAnotherMBean {}
-		
-		ObjStoreBrowser osb = createObjStoreBrowser();
-		OSEntryBean bean;
-		String validName = "jboss.jta:type=TestObjectStore";
+        osb.dump(new StringBuilder());
+        osb.stop();
+    }
 
-		osb.start();
-		osb.probe();
+    @Test
+    public void testJMXServer() throws Exception {
 
-		bean = new OSEntryBean();
+        class NonCompliantBean implements NotAnotherMBean {
+        }
 
-		// MalformedObjectNameException
-		assertNull(JMXServer.getAgent().registerMBean("InvalidName", bean));
-		assertFalse(JMXServer.getAgent().unregisterMBean("InvalidName"));
+        ObjStoreBrowser osb = createObjStoreBrowser();
+        OSEntryBean bean;
+        String validName = "jboss.jta:type=TestObjectStore";
 
-		// InstanceNotFoundException
-		assertFalse(JMXServer.getAgent().unregisterMBean(validName));
+        osb.start();
+        osb.probe();
 
-		// NotCompliantMBeanException
-		assertNull(JMXServer.getAgent().registerMBean(validName, new NonCompliantBean()));
+        bean = new OSEntryBean();
 
-		// Do it right this time
-		int cnt = JMXServer.getAgent().queryNames(validName, null).size();
-		assertNotNull(JMXServer.getAgent().registerMBean(validName, bean));
-		assertEquals(cnt + 1, JMXServer.getAgent().queryNames(validName, null).size());
+        // MalformedObjectNameException
+        assertNull(JMXServer.getAgent().registerMBean("InvalidName", bean));
+        assertFalse(JMXServer.getAgent().unregisterMBean("InvalidName"));
 
-		// InstanceAlreadyExistsException
-		assertNull(JMXServer.getAgent().registerMBean(validName, bean));
+        // InstanceNotFoundException
+        assertFalse(JMXServer.getAgent().unregisterMBean(validName));
 
-		// Make sure unregistering a valid bean works
-		assertTrue(JMXServer.getAgent().unregisterMBean(validName));
-		assertEquals(0, JMXServer.getAgent().queryNames(validName, null).size());
+        // NotCompliantMBeanException
+        assertNull(JMXServer.getAgent().registerMBean(validName, new NonCompliantBean()));
 
-		osb.stop();
-	}
+        // Do it right this time
+        int cnt = JMXServer.getAgent().queryNames(validName, null).size();
+        assertNotNull(JMXServer.getAgent().registerMBean(validName, bean));
+        assertEquals(cnt + 1, JMXServer.getAgent().queryNames(validName, null).size());
+
+        // InstanceAlreadyExistsException
+        assertNull(JMXServer.getAgent().registerMBean(validName, bean));
+
+        // Make sure unregistering a valid bean works
+        assertTrue(JMXServer.getAgent().unregisterMBean(validName));
+        assertEquals(0, JMXServer.getAgent().queryNames(validName, null).size());
+
+        osb.stop();
+    }
+
+    // define an MBean interface for use in the next test
+    public interface NotAnotherMBean extends ObjStoreItemMBean {
+    }
 }

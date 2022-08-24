@@ -32,7 +32,6 @@
 package com.arjuna.ats.arjuna.recovery;
 
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
-import org.jboss.logging.Logger;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -57,6 +56,9 @@ public class RecoveryDriver {
     public static final int DEFAULT_SYNC_RETRY = 5;
 
     public static final int DEFAULT_SO_TIMEOUT = 20000;
+    private String _hostName = null;
+    private int _port = 0;
+    private int _timeout = 20000;
 
     public RecoveryDriver(int port) {
         this(port, null, DEFAULT_SO_TIMEOUT);
@@ -107,8 +109,7 @@ public class RecoveryDriver {
         return scan(ASYNC_SCAN, _timeout, 1);
     }
 
-    public final boolean asynchronousVerboseScan () throws java.io.IOException
-    {
+    public final boolean asynchronousVerboseScan() throws java.io.IOException {
         /*
          * For async the timeout is the socket timeout and number of attempts on call is 1.
          */
@@ -156,8 +157,4 @@ public class RecoveryDriver {
 
         return success;
     }
-
-    private String _hostName = null;
-    private int _port = 0;
-    private int _timeout = 20000;
 }
