@@ -23,9 +23,6 @@
   <name>Narayana: ArjunaCore arjuna services</name>
   <description>Narayana: ArjunaCore arjuna services</description>
   <packaging>jar</packaging>
-  <build>
-    <sourceDirectory>${sourceDirACS}</sourceDirectory>
-  </build>
   <profiles>
   <profile>
   <id>community</id>
@@ -43,7 +40,7 @@
     </dependency>
   </dependencies>
   <properties>
-    <sourceDirACS>classes</sourceDirACS>
+    <sourceDirACS>src/main/java</sourceDirACS>
   </properties>
   </profile>
   </profiles>
