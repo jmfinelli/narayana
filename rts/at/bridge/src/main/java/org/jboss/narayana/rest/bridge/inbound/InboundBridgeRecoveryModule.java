@@ -110,6 +110,12 @@ public class InboundBridgeRecoveryModule implements RecoveryModule {
         addBridgesToMapping();
     }
 
+    public int transactionToRecover() {
+        // This module is concerned with subordinate transactions thus there must be a parent transaction
+
+        return 0;
+    }
+
     /**
      * Returns UIDs of JTA subordinate transactions with format id specified in inbound bridge class which were found in
      * transaction log.

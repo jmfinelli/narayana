@@ -137,6 +137,11 @@ public class BAParticipantRecoveryModule implements XTSRecoveryModule
         processParticipantsStatus() ;
     }
 
+    public int transactionToRecover() {
+        // We don't want to count subordinate transactions
+        return 0;
+    }
+
     private void doRecoverParticipant( Uid recoverUid )
     {
         // Retrieve the participant from its original process.
@@ -252,6 +257,13 @@ public class BAParticipantRecoveryModule implements XTSRecoveryModule
                 {
                     doRecoverParticipant( currentUid ) ;
                 }
+
+                if ( _recoveryStore.currentState( currentUid, _participantType ) != StateStatus.OS_UNKNOWN )
+                {
+                    // This transaction didn't recover at the previous check
+                    // (i.e. it wasn't deleted from the recovery store).
+                    this._transactionsToRecover++ ;
+                }
             }
             catch ( ObjectStoreException ex )
             {
@@ -274,5 +286,12 @@ public class BAParticipantRecoveryModule implements XTSRecoveryModule
 
     // Reference to the Object Store.
     private static RecoveryStore _recoveryStore = null ;
+
+    // This field keeps track of the transactions that still need to be
+    // recovered after the second periodic pass
+    //
+    // Note: Synchronisation is not needed to access this field as there will be
+    // only an instance of this class around.
+    private int _transactionsToRecover = 0 ;
 
 }

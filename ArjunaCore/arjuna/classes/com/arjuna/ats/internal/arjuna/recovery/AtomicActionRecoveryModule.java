@@ -78,6 +78,9 @@ public class AtomicActionRecoveryModule implements RecoveryModule
       // Transaction type
       boolean AtomicActions = false ;
 
+      // Reset the number of transactions to recover
+      this._transactionsToRecover = 0;
+
       // uids per transaction type
       InputObjectState aa_uids = new InputObjectState() ;
 
@@ -107,6 +110,10 @@ public class AtomicActionRecoveryModule implements RecoveryModule
        }
 
        processTransactionsStatus() ;
+   }
+
+   public int transactionToRecover() {
+       return this._transactionsToRecover;
    }
 
     protected AtomicActionRecoveryModule (String type)
@@ -252,6 +259,11 @@ public class AtomicActionRecoveryModule implements RecoveryModule
                             _transactionType) != StateStatus.OS_UNKNOWN) {
                         doRecoverTransaction(currentUid);
                     }
+
+                    if (_recoveryStore.currentState(currentUid, _transactionType) != StateStatus.OS_UNKNOWN) {
+                        // This transaction didn't recover (i.e. it wasn't deleted from the recovery store).
+                        this._transactionsToRecover++ ;
+                    }
                 } catch (ObjectStoreException ex) {
                     tsLogger.i18NLogger
                             .warn_recovery_AtomicActionRecoveryModule_3(
@@ -274,6 +286,13 @@ public class AtomicActionRecoveryModule implements RecoveryModule
    // This object manages the interface to all TransactionStatusManagers
    // processes(JVMs) on this system/node.
    private TransactionStatusConnectionManager _transactionStatusConnectionMgr ;
+
+   // This field keeps track of the transactions that still need to be
+   // recovered after the second periodic pass
+   //
+   // Note: Synchronisation is not needed to access this field as there will be
+   // only an instance of this class around.
+   private int _transactionsToRecover = 0 ;
 
 }
 

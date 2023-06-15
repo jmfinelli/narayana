@@ -97,6 +97,8 @@ public class ATCoordinatorRecoveryModule implements XTSRecoveryModule
         // Transaction type
         boolean ACCoordinators = false ;
 
+        this._transactionsToRecover = 0 ;
+
         // uids per transaction type
         InputObjectState acc_uids = new InputObjectState() ;
 
@@ -132,6 +134,12 @@ public class ATCoordinatorRecoveryModule implements XTSRecoveryModule
 
         // ok notify the coordinator processor that recovery processing has completed
 
+    }
+
+    @Override
+    public int transactionToRecover()
+    {
+        return this._transactionsToRecover ;
     }
 
     protected ATCoordinatorRecoveryModule(String type)
@@ -279,6 +287,13 @@ public class ATCoordinatorRecoveryModule implements XTSRecoveryModule
                 {
                     doRecoverTransaction( currentUid ) ;
                 }
+
+                if ( _recoveryStore.currentState( currentUid, _transactionType ) != StateStatus.OS_UNKNOWN )
+                {
+                    // This transaction didn't recover at the previous check
+                    // (i.e. it wasn't deleted from the recovery store).
+                    this._transactionsToRecover++ ;
+                }
             }
             catch ( ObjectStoreException ex )
             {
@@ -302,6 +317,13 @@ public class ATCoordinatorRecoveryModule implements XTSRecoveryModule
     // This object manages the interface to all TransactionStatusManagers
     // processes(JVMs) on this system/node.
     private TransactionStatusConnectionManager _transactionStatusConnectionMgr ;
+
+    // This field keeps track of the transactions that still need to be
+    // recovered after the second periodic pass
+    //
+    // Note: Synchronisation is not needed to access this field as there will be
+    // only an instance of this class around.
+    private int _transactionsToRecover = 0 ;
 
 }
 

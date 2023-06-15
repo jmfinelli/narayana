@@ -182,6 +182,11 @@ public class RecoveryManager
 	st.start();
     }
 
+    public final int leftOverTransactions()
+    {
+        return _theImple.leftOverTransactions();
+    }
+
     /**
      * Terminate and cleanup the recovery manager. There is no going back from this. This is a
      * synchronous operation so return means that the recovery has completed.

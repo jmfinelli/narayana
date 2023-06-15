@@ -84,6 +84,13 @@ public class XARecoveryModule implements ExtendedRecoveryModule
 {
 	private final AtomicBoolean recoveryProblems = new AtomicBoolean(false);
 
+	// This field keeps track of the transactions that still need to be
+	// recovered after the second periodic pass
+	//
+	// Note: Synchronisation is not needed to access this field as there will be
+	// only an instance of this class around.
+	private int _transactionsToRecover = 0;
+
 	boolean isRecoveryProblems() {
 		return this.recoveryProblems.get();
 	}
@@ -108,6 +115,11 @@ public class XARecoveryModule implements ExtendedRecoveryModule
     public boolean isPeriodicWorkSuccessful() {
         return !this.isRecoveryProblems();
     }
+
+	@Override
+	public synchronized int transactionToRecover() {
+		return this._transactionsToRecover;
+	}
 
     public void addXAResourceRecoveryHelper(XAResourceRecoveryHelper xaResourceRecoveryHelper) {
         _xaResourceRecoveryHelpers.add(xaResourceRecoveryHelper);
@@ -210,6 +222,9 @@ public class XARecoveryModule implements ExtendedRecoveryModule
 
         contactedJndiNames.clear();
 		this.setRecoveryProblems(false);
+
+		// This is a good moment to reset the count of left-over transactions from last periodic scan
+		this._transactionsToRecover = 0;
 
 		_uids = new InputObjectState();
 
@@ -578,6 +593,12 @@ public class XARecoveryModule implements ExtendedRecoveryModule
 							}
 						}
 					}
+
+					if (_recoveryStore.currentState(theUid, _recoveryManagerClass.type()) != StateStatus.OS_UNKNOWN)
+					{
+						// This transaction didn't recover (i.e. it wasn't deleted from the recovery store).
+						this._transactionsToRecover++ ;
+					}
 				}
 			}
 			catch (IOException e)
@@ -915,6 +936,10 @@ public class XARecoveryModule implements ExtendedRecoveryModule
 									this.setRecoveryProblems(true);
 	                                jtaLogger.i18NLogger.warn_recovery_forgetfailed(_logName+".xaRecovery", e);
 								}
+							}
+							else if (!foundTransaction)
+							{
+								this._transactionsToRecover++;
 							}
 	
 						} while (recordUid != null);

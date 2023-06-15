@@ -510,6 +510,39 @@ public class PeriodicRecovery extends Thread
         }
     }
 
+    public final int leftOverTransactions()
+    {
+        synchronized (_stateLock) {
+            if (getStatus() == Status.SCANNING) {
+                // just wait for the other scan to finish
+                if (tsLogger.logger.isDebugEnabled()) {
+                    tsLogger.logger.debug("PeriodicRecovery: ad hoc thread waiting on other scan");
+                }
+                doScanningWait();
+            }
+        }
+
+        doWork();
+
+        synchronized (_stateLock) {
+            if (getStatus() == Status.SCANNING) {
+                // just wait for the other scan to finish
+                if (tsLogger.logger.isDebugEnabled()) {
+                    tsLogger.logger.debug("PeriodicRecovery: ad hoc thread waiting on other scan");
+                }
+                doScanningWait();
+            }
+
+            if (tsLogger.logger.isDebugEnabled()) {
+                tsLogger.logger.debug(
+                        String.format("PeriodicRecovery: returning the number of left-over transactions: %d",
+                                this._leftOverTxns));
+            }
+
+            return this._leftOverTxns;
+        }
+    }
+
     /**
      * called by the listener worker to wake the periodic recovery thread and get it to start a scan if one
      * is not already in progress
@@ -750,6 +783,9 @@ public class PeriodicRecovery extends Thread
             tsLogger.logger.debug("Periodic recovery first pass at "+_theTimestamper.format(new Date()));
         }
 
+        // This is a good moment to reset the count of transactions in need of recovery
+        this._leftOverTxns = 0;
+
         // n.b. this works on a copy of the modules list so it is not affected by
         // dynamic updates in the middle of a scan, ensuring first+second pass happen
         // for the same stable set of modules.
@@ -813,7 +849,16 @@ public class PeriodicRecovery extends Thread
 
             ClassLoader cl = switchClassLoader(m);
             try {
-            m.periodicWorkSecondPass();
+                m.periodicWorkSecondPass();
+                int leftOverInModule = m.transactionToRecover();
+                if (leftOverInModule > 0)  {
+                    this._leftOverTxns += leftOverInModule;
+
+                    if (tsLogger.logger.isDebugEnabled()) {
+                        tsLogger.logger.debugf("Recovery module '%s' has %n transactions that need attention.",
+                                m.toString(), leftOverInModule);
+                    }
+                }
             } finally {
                 restoreClassLoader(cl);
             }
@@ -963,6 +1008,12 @@ public class PeriodicRecovery extends Thread
      * the worker service which handles requests via the listener socket
      */
     private WorkerService _workerService = null;
+
+    /**
+     * Counter to store the number of transactions that are still
+     * in need of recovery at the end of each scan.
+     */
+    private volatile int _leftOverTxns = 0;
 
    /*
     * Read the system properties to set the configurable options

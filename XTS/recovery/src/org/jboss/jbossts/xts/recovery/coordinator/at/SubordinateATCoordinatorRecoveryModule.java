@@ -125,6 +125,12 @@ public class SubordinateATCoordinatorRecoveryModule implements XTSRecoveryModule
 
     }
 
+    @Override
+    public int transactionToRecover() {
+        // We don't want to count subordinate transactions
+        return 0;
+    }
+
     protected SubordinateATCoordinatorRecoveryModule(String type)
     {
         if (RecoveryLogger.logger.isDebugEnabled()) {

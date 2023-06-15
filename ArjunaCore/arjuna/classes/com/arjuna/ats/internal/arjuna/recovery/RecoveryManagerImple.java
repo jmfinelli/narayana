@@ -138,6 +138,11 @@ public class RecoveryManagerImple
         _periodicRecovery.doWork();
     }
 
+    public final int leftOverTransactions()
+    {
+        return _periodicRecovery.leftOverTransactions();
+    }
+
     public final void addModule (RecoveryModule module)
     {
         _periodicRecovery.addModule(module);

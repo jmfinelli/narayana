@@ -112,6 +112,14 @@ public class CommitMarkableResourceRecordRecoveryModule implements
 			.getCommitMarkableResourceTableNameMap();
 	private Map<String, List<Xid>> completedBranches = new HashMap<String, List<Xid>>();
     private boolean inFirstPass;
+
+	// This field keeps track of the transactions that still need to be
+	// recovered after the second periodic pass
+	//
+	// Note: Synchronisation is not needed to access this field as there will be
+	// only an instance of this class around.
+	private int _transactionsToRecover = 0;
+
 	private static String defaultTableName = jtaEnvironmentBean
 			.getDefaultCommitMarkableTableName();
 
@@ -178,6 +186,8 @@ public class CommitMarkableResourceRecordRecoveryModule implements
             return;
         }
 	    inFirstPass = true;
+		this._transactionsToRecover = 0;
+
 		// TODO - this is one shot only due to a
 		// remove in the function, if this delete fails only normal
 		// recovery is possible
@@ -502,6 +512,13 @@ public class CommitMarkableResourceRecordRecoveryModule implements
 			tsLogger.logger.warn("Could not read " + ATOMIC_ACTION_TYPE
 					+ " from object store", e);
 		}
+	}
+
+	@Override
+	public int transactionToRecover() {
+		// TODO: _transactionsToRecover is initialised but then it is not used.
+		//  Fix thi
+		return this._transactionsToRecover;
 	}
 
 	/**

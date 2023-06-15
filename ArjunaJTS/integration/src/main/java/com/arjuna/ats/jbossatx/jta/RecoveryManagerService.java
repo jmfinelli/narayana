@@ -117,6 +117,15 @@ public class RecoveryManagerService implements XAResourceRecoveryRegistry
         _recoveryManager.scan();
     }
 
+    public int leftOverTransactions()
+    {
+        if(_recoveryManager == null) {
+            throw new IllegalStateException(jbossatxLogger.i18NLogger.get_jta_RecoveryManagerService_norecoverysystem());
+        }
+
+        return _recoveryManager.leftOverTransactions();
+    }
+
     public void removeXAResourceRecovery(XAResourceRecovery xaResourceRecovery)
     {
         if(_recoveryManager == null) {

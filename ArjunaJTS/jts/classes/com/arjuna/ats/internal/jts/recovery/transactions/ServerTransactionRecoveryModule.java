@@ -107,6 +107,11 @@ public class ServerTransactionRecoveryModule extends TransactionRecoveryModule
 	    }
 
     }
+
+    public int transactionToRecover() {
+        // TODO: this is not right. Returning zero to test JTA
+        return 0;
+    }
     
     /**
      * Set-up routine

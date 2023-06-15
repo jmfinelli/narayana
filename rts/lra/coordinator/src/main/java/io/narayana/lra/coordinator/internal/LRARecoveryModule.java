@@ -95,6 +95,9 @@ public class LRARecoveryModule implements RecoveryModule {
      * This is called periodically by the RecoveryManager
      */
     public void periodicWorkFirstPass() {
+        // Reset the number of transactions to recover
+        this._transactionsToRecover = 0;
+
         if (LRALogger.logger.isTraceEnabled()) {
             LRALogger.logger.trace("LRARecoveryModule: first pass");
         }
@@ -106,6 +109,10 @@ public class LRARecoveryModule implements RecoveryModule {
         }
 
         recoverTransactions();
+    }
+
+    public int transactionToRecover() {
+        return this._transactionsToRecover;
     }
 
     private synchronized void recoverTransactions() {
@@ -147,6 +154,9 @@ public class LRARecoveryModule implements RecoveryModule {
 
                 if (!lra.isRecovering()) {
                     service.finished(lra, false);
+                } else {
+                    // the lra transaction is still recovering
+                    this._transactionsToRecover++;
                 }
             }
 
@@ -363,4 +373,11 @@ public class LRARecoveryModule implements RecoveryModule {
     private final TransactionStatusConnectionManager _transactionStatusConnectionMgr;
 
     private static LRARecoveryModule lraRecoveryModule;
+
+    // This field keeps track of the transactions that still need to be
+    // recovered after the second periodic pass
+    //
+    // Note: Synchronisation is not needed to access this field as there will be
+    // only an instance of this class around.
+    private int _transactionsToRecover = 0;
 }

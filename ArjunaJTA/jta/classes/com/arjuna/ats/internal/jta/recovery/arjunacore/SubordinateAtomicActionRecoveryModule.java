@@ -94,6 +94,12 @@ public class SubordinateAtomicActionRecoveryModule implements RecoveryModule {
         // No-op - recovery is performed by the EIS
     }
 
+    public int transactionToRecover() {
+        // This module is concerned with subordinate transactions thus there must be a parent transaction
+
+        return 0;
+    }
+
     /**
      * Used to ensure that the orphan detection has fully loaded the transaction state before asserting
      * a decision.

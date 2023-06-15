@@ -49,6 +49,10 @@ class DummyRecoveryModule implements com.arjuna.ats.arjuna.recovery.RecoveryModu
         _complete = true;
     }
 
+    public int transactionToRecover() {
+        return 0;
+    }
+
     public final boolean finished()
     {
         return _complete;

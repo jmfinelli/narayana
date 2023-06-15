@@ -198,6 +198,14 @@ public class TORecoveryModule implements RecoveryModule
         }
     }
 
+    public int transactionToRecover()
+    {
+        // Every top-level transaction is associated with one Transaction object when the transaction is created.
+        // Thus, we don't want to count transactions twice
+
+        return 0;
+    }
+
     /**
      * Set-up routine.
      */

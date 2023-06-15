@@ -93,4 +93,11 @@ public class OutboundBridgeRecoveryManager implements RecoveryModule
             }
         }
     }
+
+    @Override
+    public int transactionToRecover() {
+        // As we arrive here after the JTA top level tx recovery module has completed its job,
+        // we won't find any transaction that needs recovery.
+        return 0;
+    }
 }

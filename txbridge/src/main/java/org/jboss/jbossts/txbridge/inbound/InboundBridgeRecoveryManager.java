@@ -210,6 +210,11 @@ public class InboundBridgeRecoveryManager implements XTSATRecoveryModule, Recove
 
     }
 
+    @Override
+    public int transactionToRecover() {
+        return 0;
+    }
+
     /**
      * Run a recovery scan to identify any in-doubt JTA subordinates.
      *

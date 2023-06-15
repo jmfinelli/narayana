@@ -80,4 +80,11 @@ public class JCAServerTransactionRecoveryModule implements RecoveryModule {
     public void periodicWorkSecondPass() {
 
     }
+
+    @Override
+    public int transactionToRecover() {
+        // This module is concerned with subordinate transactions thus there must be a parent transaction
+
+        return 0;
+    }
 }

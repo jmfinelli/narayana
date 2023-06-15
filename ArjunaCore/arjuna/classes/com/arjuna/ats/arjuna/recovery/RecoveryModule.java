@@ -61,4 +61,13 @@ public interface RecoveryModule
      */
 
     public void periodicWorkSecondPass ();
+
+    /**
+     * This method reports how many transactions are still needed
+     * to be recovered after the last successful recovery cycle.
+     *
+     * @return an int indicating the number of transactions that
+     * need to be recovered either manually or automatically.
+     */
+    int transactionToRecover();
 }
