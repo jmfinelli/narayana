@@ -10,6 +10,7 @@ package com.arjuna.ats.internal.jta.transaction.jts.jca;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.arjuna.ats.arjuna.coordinator.TxControl;
 import jakarta.transaction.SystemException;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
@@ -171,7 +172,12 @@ public class TransactionImporterImple implements TransactionImporter
 	 * @param timeout
 	 * @return
 	 */
-	private TransactionImportResult addImportedTransaction(TransactionImple recoveredTransaction, Xid mapKey, Xid xid, int timeout) {
+	private TransactionImportResult addImportedTransaction(TransactionImple recoveredTransaction, Xid mapKey, Xid xid, int timeout) throws XAException {
+		if (!TxControl.isEnabled()) {
+			// TODO needs looking at for the right code and so on and maybe it's different for recover than it is when importing a new transaction
+			throw new XAException("Transaction system is shutting down");
+		}
+
 		boolean isNew = false;
 		SubordinateXidImple importedXid = new SubordinateXidImple(mapKey);
 		// We need to store the imported transaction in a volatile field holder so that it can be shared between threads

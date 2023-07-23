@@ -1,0 +1,55 @@
+########################################################################
+#
+# Byteman script used to control how many fails should happen before
+# PeriodicRecovery manages to recover all transactions. The end goal
+# is to suspend PeriodicRecovery cleanly.
+#
+########################################################################
+
+########################################################################
+# Rule to create a counter when
+# com.hp.mwtests.ts.arjuna.resources.BytemanControlledCrashRecord.resetCounter()
+# is invoked
+#########################################################################
+
+RULE resetCounter
+CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledCrashRecord
+METHOD resetCounter
+AT ENTRY
+IF TRUE
+DO debug("[BytemanControlledCrashRecord] Create/Reset Recovery Counter"),
+   deleteCounter("recoveryCounter"),
+   createCounter("recoveryCounter")
+ENDRULE
+
+########################################################################
+# Rule to increase a counter when
+# com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.doWorkInternal()
+# is invoked
+#########################################################################
+
+RULE IncreaseCounter
+CLASS com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery
+METHOD doWorkInternal
+AT ENTRY
+BIND NOTHING
+IF TRUE
+DO incrementCounter("recoveryCounter"),
+   debug("[PeriodicRecovery] doWorkInternal() was invoked " + readCounter("recoveryCounter") + " times")
+ENDRULE
+
+########################################################################
+# Rule to fail
+# com.hp.mwtests.ts.arjuna.resources.BasicRecord.topLevelCommit()
+# for four times
+#########################################################################
+
+RULE FailTopLevelCommit
+CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledCrashRecord
+METHOD topLevelCommit
+AT ENTRY
+IF readCounter("recoveryCounter") <= BytemanControlledCrashRecord._failCounter
+DO debug("[BytemanControlledCrashRecord] before returning a TwoPhaseOutcome.FINISH_ERROR, recoveryCounter is: " + readCounter("recoveryCounter")),
+   # com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome.FINISH_ERROR == 8
+   return 8
+ENDRULE
