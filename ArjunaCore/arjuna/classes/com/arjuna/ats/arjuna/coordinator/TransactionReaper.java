@@ -108,7 +108,18 @@ public class TransactionReaper
                 // TODO close window where first can change - maybe record nextDynamicCheckTime before probing first,
                 // then use compareAndSet? Although something will need to check before sleeping anyhow...
                 if (reaperElement == null) {
-                    nextDynamicCheckTime.set(Long.MAX_VALUE);
+                    // Reading _inShutdown in this synchronized block makes sure that its value does not come from
+                    // a cache (i.e. its value has been read from memory and not from the CPU cache)
+                    if (!_inShutdown)
+                        nextDynamicCheckTime.set(Long.MAX_VALUE);
+                    else {
+                        // If the JVM reaches this code then it means that the TransactionReaper is in shutdown and
+                        // either another thread has called removeElementClient but read a cached value for _inShutdown,
+                        // or the other thread is in the process of executing removeElementClient, and we preemptively
+                        // decide to notify here in case _inShutdown returns a stale value of false for that thread.
+                        // (ReaperThread will not wait at the next loop thus no need to use notifyAll())
+                        this.notify();
+                    }
                     return;
                 } else {
                     final long nextCheck = reaperElement.getNextCheckAbsoluteMillis();
@@ -721,8 +732,16 @@ public class TransactionReaper
 
             if (!waitForTransactions) {
                 _reaperElements.setAllTimeoutsToZero();
+                /**
+                 * Setting nextDynamicCheckTime to zero means that ReaperThread will not sleep/wait again
+                 */
                 nextDynamicCheckTime.set(0);
-                notifyAll();
+                /**
+                 * This notification's goal is waking up an asleep ReaperThread
+                 *
+                 * Note: ReaperThread *might* be also running, in which case, this notification will be ignored
+                 */
+                this.notify();
             }
 
             /*
@@ -773,6 +792,11 @@ public class TransactionReaper
     // cheaper than locking to recalculate the new time here.
     private final void removeElementClient(ReaperElement reaperElement)
     {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace(String.format("TransactionReaper::removeElementClient ( Removing transaction %s)",
+                    reaperElement._control.get_uid()));
+        }
+
         _reaperElements.remove(reaperElement);        
         _timeouts.remove(reaperElement._control);
 
@@ -795,6 +819,11 @@ public class TransactionReaper
     // new time is correct.
     private final void removeElementReaper(ReaperElement reaperElement)
     {
+        if (tsLogger.logger.isTraceEnabled()) {
+            tsLogger.logger.trace(String.format("TransactionReaper::removeElementReaper ( Removing transaction %s)",
+                    reaperElement._control.get_uid()));
+        }
+
         _reaperElements.remove(reaperElement);
         _timeouts.remove(reaperElement._control);
 

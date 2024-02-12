@@ -53,14 +53,6 @@
         <configuration>
           <useManifestOnlyJar>false</useManifestOnlyJar>
           <excludes>
-            <!-- exclude tests that load the byteman agent (BMUnitRunner) -->
-            <exclude>**/RecoveryManagerStartStopTest.java</exclude>
-            <exclude>**/LogStoreTest2.java</exclude>
-            <exclude>**/LogStoreRecoveryTest.java</exclude>
-            <exclude>**/ReaperMonitorTest.java</exclude>
-            <exclude>**/ReaperTestCase3.java</exclude>
-            <exclude>**/ReaperTestCase2.java</exclude>
-            <exclude>**/ReaperTestCase.java</exclude>
             <!-- not sure why these are excluded -->
             <exclude>**/resources/**</exclude>
             <exclude>**/DummyCheckedAction.java</exclude>
@@ -77,6 +69,9 @@
             <!-- auxilairy code used by reaper test classes -->
             <exclude>**/reaper/ReaperTestCaseControl.java</exclude>
           </excludes>
+          <systemProperties>
+            <java.util.logging.config.file>${build.directory}/test-classes/logging.properties</java.util.logging.config.file>
+          </systemProperties>
         </configuration>
       </plugin>
 

@@ -324,7 +324,12 @@ public class ReaperElement implements Comparable<ReaperElement>
         return _transactionTimeoutAbsoluteMillis;
     }
 
-    void setTransactionTimeoutAbsoluteMillis(long transactionTimeoutAbsoluteMillis) {
+    /**
+     * Sets the absolute timeout of the transaction.
+     *
+     * @param transactionTimeoutAbsoluteMillis value in milliseconds
+     */
+    public void setTransactionTimeoutAbsoluteMillis(long transactionTimeoutAbsoluteMillis) {
         this._transactionTimeoutAbsoluteMillis = transactionTimeoutAbsoluteMillis;
     }
 }
