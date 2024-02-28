@@ -11,6 +11,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.hp.mwtests.ts.jta.common.FailureXAResource;
 import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
 import jakarta.transaction.NotSupportedException;
@@ -298,7 +299,44 @@ public class JTATest {
             assertTrue(resource2Rollback);
         }
     }
-	
+
+    @Test
+    public void testXARB_INTEGRITYprepare() throws Exception {
+        jakarta.transaction.TransactionManager tm = com.arjuna.ats.jta.TransactionManager
+                .transactionManager();
+
+        tm.begin();
+
+        jakarta.transaction.Transaction theTransaction = tm.getTransaction();
+
+        assertTrue(theTransaction.enlistResource(new SimpleXAResource() {
+            @Override
+            public int prepare(Xid xid) throws XAException {
+                throw new XAException(XAException.XA_RBINTEGRITY);
+            }
+
+            @Override
+            public void rollback(Xid xid) throws XAException {
+                resource1Rollback = true;
+            }
+        }));
+
+        assertTrue(theTransaction.enlistResource(new SimpleXAResource() {
+
+            @Override
+            public void rollback(Xid xid) throws XAException {
+                resource2Rollback = true;
+            }
+        }));
+
+        try {
+            tm.commit();
+            fail("Should not have committed");
+        } catch (RollbackException e) {
+            assertFalse(resource1Rollback);
+            assertTrue(resource2Rollback);
+        }
+    }
 	
 	@Test
 	public void testHeuristicRollbackSuppressedException() throws NotSupportedException, SystemException, IllegalStateException, RollbackException, SecurityException, HeuristicMixedException, HeuristicRollbackException {

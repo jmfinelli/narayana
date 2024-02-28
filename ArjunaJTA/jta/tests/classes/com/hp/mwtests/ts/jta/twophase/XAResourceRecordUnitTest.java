@@ -204,4 +204,15 @@ public class XAResourceRecordUnitTest
         assertEquals(xares.nestedCommit(), TwoPhaseOutcome.FINISH_OK);
         assertEquals(xares.nestedAbort(), TwoPhaseOutcome.FINISH_OK);
     }
+
+    @Test
+    public void testPrepareFailureWithRollback () {
+        DummyXA res = new DummyXA(false);
+        FailureXAResource fxa = new FailureXAResource(FailLocation.prepare_and_rollback, FailType.XA_RBINTEGRITY);
+        TransactionImple tx = new TransactionImple(0);
+        XAResourceRecord xares = new XAResourceRecord(tx, fxa, tx.getTxId(), null);
+
+        assertEquals(xares.topLevelPrepare(), TwoPhaseOutcome.PREPARE_NOTOK);
+        assertEquals(xares.topLevelAbort(), TwoPhaseOutcome.FINISH_OK);
+    }
 }

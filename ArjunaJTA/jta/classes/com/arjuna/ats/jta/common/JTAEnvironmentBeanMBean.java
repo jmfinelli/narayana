@@ -28,8 +28,6 @@ public interface JTAEnvironmentBeanMBean
 
     List<String> getXaResourceOrphanFilterClassNames();
 
-    boolean isXaRollbackOptimization();
-
     boolean isXaAssumeRecoveryComplete();
 
     String getUserTransactionJNDIContext();
