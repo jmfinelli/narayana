@@ -101,7 +101,6 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
         }
 
         _prepared = false;
-        _rolledBack = false;
         _heuristic = TwoPhaseOutcome.FINISH_OK;
 
         _theTransaction = tx;
@@ -193,7 +192,7 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
             switch (e1.errorCode) {
                 // No txn -> assume rollback
                 case XAException.XAER_NOTA:
-                    // Rolled back by specs
+                // Rolled back by specs
                 case XAException.XA_RBROLLBACK:
                 case XAException.XA_RBEND:
                 case XAException.XA_RBCOMMFAIL:
@@ -339,7 +338,7 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
                             case XAException.XA_RBTIMEOUT:
                                 // The resource manager has rolled back the
                                 // transaction branch’s work and has released
-                                // zall held resources. Nothing left to do
+                                // all held resources. Nothing left to do
                                 this._rolledBack = true;
                                 break;
                             default:
@@ -431,7 +430,8 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
                             case XAException.XA_RBTIMEOUT:
                             case XAException.XA_RBTRANSIENT:
                             case XAException.XAER_RMERR:
-                            case XAException.XAER_PROTO:  // XA spec implies rollback
+                            case XAException.XAER_PROTO:
+                                // XA spec implies rollback
                                 _rolledBack = true;
                                 _heuristic = TwoPhaseOutcome.HEURISTIC_ROLLBACK;
                                 return TwoPhaseOutcome.HEURISTIC_ROLLBACK;
@@ -516,6 +516,7 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
         if (_tranID == null) {
             jtaLogger.i18NLogger.warn_resources_arjunacore_opcnulltx("XAResourceRecord.1pc");
 
+            _rolledBack = true;
             return TwoPhaseOutcome.ONE_PHASE_ERROR;  // rolled back!!
         } else {
             if (_theXAResource != null) {
@@ -625,6 +626,7 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
                             forget();
                             break;
                         case XAException.XA_HEURRB:
+                            this._rolledBack = true;
                             forget();
                             return TwoPhaseOutcome.ONE_PHASE_ERROR;
                         case XAException.XA_RBROLLBACK:
@@ -638,7 +640,7 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
                         case XAException.XAER_RMERR:
                             // These codes imply that the RM rolled back the branch
                             // Setting _rolledBack to true is not strictly needed here,
-                            // but we'll set it anyway
+                            // but we'll set it anyway for consistency
                             this._rolledBack = true;
                             return TwoPhaseOutcome.ONE_PHASE_ERROR;
                         case XAException.XAER_NOTA:
@@ -653,6 +655,7 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
                             return TwoPhaseOutcome.HEURISTIC_HAZARD;
                         case XAException.XA_RETRY:  // XA does not allow this to be thrown for 1PC!
                         case XAException.XAER_PROTO:
+                            this._rolledBack = true;
                             return TwoPhaseOutcome.ONE_PHASE_ERROR; // assume rollback
                         case XAException.XAER_RMFAIL: // This was modified as part of JBTM-XYZ - although RMFAIL is not clear there is a rollback/commit we are flagging this to the user
                             _heuristic = TwoPhaseOutcome.HEURISTIC_HAZARD;
@@ -669,8 +672,10 @@ public class XAResourceRecord extends AbstractRecord implements ExceptionDeferre
                 } finally {
                     removeConnection();
                 }
-            } else
+            } else {
+                this._rolledBack = true;
                 return TwoPhaseOutcome.ONE_PHASE_ERROR;
+            }
         }
 
         if (commit)
