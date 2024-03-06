@@ -1065,7 +1065,8 @@ public class SimpleIsolatedServers {
 			Thread.currentThread().setContextClassLoader(classLoader);
 		}
 		assertTrue("" + completionCounter.getRollbackCount("2000"), completionCounter.getRollbackCount("2000") == 1);
-		assertTrue("" + completionCounter.getRollbackCount("1000"), completionCounter.getRollbackCount("1000") == 2);
+		// The second rollback invocation (from the proxyXAResource) is ignored because of JBTM-3843, that's why the following condition is == 1
+		assertTrue("" + completionCounter.getRollbackCount("1000"), completionCounter.getRollbackCount("1000") == 1);
 	}
 
 	@Test

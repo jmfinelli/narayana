@@ -56,7 +56,6 @@ public class JTAEnvironmentBean implements JTAEnvironmentBeanMBean
     private volatile List<String> xaResourceOrphanFilterClassNames = new ArrayList<String>();
     private volatile List<XAResourceOrphanFilter> xaResourceOrphanFilters = null;
 
-    private volatile boolean xaRollbackOptimization = false;
     private volatile boolean xaAssumeRecoveryComplete = false;
 
     // com.arjuna.ats.jta.utils.
@@ -587,6 +586,8 @@ public class JTAEnvironmentBean implements JTAEnvironmentBeanMBean
     }
 
     /**
+     * Deprecated: This method will be removed in the next major release
+     *
      * Returns if connections associated to XAResources that fail during prepare should be cleaned up immediately.
      * TODO move to JDBC module as it's only for our own connection manager?
      *
@@ -595,19 +596,22 @@ public class JTAEnvironmentBean implements JTAEnvironmentBeanMBean
      *
      * @return true for cleanup during prepare, false for cleanup during phase two rollback.
      */
+    @Deprecated
     public boolean isXaRollbackOptimization()
     {
-        return xaRollbackOptimization;
+        return false;
     }
 
     /**
+     * Deprecated: This method will be removed in the next major release
+     *
      * Sets if failed resources should be cleaned up during prepare or during phase two.
      *
      * @param xaRollbackOptimization true for immediate cleanup, false for phase two cleanup.
      */
+    @Deprecated
     public void setXaRollbackOptimization(boolean xaRollbackOptimization)
     {
-        this.xaRollbackOptimization = xaRollbackOptimization;
     }
 
     /**
