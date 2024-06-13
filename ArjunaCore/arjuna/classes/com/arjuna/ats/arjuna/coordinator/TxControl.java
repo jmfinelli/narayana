@@ -21,8 +21,50 @@ import com.arjuna.ats.arjuna.recovery.TransactionStatusManager;
  */
 
 public class TxControl {
+    private static TransactionStatusManager transactionStatusManager = null;
+
     public static final int NODE_NAME_SIZE = 28;
     public static final String DEFAULT_NODE_NAME = "Arjuna:";
+
+    static final boolean maintainHeuristics = arjPropertyManager.getCoordinatorEnvironmentBean().isMaintainHeuristics();
+    static final boolean asyncCommit = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncCommit();
+    static final boolean asyncPrepare = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncPrepare();
+    static final boolean asyncRollback = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncRollback();
+    static final boolean asyncBeforeSynch = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncBeforeSynchronization();
+    static final boolean asyncAfterSynch = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncAfterSynchronization();
+    static final boolean onePhase = arjPropertyManager.getCoordinatorEnvironmentBean().isCommitOnePhase();
+    static final boolean readonlyOptimisation = arjPropertyManager.getCoordinatorEnvironmentBean().isReadonlyOptimisation();
+    static final boolean dynamic1PC = arjPropertyManager.getCoordinatorEnvironmentBean().getDynamic1PC();
+
+     // flag which is true if transaction service is enabled and false if it is disabled
+    static volatile boolean enable = !arjPropertyManager.getCoordinatorEnvironmentBean().isStartDisabled();
+
+    static String xaNodeName = arjPropertyManager.getCoreEnvironmentBean().getNodeIdentifier();
+    static byte[] xaNodeNameBytes = (xaNodeName == null ? null : xaNodeName.getBytes(StandardCharsets.UTF_8));
+    static int _defaultTimeout = arjPropertyManager.getCoordinatorEnvironmentBean().getDefaultTimeout();
+
+    /**
+     * flag which is true if enable and disable operations, respectively, start and stop the transaction status
+     * manager and false if they do not perform a start and stop. this flag is true by default and can only be
+     * set to false by setting property @see#com.arjuna.ats.arjuna.common.TRANSACTION_STATUS_MANAGER_ENABLE
+     * to value "NO"
+     */
+    static final boolean _enableTSM = arjPropertyManager.getCoordinatorEnvironmentBean().isTransactionStatusManagerEnable();
+
+    static final boolean beforeCompletionWhenRollbackOnly = arjPropertyManager.getCoordinatorEnvironmentBean().isBeforeCompletionWhenRollbackOnly();
+    static Thread _shutdownHook = null;
+    static Object _lock = new Object();
+
+    /**
+     * Creates transaction status manager.
+     */
+    static {
+        // TODO -- add this check to respect the environment setting for Environment.START_DISABLED?
+        // TODO -- is this feature actually needed (it appears not to be used internally)
+        // if (enable) {
+        createTransactionStatusManager();
+        // }
+    }
 
     public static class Shutdown extends Thread {
         public void run() {
@@ -169,61 +211,6 @@ public class TxControl {
                 transactionStatusManager = null;
             }
         }
-    }
-
-    static final boolean maintainHeuristics = arjPropertyManager.getCoordinatorEnvironmentBean().isMaintainHeuristics();
-
-    static final boolean asyncCommit = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncCommit();
-
-    static final boolean asyncPrepare = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncPrepare();
-
-    static final boolean asyncRollback = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncRollback();
-
-    static final boolean asyncBeforeSynch = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncBeforeSynchronization();
-
-    static final boolean asyncAfterSynch = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncAfterSynchronization();
-
-    static final boolean onePhase = arjPropertyManager.getCoordinatorEnvironmentBean().isCommitOnePhase();
-
-    static final boolean readonlyOptimisation = arjPropertyManager.getCoordinatorEnvironmentBean().isReadonlyOptimisation();
-
-    static final boolean dynamic1PC = arjPropertyManager.getCoordinatorEnvironmentBean().getDynamic1PC();
-
-    /**
-     * flag which is true if transaction service is enabled and false if it is disabled
-     */
-    static volatile boolean enable = !arjPropertyManager.getCoordinatorEnvironmentBean().isStartDisabled();
-
-    private static TransactionStatusManager transactionStatusManager = null;
-
-    static String xaNodeName = arjPropertyManager.getCoreEnvironmentBean().getNodeIdentifier();
-    static byte[] xaNodeNameBytes = (xaNodeName == null ? null : xaNodeName.getBytes(StandardCharsets.UTF_8));
-
-    static int _defaultTimeout = arjPropertyManager.getCoordinatorEnvironmentBean().getDefaultTimeout();
-
-    /**
-     * flag which is true if enable and disable operations, respectively, start and stop the transaction status
-     * manager and false if they do not perform a start and stop. this flag is true by default and can only be
-     * set to false by setting property @see#com.arjuna.ats.arjuna.common.TRANSACTION_STATUS_MANAGER_ENABLE
-     * to value "NO"
-     */
-    static final boolean _enableTSM = arjPropertyManager.getCoordinatorEnvironmentBean().isTransactionStatusManagerEnable();
-
-    static final boolean beforeCompletionWhenRollbackOnly = arjPropertyManager.getCoordinatorEnvironmentBean().isBeforeCompletionWhenRollbackOnly();
-
-    static Thread _shutdownHook = null;
-
-    static Object _lock = new Object();
-
-    /**
-     * Creates transaction status manager.
-     */
-    static {
-        // TODO -- add this check to respect the environment setting for Environment.START_DISABLED?
-        // TODO -- is this feature actually needed (it appears not to be used internally)
-        // if (enable) {
-        createTransactionStatusManager();
-        // }
     }
 
 }
