@@ -5,11 +5,12 @@
 
 package com.arjuna.ats.jta.distributed.server;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class CompletionCounter {
+public class CompletionCounter implements Serializable {
 
 	private static CompletionCounter instance;
 

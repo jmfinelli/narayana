@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.arjuna.ats.arjuna.common.Uid;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Synchronization;
 import jakarta.transaction.SystemException;
@@ -29,6 +30,7 @@ import com.arjuna.ats.arjuna.common.CoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.CoreEnvironmentBeanException;
 import com.arjuna.ats.arjuna.common.ObjectStoreEnvironmentBean;
 import com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean;
+import com.arjuna.ats.internal.arjuna.tools.log.EditableAtomicAction;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 import com.arjuna.ats.arjuna.coordinator.TxControl;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
@@ -205,6 +207,10 @@ public class ServerImpl implements LocalServer {
 		return transactionManagerService.getTransactionManager();
 	}
 
+	public String get_uid () throws SystemException {
+		return ((TransactionImple) transactionManagerService.getTransactionManager().getTransaction()).get_uid().stringForm();
+	}
+
 	@Override
 	public Xid locateOrImportTransactionThenResumeIt(int remainingTimeout, Xid toResume) throws XAException, IllegalStateException, SystemException,
 			IOException {
@@ -256,6 +262,19 @@ public class ServerImpl implements LocalServer {
     public ProxyXAResource generateProxyXAResource(String remoteServerName, Xid migratedXid, boolean handleError) throws SystemException, IOException {
         return new ProxyXAResource(nodeName, remoteServerName, migratedXid, handleError);
     }
+
+	@Override
+	public String checkHeuristic(String getUid) {
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		Thread.currentThread().setContextClassLoader(getClassLoader());
+
+		EditableAtomicAction editableAtomicAction = new EditableAtomicAction(new Uid(getUid));
+		String toReturn = editableAtomicAction.toString();
+		// Doesn't generate an error, just can log something
+		editableAtomicAction.moveHeuristicToPrepared(0);
+		Thread.currentThread().setContextClassLoader(classLoader);
+		return toReturn;
+	}
 
 	@Override
 	public Synchronization generateProxySynchronization(String remoteServerName, Xid toRegisterAgainst) {

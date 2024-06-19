@@ -30,6 +30,8 @@ public interface LocalServer {
 
 	public TransactionManager getTransactionManager() throws NotSupportedException, SystemException;
 
+	public String get_uid() throws SystemException;
+
 	public void doRecoveryManagerScan(boolean shortenSafetyInterval);
 
 	public long getTimeLeftBeforeTransactionTimeout() throws RollbackException;
@@ -48,4 +50,6 @@ public interface LocalServer {
 	public void shutdown() throws Exception;
 
     public XAResource generateProxyXAResource(String nextServerNodeName, Xid proxyRequired, boolean handleError) throws SystemException, IOException;
+
+	String checkHeuristic(String getUid);
 }
