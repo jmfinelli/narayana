@@ -3,8 +3,6 @@
    SPDX short identifier: Apache-2.0
  */
 
-
-
 package com.arjuna.ats.internal.arjuna.recovery;
 
 import java.io.IOException;
@@ -37,7 +35,6 @@ import com.arjuna.ats.arjuna.utils.Utility;
 
 public class PeriodicRecovery extends Thread
 {
-    private boolean blockSuspension;
     /***** public API *****/
 
     /**
@@ -193,12 +190,12 @@ public class PeriodicRecovery extends Thread
    }
 
     /**
-     * make all scanning operations suspend.
-     *
+     * Make all scanning operations suspend.
+     * <p>
      * This switches the recovery operation mode to SUSPENDED. Any attempt to start a new scan either by an ad hoc
      * threads or by the periodic recovery thread will suspend its thread until the mode changes. If a scan is in
      * progress when this method is called it will complete its scan without suspending.
-     *
+     * </p>
      * @param async false if the calling thread should wait for any in-progress scan to complete before returning
      * @return the previous mode before attempting the suspend
      */
@@ -207,40 +204,68 @@ public class PeriodicRecovery extends Thread
    {
        synchronized (_stateLock)
        {
-           // see if suspension should delay until RecoveryModules that are instances of SuspendBlockingRecoveryModule have completed recovery
-           if (RecoveryManager.manager().isWaitForFinalRecovery()) {
-               // Need to make sure that we wait for TxControl to have been disabled
-               while (TxControl.isEnabled()) {
-                   // This should be done with better handling
-                    Thread.currentThread().sleep(1000);
-               }
+           Mode currentMode = getMode();
 
-               // TODO Need some way to check the reaper is terminated
+           /*
+            * WaitForFinalRecovery checks whether suspension should delay until RecoveryModules
+            * that are instances of SuspendBlockingRecoveryModule have completed recovery.
+            *
+            * Why during PeriodicRecovery.suspendScan? This method is the Narayana's hook to
+            * gracefully terminate the periodic recovery, which is Narayana's last ditch to
+            * complete transactions that didn't manage to end their life-cycle normally.
+            * As a consequence, while gracefully shutting down the periodic recovery, this
+            * method has to wait for the following conditions:
+            * - The transaction system has to be disabled, which means that no new txns can
+            * be initiated (first condition)
+            * - The transaction reaper should complete any monitoring and the associated
+            * thread should be terminated (second condition)
+            * - The periodic recovery's current scan needs to conclude its cycle
+            * (third condition)
+            * Once all above conditions have been satisfied, the periodic recovery (through its
+            * method doWorkInternal) has to recover all in-doubt txns that didn't manage to
+            * complete normally.
+            */
+           if (currentMode == Mode.ENABLED && RecoveryManager.manager().isWaitForFinalRecovery()) {
 
+               // Makes sure that the transaction system has been disabled (first condition)
+               TxControl.waitUntilIsDisabled();
 
-               while (getStatus() == Status.SCANNING) {
-                   // Need to be sure that a scan has fully completed, for now illustrate this by waiting to be used outside of scanning
-                   // maybe it can be checked we are not in the middle of scanning rather than simply wait?
-                   _stateLock.wait();
-               }
-               
+               // Makes sure that the transaction reaper completed all transactions (second condition)
+               TransactionReaper.transactionReaper().waitForAllTxnsToTerminate();
+
+               /*
+                * At least one full scan should be executed to make sure that there are
+                * no transactions to recover.
+                * Although it is very unlikely that there is an ongoing scan at this point,
+                * doScanningWait() will make sure that another full scan will be executed.
+                */
+               doScanningWait();
+               doWork();
+
+               /*
+                * Now, it is finally possible to start checking if there are transactions that
+                * are still in need of recovery (or completion, in case of heuristics)
+                */
                while (true) {
                    try {
-                       // preventShutdown is reset in doWorkInternal to false and after scanning completes check if there were any reasons to preventShutdown
+                       /*
+                        * blockSuspension is set to false in doWorkInternal. In particular, after each scanning completes,
+                        * doWorkInternal checks whether there were any reasons to blockSuspension.
+                        */
+
                        // I don't know the best place to make this comment but checking for subordinates could be a new recovery module wrapping something like https://github.com/jbosstm/narayana/blob/86182416bea64368ecdfc7e78767f798b15c14db/ArjunaJTS/jtax/classes/com/arjuna/ats/internal/jta/transaction/jts/jca/XATerminatorImple.java#L438C4-L438C4
                        // but please know that these checks are called by external processes at any time and so that would need to be blocked while this suspension process continues and appropriately handled
-                       if (!blockSuspension) {
+                       if (!_blockSuspension) {
                            break;
                        }
-                       _stateLock.wait(); // for next cycle to finish
+                       _stateLock.wait(); // wait for the next cycle to finish
                    } catch (InterruptedException e) {
                        // just ignore and retest condition
                    }
                }
            }
-           // only switch and kick everyone if we are currently ENABLED
-           Mode currentMode = getMode();
 
+           // only switch and kick everyone if we are currently ENABLED
            if (currentMode == Mode.ENABLED) {
                if (tsLogger.logger.isDebugEnabled()) {
                    tsLogger.logger.debug("PeriodicRecovery: Mode <== SUSPENDED");
@@ -248,7 +273,9 @@ public class PeriodicRecovery extends Thread
                setMode(Mode.SUSPENDED);
                _stateLock.notifyAll();
            }
-           // It is not expected that another scan could have started as the block about should have set it to suspended
+
+           // In case isWaitForFinalRecovery == true, there could not be any ongoing scan
+           // as the above block set PeriodicRecovery's status to SUSPENDED
            if (!RecoveryManager.manager().isWaitForFinalRecovery() && !async) {
                // synchronous, so we keep waiting until the currently active scan stops
                while (getStatus() == Status.SCANNING) {
@@ -758,7 +785,7 @@ public class PeriodicRecovery extends Thread
     {
         // n.b. we only get here if status is SCANNING
 
-        blockSuspension = false;
+        _blockSuspension = false;
 
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("Periodic recovery first pass at "+_theTimestamper.format(new Date()));
@@ -829,7 +856,7 @@ public class PeriodicRecovery extends Thread
             try {
             m.periodicWorkSecondPass();
             if (m instanceof SuspendBlockingRecoveryModule) {
-                blockSuspension = blockSuspension || ((SuspendBlockingRecoveryModule) m).shouldBlockShutdown();
+                _blockSuspension = _blockSuspension || ((SuspendBlockingRecoveryModule) m).shouldBlockShutdown();
             }
             } finally {
                 restoreClassLoader(cl);
@@ -980,6 +1007,12 @@ public class PeriodicRecovery extends Thread
      * the worker service which handles requests via the listener socket
      */
     private WorkerService _workerService = null;
+
+    /**
+     * flag to signal that there are transactions to recover;
+     * this flag is ONLY set during the periodic recovery cycle.
+     */
+    private volatile boolean _blockSuspension = false;
 
    /*
     * Read the system properties to set the configurable options

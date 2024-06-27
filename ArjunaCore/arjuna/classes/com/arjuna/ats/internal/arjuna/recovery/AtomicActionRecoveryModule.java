@@ -238,12 +238,12 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
    }
 
     /**
-     * This is just for illustration. For instance it may be that periodic recovery would have cleaned some of these.
-     * @return
+     * TODO I don't mind how shouldBlockShutdown() is worked out. Open to better solution :-)
+     * @return whether there are AtomicAction transactions to take care of
      */
     @Override
     public boolean shouldBlockShutdown() {
-        return _transactionUidVector.isEmpty();
+        return !_transactionUidVector.isEmpty();
     }
 
    // 'type' within the Object Store for AtomicActions.

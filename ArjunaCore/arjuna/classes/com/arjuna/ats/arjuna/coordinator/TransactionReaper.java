@@ -727,17 +727,7 @@ public class TransactionReaper
                 _reaperElements.setAllTimeoutsToZero();
             }
 
-            /*
-                * Wait for all of the transactions to
-                * terminate normally.
-                */
-            while (!_reaperElements.isEmpty()) {
-                try {
-                    this.wait();
-                }
-                catch (final Exception ex) {
-                }
-            }
+            waitForAllTxnsToTerminate();
 
             _reaperThread.shutdown();
 
@@ -767,6 +757,25 @@ public class TransactionReaper
         }
 
         _reaperWorkerThread = null;
+    }
+
+    /**
+     * Wait for all the transactions to terminate normally.
+     *
+     * Note: this method assumes that the transaction system has been
+     * shutdown already so no new transactions can be created, or we
+     * could be here for a long time!
+     */
+    public void waitForAllTxnsToTerminate() {
+        synchronized (this) {
+            while (!_reaperElements.isEmpty()) {
+                try {
+                    this.wait();
+                } catch (final InterruptedException ignore) {
+                    // Ignored
+                }
+            }
+        }
     }
 
     // called (indirectly) by user code doing removals on e.g. commit/rollback

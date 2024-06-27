@@ -491,4 +491,5 @@ public class RecoveryManager
 
     private static RecoveryManager _recoveryManager = null;
     private static boolean delayRecoveryManagerThread ;
+    private static boolean waitForRecovery;
 }
