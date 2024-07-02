@@ -6,6 +6,7 @@
 
 package com.arjuna.ats.jbossatx.jta;
 
+import com.arjuna.ats.arjuna.coordinator.TxControl;
 import org.jboss.tm.*;
 
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
@@ -54,6 +55,16 @@ public class TransactionManagerService implements TransactionManagerServiceMBean
 
     public void stop()
     {
+    }
+
+    /**
+     * This will need to be called from WildFly ServerActivity in a manner similar to how RecoverySuspendController works
+     */
+    public void suspend() {
+        // disable the transaction system but keep recovery running
+        TxControl.disable();
+        // wait for in flight transactions to complete
+        TransactionReaper.terminate(true);
     }
 
 

@@ -34,6 +34,7 @@ import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryModule;
 import com.arjuna.ats.arjuna.recovery.ExtendedRecoveryModule;
+import com.arjuna.ats.arjuna.recovery.SuspendBlockingRecoveryModule;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
 import com.arjuna.ats.internal.jta.resources.arjunacore.XAResourceRecord;
@@ -56,7 +57,7 @@ import org.jboss.tm.XAResourceWrapper;
  * Designed to be able to recover any XAResource.
  */
 
-public class XARecoveryModule implements ExtendedRecoveryModule
+public class XARecoveryModule implements ExtendedRecoveryModule, SuspendBlockingRecoveryModule
 {
 	private final AtomicBoolean recoveryProblems = new AtomicBoolean(false);
 
@@ -299,6 +300,17 @@ public class XARecoveryModule implements ExtendedRecoveryModule
 	public String id()
 	{
 		return "XARecoveryModule:" + _recoveryManagerClass;
+	}
+
+
+	/**
+	 * Just as an example, needs more work
+	 * @return
+	 */
+	@Override
+	public boolean shouldBlockShutdown () {
+		// TODO Check if there are orphans, any other conditions?
+		return true;
 	}
 
 	/**

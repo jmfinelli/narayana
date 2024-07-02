@@ -1,0 +1,52 @@
+########################################################################
+#
+# Byteman script used to control how many fails should happen before
+# PeriodicRecovery manages to recover all transactions. The end goal
+# is to suspend PeriodicRecovery cleanly.
+#
+########################################################################
+
+########################################################################
+# Rule to create a counter when
+# BytemanControlledRecord.resetCounter()
+# is invoked
+#########################################################################
+
+RULE resetCounter
+CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
+METHOD resetRecoveryCounter
+AT ENTRY
+IF TRUE
+DO debug("[BytemanControlledRecord] Create/Reset Recovery Counter"),
+   deleteCounter("topLevelCommitCounter"),
+   createCounter("topLevelCommitCounter")
+ENDRULE
+
+########################################################################
+# Rule to increment topLevelCommitCounter
+#########################################################################
+
+RULE IncrementTopLevelCommitCounter
+CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
+METHOD topLevelCommit
+AT ENTRY
+IF TRUE
+DO incrementCounter("topLevelCommitCounter"),
+   debug("[BytemanControlledRecord] topLevelCommitCounter was incremented to " + readCounter("topLevelCommitCounter"))
+ENDRULE
+
+########################################################################
+# Rule to fail
+# BytemanControlledRecord.topLevelCommit()
+# for BytemanControlledRecord._commitFailureCounter times
+#########################################################################
+
+RULE FailTopLevelCommit
+CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
+METHOD topLevelCommit
+AT EXIT
+IF readCounter("topLevelCommitCounter") <= BytemanControlledRecord._commitFailureCounter
+DO debug("[BytemanControlledRecord] before returning a TwoPhaseOutcome.FINISH_ERROR, topLevelCommitCounter is: " + readCounter("topLevelCommitCounter")),
+   # com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome.FINISH_ERROR == 8
+   return 8
+ENDRULE
