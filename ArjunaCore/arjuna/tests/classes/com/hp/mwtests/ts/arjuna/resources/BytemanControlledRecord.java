@@ -38,30 +38,22 @@ public class BytemanControlledRecord extends AbstractRecord {
         BytemanControlledRecord._commitCallCounter.set(0);
     }
 
-    /**
-     * To be called before the start of the test when the byteman script
-     * recoverySuspend.btm is loaded
+    /* This is a counter used internally in BytemanControlledRecord to count how many
+     * times the "topLevelPrepare()" method was invoked.
      */
-    public static void resetRecoveryCounter() {
-        // The magic happens in the byteman script
+    private static final AtomicInteger _prepareCallCounter = new AtomicInteger(0);
+
+    public static int getPrepareCallCounter() {
+        return BytemanControlledRecord._prepareCallCounter.get();
     }
 
-    public static void resetAll() {
-        BytemanControlledRecord.resetRecoveryCounter();
-        BytemanControlledRecord.resetCommitCallCounter();
+    public static void resetPrepareCallCounter() {
+        BytemanControlledRecord._prepareCallCounter.set(0);
     }
-
-    // It can be read from byteman using:
-    // BytemanControlledRecord._commitFailureCounter. See the script for more details.
-    private static int _commitFailureCounter;
-
-    // This needs to be set before running the test that uses this record type
-    public static void setCommitFailureCounter(int commitFailureCounter) {
-        BytemanControlledRecord._commitFailureCounter = commitFailureCounter;
-    }
-
-    public static int getFailCounter() {
-        return BytemanControlledRecord._commitFailureCounter;
+    
+    // Executed in the byteman script recoverySuspend.btm
+    public static void resetGreenFlag() {
+        
     }
 
     public BytemanControlledRecord() {
@@ -120,6 +112,7 @@ public class BytemanControlledRecord extends AbstractRecord {
     }
 
     public int topLevelPrepare() {
+        BytemanControlledRecord._prepareCallCounter.getAndIncrement();
         return TwoPhaseOutcome.PREPARE_OK;
     }
 

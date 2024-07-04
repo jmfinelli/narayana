@@ -35,7 +35,6 @@ public class RecoverySuspendTest {
     // fields read with byteman
     private final static int periodicRecoveryPeriod = 5;
     private final static int recoveryBackoffPeriod = 1;
-    private final static int numberOfFailures = 3;
 
     @BeforeAll
     public static void beforeClass() {
@@ -118,9 +117,10 @@ public class RecoverySuspendTest {
     @Test
     public void testSuspensionWhenThereIsAtomicActionToRecover() {
 
-        // Set up how many attempts should fail
-        BytemanControlledRecord.setCommitFailureCounter(numberOfFailures);
-
+        // Make sure that the test environment is ready
+        BytemanControlledRecord.resetCommitCallCounter();
+        BytemanControlledRecord.resetGreenFlag();
+        
         createBasicAtomicAction();
 
         // The Transaction System needs to be disabled, i.e. no new transactions can be created
@@ -132,18 +132,16 @@ public class RecoverySuspendTest {
         // Synchronization is not needed (i.e. async = true) as isWaitForFinalRecovery() == true
         _manager.suspend(true);
 
-        // BytemanControlledRecord.getCommitCallCounter() should be numberOfFailures + 1 as:
-        // - one invocation from the normal commit procedure should fail
-        // - (numberOfFailures - 1) invocations from the recovery process should fail
-        // - one invocation from the recovery process should pass
-        Assertions.assertTrue(BytemanControlledRecord.getCommitCallCounter() == (numberOfFailures + 1),
-                String.format("BytemanControlledRecord's getCommitCallCounter is %d but it should have been %d",
-                        BytemanControlledRecord.getCommitCallCounter(), (numberOfFailures + 1)));
+        // BytemanControlledRecord.getCommitCallCounter() should be 3 as:
+        // - One invocation from the normal commit procedure should fail
+        // - One invocation from the recovery process should fail
+        // - One invocation from the recovery process should pass
+        Assertions.assertEquals(3, BytemanControlledRecord.getCommitCallCounter(), 
+                String.format("BytemanControlledRecord's getCommitCallCounter is %d but it should have been 3",
+                        BytemanControlledRecord.getCommitCallCounter()));
     }
 
     private void createBasicAtomicAction() {
-        // Reset the Recovery Counter through byteman
-        BytemanControlledRecord.resetAll();
 
         AtomicAction A = new AtomicAction();
 

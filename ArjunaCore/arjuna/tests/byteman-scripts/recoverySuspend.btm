@@ -1,52 +1,56 @@
 ########################################################################
 #
-# Byteman script used to control how many fails should happen before
-# PeriodicRecovery manages to recover all transactions. The end goal
-# is to suspend PeriodicRecovery cleanly.
+# Byteman script used to make BytemanControlledRecord fail
+# topLevelCommit until AtomicActionRecoveryModule acknowledges that
+# it needs to block the suspension of PeriodicRecovery.
+# The end goal of this script is to simulate a transaction that fails
+# while PeriodicRecovery is trying to recover it. This scenario makes
+# sure that PeriodicRecovery waits to suspend until all transactions
+# have recovered
 #
 ########################################################################
 
 ########################################################################
-# Rule to create a counter when
-# BytemanControlledRecord.resetCounter()
-# is invoked
+# Rule to clear greenFlag when invoking 
+# BytemanControlledRecord.resetGreenFlag()
 #########################################################################
 
-RULE resetCounter
+RULE resetFlag
 CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
-METHOD resetRecoveryCounter
+METHOD resetGreenFlag
 AT ENTRY
 IF TRUE
-DO debug("[BytemanControlledRecord] Create/Reset Recovery Counter"),
-   deleteCounter("topLevelCommitCounter"),
-   createCounter("topLevelCommitCounter")
+DO debug("[BytemanControlledRecord] clearing greenFlag"),
+   clear("greenFlag")
 ENDRULE
 
 ########################################################################
-# Rule to increment topLevelCommitCounter
+# Rule to create greenFlag when
+# AtomicActionRecoveryModule.shouldBlockShutdown returns true
 #########################################################################
 
-RULE IncrementTopLevelCommitCounter
-CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
-METHOD topLevelCommit
-AT ENTRY
-IF TRUE
-DO incrementCounter("topLevelCommitCounter"),
-   debug("[BytemanControlledRecord] topLevelCommitCounter was incremented to " + readCounter("topLevelCommitCounter"))
+RULE setFlag
+CLASS com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule
+METHOD shouldBlockShutdown
+AT EXIT
+BIND returnValue:boolean = $!
+IF returnValue
+DO debug("[AtomicActionRecoveryModule] Setting greenFlag to true"),
+   flag("greenFlag")
 ENDRULE
 
 ########################################################################
 # Rule to fail
 # BytemanControlledRecord.topLevelCommit()
-# for BytemanControlledRecord._commitFailureCounter times
+# until greenFlag gets set
 #########################################################################
 
 RULE FailTopLevelCommit
 CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
 METHOD topLevelCommit
 AT EXIT
-IF readCounter("topLevelCommitCounter") <= BytemanControlledRecord._commitFailureCounter
-DO debug("[BytemanControlledRecord] before returning a TwoPhaseOutcome.FINISH_ERROR, topLevelCommitCounter is: " + readCounter("topLevelCommitCounter")),
-   # com.arjuna.ats.arjuna.coordinator.TwoPhaseOutcome.FINISH_ERROR == 8
+IF NOT flagged("greenFlag")
+DO debug("[BytemanControlledRecord] returning TwoPhaseOutcome.FINISH_ERROR"),
+   # TwoPhaseOutcome.FINISH_ERROR == 8
    return 8
 ENDRULE

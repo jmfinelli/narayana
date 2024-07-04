@@ -39,7 +39,7 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
     private volatile int expiryScanInterval = 12; // hours
     private volatile int transactionStatusManagerExpiryTime = 12; // hours
 
-    private volatile boolean waitForRecovery = true;
+    private volatile boolean waitForRecovery = false;
 
     @ConcatenationPrefix(prefix = "com.arjuna.ats.arjuna.recovery.expiryScanner")
     private volatile List<String> expiryScannerClassNames = new ArrayList<String>();
