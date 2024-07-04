@@ -13,8 +13,6 @@ import java.util.Enumeration;
 import java.util.Vector;
 
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
-import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
-import com.arjuna.ats.arjuna.coordinator.TxControl;
 import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryModule;
@@ -190,14 +188,26 @@ public class PeriodicRecovery extends Thread
    }
 
     /**
-     * Make all scanning operations suspend.
      * <p>
-     * This switches the recovery operation mode to SUSPENDED. Any attempt to start a new scan either by an ad hoc
-     * threads or by the periodic recovery thread will suspend its thread until the mode changes. If a scan is in
-     * progress when this method is called it will complete its scan without suspending.
+     *     Make all scanning operations suspend.
      * </p>
-     * @param async false if the calling thread should wait for any in-progress scan to complete before returning
-     * @return the previous mode before attempting the suspend
+     * <p>
+     *     This switches the recovery operation mode to SUSPENDED. Any attempt to start a new scan either by an ad hoc
+     *     threads or by the periodic recovery thread will suspend its thread until the mode changes. If a scan is in
+     *     progress when this method is called it will complete its scan without suspending.
+     * </p>
+     * <p>
+     *     Note that this method is also influenced by
+     *     <code>RecoveryEnvironmentBean.setWaitForFinalRecovery(boolean)</code>.
+     *     Please, refer to the its javadoc for further details.
+     *     In case <code>isWaitForFinalRecovery() == true</code>, it is <b>very important</b> that, before invoking
+     *     <code>suspendScan</code>:
+     *     * The Transaction System (i.e. TxControl) gets disabled (i.e. no new transactions will be created)
+     *     * The Transaction Reaper finishes monitoring all in-flight transactions
+     * </p>
+     * @param async false if the calling thread should wait for any in-progress scan to complete before returning.
+     *              In case <code>isWaitForFinalRecovery() == true</code>, this parameter is override.
+     * @return the previous mode before attempting the suspension
      */
 
    public Mode suspendScan (boolean async)
@@ -207,37 +217,14 @@ public class PeriodicRecovery extends Thread
            Mode currentMode = getMode();
 
            /*
-            * WaitForFinalRecovery checks whether suspension should delay until RecoveryModules
-            * that are instances of SuspendBlockingRecoveryModule have completed recovery.
-            *
-            * Why during PeriodicRecovery.suspendScan? This method is the Narayana's hook to
-            * gracefully terminate the periodic recovery, which is Narayana's last ditch to
-            * complete transactions that didn't manage to end their life-cycle normally.
-            * As a consequence, while gracefully shutting down the periodic recovery, this
-            * method has to wait for the following conditions:
-            * - The transaction system has to be disabled, which means that no new txns can
-            * be initiated (first condition)
-            * - The transaction reaper should complete any monitoring and the associated
-            * thread should be terminated (second condition)
-            * - The periodic recovery's current scan needs to conclude its cycle
-            * (third condition)
-            * Once all above conditions have been satisfied, the periodic recovery (through its
-            * method doWorkInternal) has to recover all in-doubt txns that didn't manage to
-            * complete normally.
+            * isWaitForFinalRecovery checks whether suspension should delay until RecoveryModules
+            * implementing SuspendBlockingRecoveryModule recover all their transactions.
             */
-           if (currentMode == Mode.ENABLED && RecoveryManager.manager().isWaitForFinalRecovery()) {
-
-               // Makes sure that the transaction system has been disabled (first condition)
-               TxControl.waitUntilIsDisabled();
-
-               // Makes sure that the transaction reaper completed all transactions (second condition)
-               TransactionReaper.transactionReaper().waitForAllTxnsToTerminate();
+           if (currentMode == Mode.ENABLED && recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitForFinalRecovery()) {
 
                /*
-                * At least one full scan should be executed to make sure that there are
-                * no transactions to recover.
-                * Although it is very unlikely that there is an ongoing scan at this point,
-                * doScanningWait() will make sure that another full scan will be executed.
+                * At least, one clear scan (after the Transaction Manager has been shut down)
+                * should be completed to make sure that there are no transactions to recover.
                 */
                doScanningWait();
                doWork();
@@ -246,21 +233,18 @@ public class PeriodicRecovery extends Thread
                 * Now, it is finally possible to start checking if there are transactions that
                 * are still in need of recovery (or completion, in case of heuristics)
                 */
-               while (true) {
-                   doScanningWait();
-
+               while (_blockSuspension) {
                    /*
-                    * blockSuspension is set to false in doWorkInternal. In particular, after each scanning completes,
-                    * doWorkInternal checks whether there were any reasons to blockSuspension.
+                    * There might be another thread (the embedded thread or a user-request scan)
+                    * running the recovery cycle.
+                    * It would be possible to use again doScanningWait() here to wait the end of
+                    * the ongoing scan, but the best bet is to wait for the end of the next
+                    * recycle scan with doPeriodicWait()
                     */
-
+                   doPeriodicWait();
+                   
                    // I don't know the best place to make this comment but checking for subordinates could be a new recovery module wrapping something like https://github.com/jbosstm/narayana/blob/86182416bea64368ecdfc7e78767f798b15c14db/ArjunaJTS/jtax/classes/com/arjuna/ats/internal/jta/transaction/jts/jca/XATerminatorImple.java#L438C4-L438C4
                    // but please know that these checks are called by external processes at any time and so that would need to be blocked while this suspension process continues and appropriately handled
-                   if (!_blockSuspension) {
-                       break;
-                   }
-
-                   doPeriodicWait();
                }
            }
 
@@ -273,9 +257,11 @@ public class PeriodicRecovery extends Thread
                _stateLock.notifyAll();
            }
 
-           // In case isWaitForFinalRecovery == true, there could not be any ongoing scan
-           // as the above block set PeriodicRecovery's status to SUSPENDED
-           if (!RecoveryManager.manager().isWaitForFinalRecovery() && !async) {
+           // At this point, in case isWaitForFinalRecovery is equal to true, an ongoing scan
+           // will not recover any transaction.
+           // In fact, all transactions have already recovered thanks to the above logic
+           // triggered with isWaitForFinalRecovery == true.
+           if (!recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitForFinalRecovery() && !async) {
                // synchronous, so we keep waiting until the currently active scan stops
                while (getStatus() == Status.SCANNING) {
                    try {
@@ -784,7 +770,11 @@ public class PeriodicRecovery extends Thread
     {
         // n.b. we only get here if status is SCANNING
 
-        _blockSuspension = false;
+        /* Let's assume that we want to block the suspension of the Recovery Manager.
+         * Recovery Modules implementing SuspendBlockingRecoveryModule should prove
+         * this assumption wrong :-)
+         */
+        _blockSuspension = true;
 
         if (tsLogger.logger.isDebugEnabled()) {
             tsLogger.logger.debug("Periodic recovery first pass at "+_theTimestamper.format(new Date()));
@@ -846,6 +836,7 @@ public class PeriodicRecovery extends Thread
         }
 
         modules = copyOfModules.elements();
+        boolean tempBlockSuspension = false;
 
         while (modules.hasMoreElements())
         {
@@ -855,11 +846,13 @@ public class PeriodicRecovery extends Thread
             try {
             m.periodicWorkSecondPass();
             if (m instanceof SuspendBlockingRecoveryModule) {
-                _blockSuspension = _blockSuspension || ((SuspendBlockingRecoveryModule) m).shouldBlockShutdown();
+                tempBlockSuspension = tempBlockSuspension || ((SuspendBlockingRecoveryModule) m).shouldBlockShutdown();
             }
             } finally {
                 restoreClassLoader(cl);
             }
+
+            this._blockSuspension = tempBlockSuspension;
 
             if (tsLogger.logger.isDebugEnabled()) {
                 tsLogger.logger.debugf("Recovery module '%s' second pass processed", m);
@@ -1009,9 +1002,10 @@ public class PeriodicRecovery extends Thread
 
     /**
      * flag to signal that there are transactions to recover;
-     * this flag is ONLY set during the periodic recovery cycle.
+     * this flag could ONLY be set to false during the
+     * periodic recovery cycle (i.e. doWorkInternal()).
      */
-    private volatile boolean _blockSuspension = false;
+    private volatile boolean _blockSuspension = true;
 
    /*
     * Read the system properties to set the configurable options

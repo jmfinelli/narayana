@@ -4,6 +4,7 @@ import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean;
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
 import com.arjuna.ats.arjuna.coordinator.RecordType;
+import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 import com.arjuna.ats.arjuna.coordinator.TxControl;
 import com.arjuna.ats.arjuna.coordinator.abstractrecord.RecordTypeManager;
 import com.arjuna.ats.arjuna.coordinator.abstractrecord.RecordTypeMap;
@@ -48,14 +49,14 @@ public class RecoverySuspendTest {
         // Let's go quick on this
         recoveryConfig.setRecoveryBackoffPeriod(recoveryBackoffPeriod);
         recoveryConfig.setPeriodicRecoveryPeriod(periodicRecoveryPeriod);
+        // don't sign off until the store is empty
+        recoveryConfig.setWaitForFinalRecovery(true);
 
         // the test set of modules
         recoveryConfig.setRecoveryModuleClassNames(Arrays.asList(modules));
 
         // obtain a new RecoveryManager with the above config:
         _manager = RecoveryManager.manager(RecoveryManager.INDIRECT_MANAGEMENT);
-        // don't sign off until the store is empty
-        _manager.setWaitForFinalRecovery(true);
         // recovery can start
         _manager.startRecoveryManagerThread();
 
@@ -97,15 +98,21 @@ public class RecoverySuspendTest {
     @Test
     public void testSuspensionWheneThereArentTxnsToRecover() {
 
-        long start = System.currentTimeMillis();
-        // Needs to disable the creation of new transactions before suspending the RM
+        // The Transaction System needs to be disabled, i.e. no new transactions can be created
         TxControl.disable();
-        _manager.suspend(true);
-        long duration = System.currentTimeMillis() - start;
 
-        Assertions.assertTrue(duration <
+        // Makes sure that the transaction reaper completed all transactions
+        TransactionReaper.transactionReaper().waitForAllTxnsToTerminate();
+
+        long startSuspension = System.currentTimeMillis();
+
+        // Synchronization is not needed (i.e. async = true) as isWaitForFinalRecovery() == true
+        _manager.suspend(true);
+        long durationOfSuspension = System.currentTimeMillis() - startSuspension;
+
+        Assertions.assertTrue(durationOfSuspension <
                 // In milliseconds
-                1000L * (periodicRecoveryPeriod + recoveryBackoffPeriod), String.valueOf(duration));
+                1000L * (periodicRecoveryPeriod + recoveryBackoffPeriod), String.valueOf(durationOfSuspension));
     }
 
     @Test
@@ -116,11 +123,14 @@ public class RecoverySuspendTest {
 
         createBasicAtomicAction();
 
-        long start = System.currentTimeMillis();
-        // Needs to disable the creation of new transactions before suspending the RM
+        // The Transaction System needs to be disabled, i.e. no new transactions can be created
         TxControl.disable();
+
+        // Makes sure that the transaction reaper completed all transactions
+        TransactionReaper.transactionReaper().waitForAllTxnsToTerminate();
+
+        // Synchronization is not needed (i.e. async = true) as isWaitForFinalRecovery() == true
         _manager.suspend(true);
-        long duration = System.currentTimeMillis() - start;
 
         // BytemanControlledRecord.getCommitCallCounter() should be numberOfFailures + 1 as:
         // - one invocation from the normal commit procedure should fail

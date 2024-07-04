@@ -28,9 +28,8 @@ public class TxControl
         public void run()
         {
             // guard against simultaneous user-initiated shutdown
-            // synchronize on a dedicated lock since TxControl.removeTransactionStatusManager()
-            // is also synchronized on the same lock
-            synchronized (shutdownLock) {
+            // synchronize on the class since the shutdown method on TxControl is static synchronized
+            synchronized (TxControl.class) {
             // check that this hook is still active
             if (_shutdownHook == this && transactionStatusManager != null)
             {
@@ -67,14 +66,11 @@ public class TxControl
 	 * and for recovery to execute.
 	 */
 	
-	public static final void enable()
+	public static final synchronized void enable()
 	{
-		synchronized (shutdownLock)
-		{
-			createTransactionStatusManager();
-
-			TxControl.enable = true;
-		}
+	    createTransactionStatusManager();
+	    
+	    TxControl.enable = true;
 	}
 
 	/**
@@ -82,12 +78,9 @@ public class TxControl
 	 * recovery will be allowed to continue.
 	 */
 	
-	public static final void disable()
+	public static final synchronized void disable()
 	{
-		synchronized (shutdownLock)
-		{
-			disable(false);
-		}
+	    disable(false);
 	}
 	
 	/**
@@ -98,67 +91,27 @@ public class TxControl
          * routine!
          */
 	
-	public static final void disable (boolean disableRecovery)
-	{
-		synchronized (shutdownLock) {
-			/*
-			 * We could have an implementation that did not return until all
-			 * transactions had finished. However, this could take an arbitrary
-			 * time, especially if participants could fail. Since this information
-			 * is available anyway to the application, let it handle it.
-			 */
+	public static final synchronized void disable (boolean disableRecovery)
+        {
+            /*
+             * We could have an implementation that did not return until all
+             * transactions had finished. However, this could take an arbitrary
+             * time, especially if participants could fail. Since this information
+             * is available anyway to the application, let it handle it.
+             */
 
-			if (disableRecovery)
-				removeTransactionStatusManager();
+	    if (disableRecovery)
+	        removeTransactionStatusManager();
 
-			TxControl.enable = false;
-
-			/*
-			 * Signal to TxControl.waitUntilIsDisabled() that the Transaction system
-			 * has been disabled. There is a chance that this notification gets fired
-			 * while there isn't any thread waiting for it. However, as
-			 * waitUntilIsDisabled() checks TxControl.enable through a synchronized
-			 * block on shutdownLock, there is no chance for an infinite waiting.
-			 */
-			shutdownLock.notify();
-		}
-	}
+            TxControl.enable = false;
+        }
 
 
 	public static final boolean isEnabled()
 	{
-		synchronized (shutdownLock)
-		{
-			return TxControl.enable;
-		}
+		return TxControl.enable;
 	}
         
-	/**
-	 * This method waits (synchronously) until the Transaction system
-	 * has been disabled. Note that this method will block the caller
-	 * thread.
-	 */
-	public static void waitUntilIsDisabled()
-	{
-		synchronized (shutdownLock)
-		{
-			while (isEnabled())
-			{
-				try
-				{
-					if (tsLogger.logger.isDebugEnabled())
-					{
-						tsLogger.logger.debug("TxControl: waitUntilIsDisabled() is waiting for the TxControl.disable()");
-					}
-					shutdownLock.wait();
-				} catch (InterruptedException ignore)
-				{
-					// We can ignore this exception
-				}
-			}
-		}
-	}
-
 	/**
 	 * @return the <code>ObjectStore</code> implementation which the
 	 *         transaction coordinator will use.
@@ -211,41 +164,35 @@ public class TxControl
         return beforeCompletionWhenRollbackOnly;
     }
 
-    private final static void createTransactionStatusManager ()
-		{
-			synchronized (shutdownLock)
-			{
-				if (transactionStatusManager == null && _enableTSM)
-				{
-					transactionStatusManager = new TransactionStatusManager();
-
-					_shutdownHook = new Shutdown();
-
-					// add hook to ensure finalize gets called.
-					Runtime.getRuntime().addShutdownHook(_shutdownHook);
-				}
-			}
-		}
-
-	private final static void removeTransactionStatusManager ()
+    private final static synchronized void createTransactionStatusManager ()
 	{
-		synchronized (shutdownLock)
-		{
-			if (_shutdownHook != null) 
-			{
-				Runtime.getRuntime().removeShutdownHook(_shutdownHook);
+	    if (transactionStatusManager == null && _enableTSM)
+	    {
+	        transactionStatusManager = new TransactionStatusManager();
+
+	        _shutdownHook = new Shutdown();
 	        
-				_shutdownHook = null;
-
-				if (transactionStatusManager != null) 
-				{
-					transactionStatusManager.shutdown();
-					transactionStatusManager = null;
-				}
-			}
-		}	
+	        // add hook to ensure finalize gets called.
+	        Runtime.getRuntime().addShutdownHook(_shutdownHook);
+	    }
 	}
+	
+	private final static synchronized void removeTransactionStatusManager ()
+	{
+	    if (_shutdownHook != null)
+	    {
+	        Runtime.getRuntime().removeShutdownHook(_shutdownHook);
+	        
+            _shutdownHook = null;
 
+	        if (transactionStatusManager != null)
+	        {
+	            transactionStatusManager.shutdown();
+	            transactionStatusManager = null;
+	        }
+	    }
+	}
+	
 	static final boolean maintainHeuristics = arjPropertyManager.getCoordinatorEnvironmentBean().isMaintainHeuristics();
 
 	static final boolean asyncCommit = arjPropertyManager.getCoordinatorEnvironmentBean().isAsyncCommit();
@@ -288,18 +235,7 @@ public class TxControl
 	
 	static Thread _shutdownHook = null;
 	
-	/*
-	 * Lock controlling whether the Transaction system is enabled or not.
-	 * There is no point in trying to optimise the access to TxControl.enable
-	 * with "volatile" as TxControl is used very rarely (e.g. when Arjuna is
-	 * started and stopped).
-	 *
-	 * Although shutdownLock is mainly used to guard TxControl.enable, it is
-	 * also used to guard the shutdown of TransactionStatusManager. I don't
-	 * think it is worth to use an extra lock for TransactionStatusManager,
-	 * but you're encouraged to prove me wrong :-)
-	 */
-	private static final Object shutdownLock = new Object();
+	static Object _lock = new Object();
 
     /**
      * Creates transaction status manager.

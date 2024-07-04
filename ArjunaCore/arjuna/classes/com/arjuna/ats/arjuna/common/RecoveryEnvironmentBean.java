@@ -39,6 +39,8 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
     private volatile int expiryScanInterval = 12; // hours
     private volatile int transactionStatusManagerExpiryTime = 12; // hours
 
+    private volatile boolean waitForRecovery = true;
+
     @ConcatenationPrefix(prefix = "com.arjuna.ats.arjuna.recovery.expiryScanner")
     private volatile List<String> expiryScannerClassNames = new ArrayList<String>();
     private volatile List<ExpiryScanner> expiryScanners = null;
@@ -596,5 +598,33 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
     public void setTimeoutSocket(boolean timeoutSocket)
     {
         this.timeoutSocket = timeoutSocket;
+    }
+
+    /**
+     * Returns information about the behaviour of the Recovery Manager when suspending.
+     * Note that this functionality requires that the transaction system and the transaction reaper
+     * are disabled in advance.
+     * 
+     * @return true if the recovery manager should wait that all RecoveryModules implementing
+     * SuspendBlockingRecoveryModule recover all their transactions before shutting down;
+     * false otherwise.
+     */
+    public boolean isWaitForFinalRecovery()
+    {
+        return waitForRecovery;
+    }
+
+    /**
+     * Configure the suspension behaviour of the Recovery Manager.
+     * Note that this functionality requires that the transaction system and the transaction reaper
+     * are disabled in advance.
+     * 
+     * @param waitForRecovery true if the recovery manager should wait that all RecoveryModules implementing
+     * SuspendBlockingRecoveryModule recover all their transactions before shutting down;
+     * false otherwise.
+     */
+    public void setWaitForFinalRecovery(boolean waitForRecovery)
+    {
+        this.waitForRecovery = waitForRecovery;
     }
 }
