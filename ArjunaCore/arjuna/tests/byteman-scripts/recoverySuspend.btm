@@ -11,11 +11,27 @@
 ########################################################################
 
 ########################################################################
+# Rule to set waitForRecoveryFlag when invoking
+# RecoveryEnvironmentBean.isWaitForFinalRecovery() in
+# PeriodicRecovery.suspendScan(boolean)
+#########################################################################
+
+RULE setWaitForRecoveryFlag
+CLASS com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery
+METHOD suspendScan
+AFTER INVOKE isWaitForFinalRecovery
+BIND returnValue:boolean = $!
+IF returnValue
+DO debug("[PeriodicRecovery] Setting waitForRecoveryFlag to true"),
+   flag("waitForRecoveryFlag")
+ENDRULE
+
+########################################################################
 # Rule to clear greenFlag when invoking 
 # BytemanControlledRecord.resetGreenFlag()
 #########################################################################
 
-RULE resetFlag
+RULE resetGreenFlag
 CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
 METHOD resetGreenFlag
 AT ENTRY
@@ -25,17 +41,31 @@ DO debug("[BytemanControlledRecord] clearing greenFlag"),
 ENDRULE
 
 ########################################################################
-# Rule to create greenFlag when
+# Rule to set greenFlag when
 # AtomicActionRecoveryModule.shouldBlockShutdown returns true
 #########################################################################
 
-RULE setFlag
+RULE setGreenFlag
 CLASS com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule
 METHOD shouldBlockShutdown
 AT EXIT
 BIND returnValue:boolean = $!
-IF returnValue
+IF returnValue && flagged("waitForRecoveryFlag")
 DO debug("[AtomicActionRecoveryModule] Setting greenFlag to true"),
+   flag("greenFlag")
+ENDRULE
+
+########################################################################
+# Rule to artificially set greenFlag when
+# AtomicActionRecoveryModule.shouldBlockShutdown returns true
+#########################################################################
+
+RULE artificiallySetGreenFlag
+CLASS com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord
+METHOD setGreenFlag
+AT ENTRY
+IF TRUE
+DO debug("[BytemanControlledRecord] artificially setting greenFlag"),
    flag("greenFlag")
 ENDRULE
 

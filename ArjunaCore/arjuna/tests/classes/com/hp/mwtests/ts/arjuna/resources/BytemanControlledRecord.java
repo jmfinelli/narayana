@@ -56,6 +56,11 @@ public class BytemanControlledRecord extends AbstractRecord {
         
     }
 
+    // Executed in the byteman script recoverySuspend.btm
+    public static void setGreenFlag() {
+        // Artificially set greenFlag to skip failures
+    }
+
     public BytemanControlledRecord() {
     }
 

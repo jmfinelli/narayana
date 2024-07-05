@@ -3,6 +3,7 @@ package com.hp.mwtests.ts.arjuna.recovery;
 import com.arjuna.ats.arjuna.AtomicAction;
 import com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean;
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
+import com.arjuna.ats.arjuna.coordinator.AbstractRecord;
 import com.arjuna.ats.arjuna.coordinator.RecordType;
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
 import com.arjuna.ats.arjuna.coordinator.TxControl;
@@ -97,21 +98,26 @@ public class RecoverySuspendTest {
     @Test
     public void testSuspensionWheneThereArentTxnsToRecover() {
 
+        // Make sure that the test environment is ready
+        BytemanControlledRecord.resetCommitCallCounter();
+        BytemanControlledRecord.setGreenFlag();
+
+        createAtomicAction(new BytemanControlledRecord(true));
+
         // The Transaction System needs to be disabled, i.e. no new transactions can be created
         TxControl.disable();
 
         // Makes sure that the transaction reaper completed all transactions
         TransactionReaper.transactionReaper().waitForAllTxnsToTerminate();
 
-        long startSuspension = System.currentTimeMillis();
-
         // Synchronization is not needed (i.e. async = true) as isWaitForFinalRecovery() == true
         _manager.suspend(true);
-        long durationOfSuspension = System.currentTimeMillis() - startSuspension;
 
-        Assertions.assertTrue(durationOfSuspension <
-                // In milliseconds
-                1000L * (periodicRecoveryPeriod + recoveryBackoffPeriod), String.valueOf(durationOfSuspension));
+        // BytemanControlledRecord.getCommitCallCounter() should be 1 as:
+        // - One invocation from the normal commit procedure should pass
+        Assertions.assertEquals(1, BytemanControlledRecord.getCommitCallCounter(),
+                String.format("BytemanControlledRecord's getCommitCallCounter is %d but it should have been 1",
+                        BytemanControlledRecord.getCommitCallCounter()));
     }
 
     @Test
@@ -121,7 +127,7 @@ public class RecoverySuspendTest {
         BytemanControlledRecord.resetCommitCallCounter();
         BytemanControlledRecord.resetGreenFlag();
         
-        createBasicAtomicAction();
+        createAtomicAction(new BytemanControlledRecord(true));
 
         // The Transaction System needs to be disabled, i.e. no new transactions can be created
         TxControl.disable();
@@ -141,17 +147,16 @@ public class RecoverySuspendTest {
                         BytemanControlledRecord.getCommitCallCounter()));
     }
 
-    private void createBasicAtomicAction() {
+    private void createAtomicAction(AbstractRecord secondRecord) {
 
         AtomicAction A = new AtomicAction();
 
         BasicRecord basicRecordOne = new BasicRecord();
-        BytemanControlledRecord basicRecordTwo = new BytemanControlledRecord(true);
 
         A.begin();
 
         A.add(basicRecordOne);
-        A.add(basicRecordTwo);
+        A.add(secondRecord);
 
         // should generate a recovery record
         A.commit();
