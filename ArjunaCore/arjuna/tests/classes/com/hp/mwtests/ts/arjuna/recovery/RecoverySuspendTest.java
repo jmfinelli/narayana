@@ -27,7 +27,6 @@ import java.util.Arrays;
 
 @WithByteman
 @BMUnitConfig(debug=true)
-@BMScript("recoverySuspend")
 public class RecoverySuspendTest {
 
     private static RecoveryManager _manager;
@@ -96,6 +95,7 @@ public class RecoverySuspendTest {
     }
 
     @Test
+    @BMScript("recoverySuspend")
     public void testSuspensionWheneThereArentTxnsToRecover() {
 
         // Make sure that the test environment is ready
@@ -121,6 +121,7 @@ public class RecoverySuspendTest {
     }
 
     @Test
+    @BMScript("recoverySuspend")
     public void testSuspensionWhenThereIsAtomicActionToRecover() {
 
         // Make sure that the test environment is ready

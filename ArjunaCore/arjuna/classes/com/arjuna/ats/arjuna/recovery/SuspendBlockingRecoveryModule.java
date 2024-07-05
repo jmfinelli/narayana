@@ -1,11 +1,11 @@
 package com.arjuna.ats.arjuna.recovery;
 
 /**
- * If a recovery module implements this interface it allows the recovery manager shutdown to block
+ * If a recovery module implements this interface, it can veto the suspension of the Recovery Manager
  */
 public interface SuspendBlockingRecoveryModule extends RecoveryModule {
 
-    public default boolean shouldBlockShutdown() {
+    default boolean shouldBlockShutdown() {
         return false;
     }
 }
