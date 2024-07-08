@@ -14,6 +14,7 @@ import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.hp.mwtests.ts.arjuna.resources.BasicRecord;
 import com.hp.mwtests.ts.arjuna.resources.BytemanControlledRecord;
 import org.jboss.byteman.contrib.bmunit.BMScript;
+import org.jboss.byteman.contrib.bmunit.BMScripts;
 import org.jboss.byteman.contrib.bmunit.BMUnitConfig;
 import org.jboss.byteman.contrib.bmunit.WithByteman;
 import org.junit.jupiter.api.AfterAll;
@@ -95,8 +96,12 @@ public class RecoverySuspendTest {
     }
 
     @Test
-    @BMScript("recoverySuspend")
-    public void testSuspensionWheneThereArentTxnsToRecover() {
+    @BMScripts(
+            scripts = {
+                    @BMScript("recoverySuspendTest_BytemanControlledRecord"),
+                    @BMScript("recoverySuspendTest_PeriodicRecovery")
+            })
+    public void testSuspensionWhenThereArentTransactionsToRecover() {
 
         // Make sure that the test environment is ready
         BytemanControlledRecord.resetCommitCallCounter();
@@ -122,7 +127,7 @@ public class RecoverySuspendTest {
     }
 
     @Test
-    @BMScript("recoverySuspend")
+    @BMScript("recoverySuspendTest_BytemanControlledRecord")
     public void testSuspensionWhenThereIsAtomicActionToRecover() {
 
         // Make sure that the test environment is ready
