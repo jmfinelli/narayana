@@ -100,6 +100,7 @@ public class RecoverySuspendTest {
 
         // Make sure that the test environment is ready
         BytemanControlledRecord.resetCommitCallCounter();
+        // The following instruction makes the BytemanControlledRecord commit without failures.
         BytemanControlledRecord.setGreenFlag();
 
         createAtomicAction(new BytemanControlledRecord(true));

@@ -64,7 +64,7 @@ public class TransactionManagerService implements TransactionManagerServiceMBean
         // disable the transaction system but keep recovery running
         TxControl.disable();
         // wait for in flight transactions to complete
-        TransactionReaper.terminate(true);
+        TransactionReaper.transactionReaper().waitForAllTxnsToTerminate();
     }
 
 

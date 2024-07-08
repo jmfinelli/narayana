@@ -2,7 +2,6 @@
    Copyright The Narayana Authors
    SPDX-License-Identifier: Apache-2.0
  */
-
 package com.arjuna.ats.internal.arjuna.recovery;
 
 import java.io.IOException;
@@ -33,7 +32,7 @@ import com.arjuna.ats.arjuna.utils.Utility;
 
 public class PeriodicRecovery extends Thread
 {
-    /***** public API *****/
+   /***** public API *****/
 
     /**
      *  state values indicating whether or not some thread is currently scanning. used to define values of field

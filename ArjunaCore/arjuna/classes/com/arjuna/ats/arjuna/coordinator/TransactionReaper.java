@@ -758,11 +758,16 @@ public class TransactionReaper
     }
 
     /**
-     * Wait for all the transactions to terminate normally.
-     *
-     * Note: this method assumes that the transaction system has been
-     * shutdown already so no new transactions can be created, or we
-     * could be here for a long time!
+     * <p>
+     *     Wait for all the transactions to terminate normally.
+     * </p>
+     * <p>
+     *     Note:
+     *     this method assumes that the transaction system is not
+     *     currently capable of creating new transactions
+     *     (via TxControl.disable()), or we could be here for
+     *     a long time!
+     * </p>
      */
     public void waitForAllTxnsToTerminate() {
         synchronized (this) {
