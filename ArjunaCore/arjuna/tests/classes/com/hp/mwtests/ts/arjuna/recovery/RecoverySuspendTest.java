@@ -165,7 +165,6 @@ public class RecoverySuspendTest {
         A.add(basicRecordOne);
         A.add(secondRecord);
 
-        // should generate a recovery record
         A.commit();
     }
 }

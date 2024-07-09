@@ -763,10 +763,9 @@ public class TransactionReaper
      * </p>
      * <p>
      *     Note:
-     *     this method assumes that the transaction system is not
-     *     currently capable of creating new transactions
-     *     (via TxControl.disable()), or we could be here for
-     *     a long time!
+     *     this method must only be used when the transaction
+     *     system is not currently capable of creating new
+     *     transactions (via TxControl.disable()).
      * </p>
      */
     public void waitForAllTxnsToTerminate() {
