@@ -50,6 +50,8 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
    {
       // Transaction type
       boolean AtomicActions = false ;
+      // Does not block the suspension of the Recovery Manager by default
+      this.shouldBlockSuspension = false;
 
       // uids per transaction type
       InputObjectState aa_uids = new InputObjectState() ;
@@ -214,6 +216,7 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
        // to recover anything but if this module is still configured it would 
        // get an NPE
         if (_transactionUidVector != null) {
+
             // Process the Vector of transaction Uids
             Enumeration transactionUidEnum = _transactionUidVector.elements();
 
@@ -225,6 +228,20 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
                             _transactionType) != StateStatus.OS_UNKNOWN) {
                         doRecoverTransaction(currentUid);
                     }
+
+                    /*
+                     * If the current AtomicAction has been recovered,
+                     * its StateStatus should be OS_UNKNOWN.
+                     * If that is not the case, it means that the current
+                     * AtomicAction still needs to be recovered and this
+                     * SuspendBlockingRecoveryModule implementation should
+                     * block the suspension of the Recovery Manager
+                     */
+                    if (_recoveryStore.currentState(currentUid,
+                            _transactionType) != StateStatus.OS_UNKNOWN) {
+                        this.shouldBlockSuspension = true;
+                    }
+
                 } catch (ObjectStoreException ex) {
                     tsLogger.i18NLogger
                             .warn_recovery_AtomicActionRecoveryModule_3(
@@ -234,13 +251,9 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
         }
    }
 
-    /**
-     * TODO I don't mind how shouldBlockShutdown() is worked out. Open to better solution :-)
-     * @return whether there are AtomicAction transactions to take care of
-     */
     @Override
-    public boolean shouldBlockShutdown() {
-        return !_transactionUidVector.isEmpty();
+    public boolean shouldBlockSuspension() {
+        return this.shouldBlockSuspension;
     }
 
    // 'type' within the Object Store for AtomicActions.
@@ -256,5 +269,12 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
    // This object manages the interface to all TransactionStatusManagers
    // processes(JVMs) on this system/node.
    private TransactionStatusConnectionManager _transactionStatusConnectionMgr ;
+
+   /*
+    * This class field is not declared as volatile as Recovery Module's
+    * first pass and second pass can only be invoked sequentially and by
+    * one thread per time.
+    */
+   private boolean shouldBlockSuspension;
 
 }

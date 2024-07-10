@@ -42,12 +42,12 @@ ENDRULE
 
 ########################################################################
 # Rule to set greenFlag when
-# AtomicActionRecoveryModule.shouldBlockShutdown returns true
+# AtomicActionRecoveryModule.shouldBlockSuspension returns true
 #########################################################################
 
 RULE setGreenFlag
 CLASS com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule
-METHOD shouldBlockShutdown
+METHOD shouldBlockSuspension
 AT EXIT
 BIND returnValue:boolean = $!
 IF returnValue && flagged("waitForRecoveryFlag")
@@ -57,7 +57,7 @@ ENDRULE
 
 ########################################################################
 # Rule to artificially set greenFlag when
-# AtomicActionRecoveryModule.shouldBlockShutdown returns true
+# AtomicActionRecoveryModule.shouldBlockSuspension returns true
 #########################################################################
 
 RULE artificiallySetGreenFlag

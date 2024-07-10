@@ -2,7 +2,7 @@ package com.arjuna.ats.arjuna.recovery;
 
 /**
  * <p>
- *     If a Recovery Module implements this interface, it can veto the suspension
+ *     When a Recovery Module implements this interface, it can veto the suspension
  *     of the Recovery Manager.
  * </p>
  * <p>
@@ -19,7 +19,21 @@ package com.arjuna.ats.arjuna.recovery;
  */
 public interface SuspendBlockingRecoveryModule extends RecoveryModule {
 
-    default boolean shouldBlockShutdown() {
+    /**
+     * <p>
+     *     This method returns true when the Recovery Manager should block its
+     *     suspension, false otherwise.
+     * </p>
+     * <p>
+     *     Note: This method should be invoked only at the end of the recovery cycle,
+     *     i.e. at the end of the second pass. Any invocation that happens before that
+     *     point does not guarantee to return the correct value.
+     * </p>
+     *
+     * @return whether this implementation of SuspendBlockingRecoveryModule
+     * should block the suspension of the Recovery Manager or not
+     */
+    default boolean shouldBlockSuspension() {
         return false;
     }
 }

@@ -853,7 +853,7 @@ public class PeriodicRecovery extends Thread
                  * `shouldBlockShutdown() == true` to `shouldBlockShutdown() == false`, it cannot
                  * change its mind.
                  */
-                tempBlockSuspension = tempBlockSuspension || ((SuspendBlockingRecoveryModule) m).shouldBlockShutdown();
+                tempBlockSuspension = tempBlockSuspension || ((SuspendBlockingRecoveryModule) m).shouldBlockSuspension();
             }
             } finally {
                 restoreClassLoader(cl);

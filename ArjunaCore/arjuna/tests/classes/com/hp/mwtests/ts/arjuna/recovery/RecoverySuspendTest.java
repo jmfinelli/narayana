@@ -96,10 +96,9 @@ public class RecoverySuspendTest {
     }
 
     @Test
-    @BMScripts(
-            scripts = {
-                    @BMScript("recoverySuspendTest_BytemanControlledRecord"),
-                    @BMScript("recoverySuspendTest_PeriodicRecovery")
+    @BMScripts(scripts = {
+                    @BMScript("RecoverySuspendTest/recoverySuspendTest_BytemanControlledRecord"),
+                    @BMScript("RecoverySuspendTest/recoverySuspendTest_PeriodicRecovery")
             })
     public void testSuspensionWhenThereArentTransactionsToRecover() {
 
@@ -127,7 +126,10 @@ public class RecoverySuspendTest {
     }
 
     @Test
-    @BMScript("recoverySuspendTest_BytemanControlledRecord")
+    @BMScripts(scripts = {
+            @BMScript("RecoverySuspendTest/recoverySuspendTest_BytemanControlledRecord"),
+            @BMScript("RecoverySuspendTest/recoverySuspendTest_FailTest")
+    })
     public void testSuspensionWhenThereIsAtomicActionToRecover() {
 
         // Make sure that the test environment is ready
