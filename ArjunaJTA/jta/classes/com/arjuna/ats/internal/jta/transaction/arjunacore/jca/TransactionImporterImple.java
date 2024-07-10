@@ -233,6 +233,7 @@ public class TransactionImporterImple implements TransactionImporter
 	private TransactionImportResult addImportedTransaction(TransactionImple recoveredTransaction, Xid mapKey, Xid xid, int timeout) throws XAException {
 		if (!TxControl.isEnabled()) {
 			// TODO needs looking at for the right code and so on and maybe it's different for recover than it is when importing a new transaction
+			// 	Consider this task as part of JBTM-3893
 			throw new XAException("Transaction system is shutting down");
 		}
 
