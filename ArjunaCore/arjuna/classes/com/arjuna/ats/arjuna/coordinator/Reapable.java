@@ -12,8 +12,7 @@ import com.arjuna.ats.arjuna.common.Uid;
  * @since JTS 3.0.
  */
 
-public interface Reapable
-{
+public interface Reapable {
 
     boolean running();
 
@@ -30,5 +29,5 @@ public interface Reapable
     default void outputCapturedStackTraces() {
         // default null-op
     }
-    
+
 }

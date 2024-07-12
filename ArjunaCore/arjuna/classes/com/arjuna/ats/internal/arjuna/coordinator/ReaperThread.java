@@ -17,52 +17,45 @@ import com.arjuna.ats.arjuna.logging.tsLogger;
  * @since JTS 1.0.
  */
 
-public class ReaperThread extends Thread
-{
+public class ReaperThread extends Thread {
 
-public ReaperThread (TransactionReaper arg)
-    {
+    public ReaperThread(TransactionReaper arg) {
         super("Transaction Reaper");
-	reaperObject = arg;
-	sleepPeriod = reaperObject.checkingPeriod();
-	_shutdown = false;
+        reaperObject = arg;
+        sleepPeriod = reaperObject.checkingPeriod();
+        _shutdown = false;
     }
 
-public void run ()
-    {
-    	if (tsLogger.logger.isTraceEnabled()) {
+    public void run() {
+        if (tsLogger.logger.isTraceEnabled()) {
             tsLogger.logger.trace("ReaperThread.run ()");
         }
 
-    	for (;;)
-    	{
-    	    /*
-    	     * Cannot assume we sleep for the entire period. We may
-    	     * be interrupted. If we are, just run a check anyway and
-    	     * ignore.
-    	     */
-    
-            synchronized(reaperObject)
-            {
+        for (; ; ) {
+            /*
+             * Cannot assume we sleep for the entire period. We may
+             * be interrupted. If we are, just run a check anyway and
+             * ignore.
+             */
+
+            synchronized (reaperObject) {
                 // test our condition -- things may have changed while we were checking
 
                 if (_shutdown) {
                     return;
                 }
 
-		sleepPeriod = reaperObject.checkingPeriod();
-        
-                if (sleepPeriod > 0)
-                {
-                     try
-                     {
-                          if (tsLogger.logger.isTraceEnabled()) {
-                              tsLogger.logger.trace("Thread "+Thread.currentThread()+" sleeping for "+Long.toString(sleepPeriod));
-                          }
+                sleepPeriod = reaperObject.checkingPeriod();
 
-                          reaperObject.wait(sleepPeriod);
-                     }
-                     catch (InterruptedException e1) {}
+                if (sleepPeriod > 0) {
+                    try {
+                        if (tsLogger.logger.isTraceEnabled()) {
+                            tsLogger.logger.trace("Thread " + Thread.currentThread() + " sleeping for " + sleepPeriod);
+                        }
+
+                        reaperObject.wait(sleepPeriod);
+                    } catch (InterruptedException e1) {
+                    }
 
                     // test our condition -- things may have changed while we were waiting
 
@@ -71,23 +64,21 @@ public void run ()
                     }
                 }
             }
-    
+
             if (tsLogger.logger.isTraceEnabled()) {
                 tsLogger.logger.trace("ReaperThread.run ()");
             }
 
-    	    reaperObject.check();
-    	}
+            reaperObject.check();
+        }
     }
 
-    public void shutdown ()
-    {
-	_shutdown = true;
+    public void shutdown() {
+        _shutdown = true;
     }
 
-    private TransactionReaper reaperObject;
-    private long              sleepPeriod;
-    private boolean           _shutdown;
+    private final TransactionReaper reaperObject;
+    private long sleepPeriod;
+    private boolean _shutdown;
 
-    
 }

@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * only a fraction of the elements inserted should ever be copied - most will be removed without ever migrating.
  *
  * Note that additional external synchronization will be needed to ensure first element does not change
- * between getFirst and any operation depending on its timeout value. This is the TransactionReaper's problem. 
+ * between getFirst and any operation depending on its timeout value. This is the TransactionReaper's problem.
  *
  * The sorted set is maintained manually, rather than using Collections.sort or other comparator based structure.
  * This is because compareTo on reaper elements is relatively expensive and we wish to avoid liner scans to minimise
@@ -47,14 +47,13 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Jonathan Halliday (jonathan.halliday@redhat.com) 2009-10
  */
-public class ReaperElementManager
-{
+public class ReaperElementManager {
     /**
      * @return the first (i.e. earliest to time out) element of the colleciton or null if empty
      */
     public synchronized ReaperElement getFirst() {
         flushPending(); // we need to order the elements before we can tell which is first.
-        if(elementsOrderedByTimeout.isEmpty()) {
+        if (elementsOrderedByTimeout.isEmpty()) {
             return null;
         } else {
             return elementsOrderedByTimeout.get(0);
@@ -63,7 +62,7 @@ public class ReaperElementManager
 
     // Note - unsynchronized for performance.
     public void add(ReaperElement reaperElement) throws IllegalStateException {
-        if(pendingInsertions.putIfAbsent(reaperElement, reaperElement) != null) {
+        if (pendingInsertions.putIfAbsent(reaperElement, reaperElement) != null) {
             // note this is best effort - we'll allow double inserts if the element is also in the ordered set.
             throw new IllegalStateException();
         }
@@ -71,7 +70,7 @@ public class ReaperElementManager
 
     /**
      * @param reaperElement the reaper element to reorder in the sorted set.
-     * @param delayMillis the amount of time to increment the element's timeout by.
+     * @param delayMillis   the amount of time to increment the element's timeout by.
      * @return the new soonest timeout in the set (not necessarily that of the reordered element)
      */
     public synchronized long reorder(ReaperElement reaperElement, long delayMillis) {
@@ -98,7 +97,7 @@ public class ReaperElementManager
     // strange hack to force instant expire of tx during shutdown.
     public synchronized void setAllTimeoutsToZero() {
         flushPending();
-        for(ReaperElement reaperElement : elementsOrderedByTimeout) {
+        for (ReaperElement reaperElement : elementsOrderedByTimeout) {
             reaperElement.setNextCheckAbsoluteMillis(0);
             reaperElement.setTransactionTimeoutAbsoluteMillis(0);
         }
@@ -106,12 +105,12 @@ public class ReaperElementManager
 
     // Note - mostly unsynchronized for performance.
     public void remove(ReaperElement reaperElement) {
-        if(pendingInsertions.remove(reaperElement) != null) {
+        if (pendingInsertions.remove(reaperElement) != null) {
             return;
         }
 
         // we missed finding it in the unsorted set - perhaps it has already been copied to the sorted set...
-        synchronized(this) {
+        synchronized (this) {
             removeSorted(reaperElement);
         }
     }
@@ -126,14 +125,14 @@ public class ReaperElementManager
 
     private void removeSorted(ReaperElement reaperElement) {
         int location = Collections.binarySearch(elementsOrderedByTimeout, reaperElement);
-        if(location >= 0) {
+        if (location >= 0) {
             elementsOrderedByTimeout.remove(location);
         }
     }
 
     private void insertSorted(ReaperElement reaperElement) {
         int location = Collections.binarySearch(elementsOrderedByTimeout, reaperElement);
-        if(location >= 0) {
+        if (location >= 0) {
             throw new IllegalStateException();
         }
         int insertionPoint = -(location + 1);
@@ -145,17 +144,17 @@ public class ReaperElementManager
         // purge the pending inserts before doing anything else. This is potentially expensive.
         // Future versions may prefer to insert only a portion of the pending set, or
         // iterate it each time to determine the smallest (head) element.
-        Set<Map.Entry<ReaperElement,ReaperElement>> entrySet = pendingInsertions.entrySet();
-        if(entrySet != null) {
+        Set<Map.Entry<ReaperElement, ReaperElement>> entrySet = pendingInsertions.entrySet();
+        if (entrySet != null) {
             Iterator<Map.Entry<ReaperElement, ReaperElement>> queueIter = entrySet.iterator();
             // iterator is weakly consistent - will traverse elements present at its time of creation,
             // may or may not see later updates.
-            while(queueIter.hasNext()) {
-                Map.Entry<ReaperElement,ReaperElement> entry = queueIter.next();
+            while (queueIter.hasNext()) {
+                Map.Entry<ReaperElement, ReaperElement> entry = queueIter.next();
                 ReaperElement element = entry.getValue();
                 // insert/remove not locked, so we are careful to check that we don't insert
                 // an element that has been removed from the pending set by a concurrent thread.
-                if(entrySet.remove(entry)) {
+                if (entrySet.remove(entry)) {
                     insertSorted(element);
                 }
             }
