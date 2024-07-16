@@ -12,6 +12,7 @@ import java.util.Enumeration;
 import java.util.Vector;
 
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
+import com.arjuna.ats.arjuna.coordinator.ActionManager;
 import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryModule;
@@ -230,9 +231,11 @@ public class PeriodicRecovery extends Thread
 
                /*
                 * Now, it is finally possible to start checking if there are transactions that
-                * are still in need of recovery (or completion, in case of heuristics)
+                * are still in need of recovery (or completion, in case of heuristics).
+                * The Action Manager gets checked as in-flight transactions with timeout zero
+                * can still be around (as the Transaction Reaper doesn't handle those txns)
                 */
-               while (_blockSuspension) {
+               while (ActionManager.manager().getNumberOfInflightTransactions() != 0 || _blockSuspension) {
                    /*
                     * There might be another thread (the embedded thread or a user-request scan)
                     * running the recovery cycle.
