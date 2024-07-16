@@ -216,7 +216,6 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
        // to recover anything but if this module is still configured it would 
        // get an NPE
         if (_transactionUidVector != null) {
-
             // Process the Vector of transaction Uids
             Enumeration transactionUidEnum = _transactionUidVector.elements();
 
