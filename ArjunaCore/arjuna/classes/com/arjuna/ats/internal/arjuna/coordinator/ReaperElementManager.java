@@ -52,7 +52,7 @@ public class ReaperElementManager {
      * @return the first (i.e. earliest to time out) element of the colleciton or null if empty
      */
     public synchronized ReaperElement getFirst() {
-        flushPending(); // we need to order the elements before we can tell which is first.
+        flushBuffer(); // we need to order the elements before we can tell which is first.
         if (elementsOrderedByTimeout.isEmpty()) {
             return null;
         } else {
@@ -62,7 +62,7 @@ public class ReaperElementManager {
 
     // Note - unsynchronized for performance.
     public void add(ReaperElement reaperElement) throws IllegalStateException {
-        if (pendingInsertions.putIfAbsent(reaperElement, reaperElement) != null) {
+        if (unsortedBuffer.putIfAbsent(reaperElement, reaperElement) != null) {
             // note this is best effort - we'll allow double inserts if the element is also in the ordered set.
             throw new IllegalStateException();
         }
@@ -81,22 +81,28 @@ public class ReaperElementManager {
         // reinsert into its new position.
         insertSorted(reaperElement);
 
-        // getFirst takes care of flushing the pending set for us.
+        // getFirst takes care of flushing the unsorted buffer for us.
         return getFirst().getNextCheckAbsoluteMillis();
     }
 
     // use only for testing, it's nasty from a performance perspective.
     public synchronized int size() {
-        return (elementsOrderedByTimeout.size() + pendingInsertions.size());
+        return (elementsOrderedByTimeout.size() + unsortedBuffer.size());
     }
 
     public synchronized boolean isEmpty() {
-        return (elementsOrderedByTimeout.isEmpty() && pendingInsertions.isEmpty());
+        return (elementsOrderedByTimeout.isEmpty() && unsortedBuffer.isEmpty());
     }
 
-    // strange hack to force instant expire of tx during shutdown.
+    // strange hack to force instant to expire of tx during shutdown.
     public synchronized void setAllTimeoutsToZero() {
-        flushPending();
+        flushBuffer();
+        // There might be transactions without a timeout to handle
+        for (Map.Entry<ReaperElement, ReaperElement> entry : unsortedBuffer.entrySet()) {
+            entry.getValue().setNextCheckAbsoluteMillis(0);
+            entry.getValue().setTransactionTimeoutAbsoluteMillis(0);
+        }
+        // All other transactions
         for (ReaperElement reaperElement : elementsOrderedByTimeout) {
             reaperElement.setNextCheckAbsoluteMillis(0);
             reaperElement.setTransactionTimeoutAbsoluteMillis(0);
@@ -105,7 +111,7 @@ public class ReaperElementManager {
 
     // Note - mostly unsynchronized for performance.
     public void remove(ReaperElement reaperElement) {
-        if (pendingInsertions.remove(reaperElement) != null) {
+        if (unsortedBuffer.remove(reaperElement) != null) {
             return;
         }
 
@@ -121,7 +127,7 @@ public class ReaperElementManager {
     // public methods - see class header doc comments for concurrency/performance info.
 
     private final ArrayList<ReaperElement> elementsOrderedByTimeout = new ArrayList<ReaperElement>();
-    private final ConcurrentHashMap<ReaperElement, ReaperElement> pendingInsertions = new ConcurrentHashMap<ReaperElement, ReaperElement>();
+    private final ConcurrentHashMap<ReaperElement, ReaperElement> unsortedBuffer = new ConcurrentHashMap<ReaperElement, ReaperElement>();
 
     private void removeSorted(ReaperElement reaperElement) {
         int location = Collections.binarySearch(elementsOrderedByTimeout, reaperElement);
@@ -139,22 +145,28 @@ public class ReaperElementManager {
         elementsOrderedByTimeout.add(insertionPoint, reaperElement);
     }
 
-    private void flushPending() {
+    private void flushBuffer() {
 
-        // purge the pending inserts before doing anything else. This is potentially expensive.
-        // Future versions may prefer to insert only a portion of the pending set, or
-        // iterate it each time to determine the smallest (head) element.
-        Set<Map.Entry<ReaperElement, ReaperElement>> entrySet = pendingInsertions.entrySet();
+        // purge unsortedBuffer before doing anything else. This is potentially expensive.
+        // Future versions may prefer to insert only a portion of the buffer, or iterate it
+        // each time to determine the smallest (head) element.
+        Set<Map.Entry<ReaperElement, ReaperElement>> entrySet = unsortedBuffer.entrySet();
         if (entrySet != null) {
             Iterator<Map.Entry<ReaperElement, ReaperElement>> queueIter = entrySet.iterator();
-            // iterator is weakly consistent - will traverse elements present at its time of creation,
-            // may or may not see later updates.
+            // iterator is weakly consistent - will traverse elements present at its time 
+            // of creation, may or may not see later updates.
             while (queueIter.hasNext()) {
                 Map.Entry<ReaperElement, ReaperElement> entry = queueIter.next();
                 ReaperElement element = entry.getValue();
-                // insert/remove not locked, so we are careful to check that we don't insert
-                // an element that has been removed from the pending set by a concurrent thread.
-                if (entrySet.remove(entry)) {
+                /*
+                 * insert/remove not locked, so we are careful to check that we don't insert
+                 * an element that has been removed from the buffer by a concurrent thread.
+                 * note: only ReaperElements with an actual timeout (i.e. timeout is less
+                 * than Long.MAX_VALUE) get removed from unsortedBuffer. This is achieved
+                 * using Java's short-circuiting behaviour.
+                 */
+                if (element.getTransactionTimeoutAbsoluteMillis() < Long.MAX_VALUE && entrySet.remove(entry)) {
+                    // insert ReaperElements into the sorted list if they that have a timeout
                     insertSorted(element);
                 }
             }

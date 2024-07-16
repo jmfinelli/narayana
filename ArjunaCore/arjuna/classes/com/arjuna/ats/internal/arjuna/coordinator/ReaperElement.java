@@ -23,8 +23,8 @@ public class ReaperElement implements Comparable<ReaperElement> {
 
     public ReaperElement(Reapable control, int cancelIntervalSeconds, long traceGracePeriodMills) {
         if (tsLogger.logger.isTraceEnabled()) {
-            tsLogger.logger.trace("ReaperElement::ReaperElement ( " + control + ", "
-                    + cancelIntervalSeconds + " )");
+            tsLogger.logger.tracef("ReaperElement::ReaperElement ( %s, %s, %s )",
+                    control, cancelIntervalSeconds, traceGracePeriodMills);
         }
 
         _control = control;
@@ -35,14 +35,24 @@ public class ReaperElement implements Comparable<ReaperElement> {
         long now = System.currentTimeMillis();
 
         /*
-         * Given a timeout period in seconds, calculate its absolute value from
-         * the current time of day in milliseconds.
+         * This check handles cases where cancelIntervalSeconds == 0.
+         * By using Long.MAX_VALUE, the timeout == zero gets
+         * translated into infinite timeout, i.e. a ReaperElement
+         * without timeout.
          */
-        _transactionTimeoutAbsoluteMillis = (cancelIntervalSeconds * 1000L) + now;
+        long cancelIntervalMilliseconds = cancelIntervalSeconds > 0 ?
+                cancelIntervalSeconds * 1000L :
+                Long.MAX_VALUE;
+
+        /*
+         * Given a timeout period in seconds, calculate its absolute
+         * value from the current time of day in milliseconds.
+         */
+        _transactionTimeoutAbsoluteMillis = cancelIntervalMilliseconds + now;
         _nextCheckAbsoluteMillis = _transactionTimeoutAbsoluteMillis;
 
         // if stack tracing will kick in before timeout, the wakeup time is that instead
-        if (traceGracePeriodMills < cancelIntervalSeconds * 1000L) {
+        if (traceGracePeriodMills < cancelIntervalMilliseconds) {
             _nextCheckAbsoluteMillis = traceGracePeriodMills + now;
         }
 
@@ -52,7 +62,7 @@ public class ReaperElement implements Comparable<ReaperElement> {
     }
 
     public String toString() {
-        return "ReaperElement < " + _control + ", " + _timeout + ", " + statusName() + ", " + _worker + " >";
+        return String.format("ReaperElement < %s, %s, %s, %s >", _control, _timeout, statusName(), _worker);
     }
 
     /**

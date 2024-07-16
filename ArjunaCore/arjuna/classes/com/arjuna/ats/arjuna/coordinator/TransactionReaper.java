@@ -149,13 +149,15 @@ public class TransactionReaper {
 
                             long now = System.currentTimeMillis();
                             long remaining = reaperElement.getTransactionTimeoutAbsoluteMillis() - now;
-                            if (remaining > _traceInterval) {
-                                reinsertElement(reaperElement, _traceInterval);
-                            } else {
-                                reinsertElement(reaperElement, remaining);
-                            }
+                            reinsertElement(reaperElement, Math.min(remaining, _traceInterval));
 
-                        } else {
+                            /* checking that timeout is greater than zero makes
+                             * sure that only ReaperElements that should
+                             * actually expire are moved to the SCHEDULE_CANCEL
+                             * status. ReaperElements that don't have a timeout
+                             * must not go through the cancellation procedure.
+                             */
+                        } else if (reaperElement._timeout > 0) {
                             // this tx has just timed out. remove it from the
                             // TX list, update the timeout to take account of
                             // cancellation period and reinsert as a cancelled
@@ -531,14 +533,17 @@ public class TransactionReaper {
         }
 
         /*
-         * Ignore if the timeout is zero, since this means the transaction
-         * should never timeout.
+         * The Transaction Reaper used to ignore Reapable with timeout set to zero.
+         * Since JBTM-XXXX, it is possible to instantiate ReaperElements with
+         * timeout equal to zero. The Transaction Reaper monitors those instances
+         * by taking their continuous stacktrace snapshots. On the other hand, the
+         * Transaction Reaper will not take ReaperElements through its cancellation
+         * workflow as timeout equal to zero means that the associated transactions
+         * will never expire.
          */
-        if (timeout == 0)
-            return;
-
         ReaperElement reaperElement = new ReaperElement(control, timeout, _traceGracePeriod);
 
+        // Timeout equal to zero doesn't modify the lifetime
         _lifetime.addAndGet(timeout);
 
         // insert the element only if it's not already present. We check _timeouts first, as elements
@@ -611,6 +616,11 @@ public class TransactionReaper {
     /**
      * Given the transaction instance, this will return the time left before the
      * transaction is automatically rolled back if it has not been terminated.
+     * Note: as Controls that do not have a timeout are not of interest of the
+     * Transaction Reaper, zero will be returned in cases where either the
+     * Transaction Reaper is not aware of any such Control or the Control has
+     * timeout zero. In other words, Controls with timeout equal to zero are
+     * considered nonexistent.
      *
      * @param control
      * @return the remaining time in milliseconds.
@@ -630,7 +640,7 @@ public class TransactionReaper {
         final ReaperElement reaperElement = _timeouts.get(control);
         long timeout = 0;
 
-        if (reaperElement == null) {
+        if (reaperElement == null || reaperElement._timeout == 0) {
             timeout = 0;
         } else {
             // units are in milliseconds at this stage.
@@ -645,8 +655,12 @@ public class TransactionReaper {
     }
 
     /**
-     * Given a Control, return the associated timeout, or 0 if we do not know
-     * about it.
+     * Given a Control, return the associated timeout.
+     * Note: as Controls that do not have a timeout are not of interest of the
+     * Transaction Reaper, zero will be returned in cases where either the
+     * Transaction Reaper is not aware of any such Control or the Control has
+     * timeout zero. In other words, Controls with timeout equal to zero are
+     * considered nonexistent.
      * <p>
      * Return in seconds!
      * <p>
@@ -656,8 +670,8 @@ public class TransactionReaper {
     public final int getTimeout(Object control) {
         if ((_timeouts.isEmpty()) || (control == null)) {
             if (tsLogger.logger.isTraceEnabled()) {
-                tsLogger.logger.trace("TransactionReaper::getTimeout for " + control
-                        + " returning 0");
+                tsLogger.logger.tracef(
+                        "TransactionReaper::getTimeout for %s returning 0", control);
             }
 
             return 0;
@@ -667,7 +681,8 @@ public class TransactionReaper {
 
         int timeout = (reaperElement == null ? 0 : reaperElement._timeout);
 
-        tsLogger.logger.trace("TransactionReaper::getTimeout for " + control + " returning " + timeout);
+        tsLogger.logger.tracef(
+                "TransactionReaper::getTimeout for %s returning %d", control, timeout);
 
         return timeout;
     }
