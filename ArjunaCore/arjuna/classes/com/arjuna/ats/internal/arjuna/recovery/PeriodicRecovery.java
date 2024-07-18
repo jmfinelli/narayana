@@ -244,9 +244,6 @@ public class PeriodicRecovery extends Thread
                     * recycle scan with doPeriodicWait()
                     */
                    doPeriodicWait();
-                   
-                   // I don't know the best place to make this comment but checking for subordinates could be a new recovery module wrapping something like https://github.com/jbosstm/narayana/blob/86182416bea64368ecdfc7e78767f798b15c14db/ArjunaJTS/jtax/classes/com/arjuna/ats/internal/jta/transaction/jts/jca/XATerminatorImple.java#L438C4-L438C4
-                   // but please know that these checks are called by external processes at any time and so that would need to be blocked while this suspension process continues and appropriately handled
                }
            }
 
@@ -850,8 +847,8 @@ public class PeriodicRecovery extends Thread
             if (m instanceof SuspendBlockingRecoveryModule) {
                 /*
                  * Once Recovery Modules (implementing SuspendBlockingRecoveryModule) indicate
-                 * they do not want to block recovery (i.e. there is more work to do), they will
-                 * never change to wanting to block recovery in subsequent recovery cycles.
+                 * they do not want to block recovery (i.e. there is no more work to do), they
+                 *  will never change to wanting to block recovery in later recovery cycles.
                  * In other words, once a Recovery Module
                  * (implementing SuspendBlockingRecoveryModule) switches from
                  * `hasWork() == true` to `hasWork() == false`, it cannot
