@@ -38,7 +38,7 @@ public interface SuspendBlockingRecoveryModule extends RecoveryModule {
      * @return whether this implementation of SuspendBlockingRecoveryModule
      * should block the suspension of the Recovery Manager or not
      */
-    default boolean shouldBlockSuspension() {
+    default boolean hasWork() {
         return false;
     }
 }

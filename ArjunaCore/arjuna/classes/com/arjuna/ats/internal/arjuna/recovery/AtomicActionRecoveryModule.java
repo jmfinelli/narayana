@@ -51,7 +51,7 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
       // Transaction type
       boolean AtomicActions = false ;
       // Does not block the suspension of the Recovery Manager by default
-      this.shouldBlockSuspension = false;
+      this.hasWork = false;
 
       // uids per transaction type
       InputObjectState aa_uids = new InputObjectState() ;
@@ -238,7 +238,7 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
                      */
                     if (_recoveryStore.currentState(currentUid,
                             _transactionType) != StateStatus.OS_UNKNOWN) {
-                        this.shouldBlockSuspension = true;
+                        this.hasWork = true;
                     }
 
                 } catch (ObjectStoreException ex) {
@@ -251,8 +251,8 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
    }
 
     @Override
-    public boolean shouldBlockSuspension() {
-        return this.shouldBlockSuspension;
+    public boolean hasWork() {
+        return this.hasWork;
     }
 
    // 'type' within the Object Store for AtomicActions.
@@ -274,6 +274,6 @@ public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
     * first pass and second pass can only be invoked sequentially and by
     * one thread per time.
     */
-   private boolean shouldBlockSuspension;
+   private boolean hasWork;
 
 }

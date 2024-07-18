@@ -850,13 +850,14 @@ public class PeriodicRecovery extends Thread
             if (m instanceof SuspendBlockingRecoveryModule) {
                 /*
                  * Once Recovery Modules (implementing SuspendBlockingRecoveryModule) indicate
-                 * they do not want to block recovery, they will never change to wanting to block
-                 * recovery in subsequent recovery cycles. In other words, once a Recovery Module
+                 * they do not want to block recovery (i.e. there is more work to do), they will
+                 * never change to wanting to block recovery in subsequent recovery cycles.
+                 * In other words, once a Recovery Module
                  * (implementing SuspendBlockingRecoveryModule) switches from
-                 * `shouldBlockShutdown() == true` to `shouldBlockShutdown() == false`, it cannot
+                 * `hasWork() == true` to `hasWork() == false`, it cannot
                  * change its mind.
                  */
-                tempBlockSuspension = tempBlockSuspension || ((SuspendBlockingRecoveryModule) m).shouldBlockSuspension();
+                tempBlockSuspension = tempBlockSuspension || ((SuspendBlockingRecoveryModule) m).hasWork();
             }
             } finally {
                 restoreClassLoader(cl);
