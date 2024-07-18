@@ -12,7 +12,6 @@ import java.util.Enumeration;
 import java.util.Vector;
 
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
-import com.arjuna.ats.arjuna.coordinator.ActionManager;
 import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.recovery.RecoveryManager;
 import com.arjuna.ats.arjuna.recovery.RecoveryModule;
@@ -204,6 +203,8 @@ public class PeriodicRecovery extends Thread
      *     <code>suspendScan</code>:
      *     * The Transaction System (i.e. TxControl) gets disabled (i.e. no new transactions will be created)
      *     * The Transaction Reaper finishes monitoring all in-flight transactions
+     *     * All in-flight transactions without a timeout are beyond the prepare phase of the 2PC protocol;
+     *     to check when this condition is verified, com.arjuna.ats.arjuna.coordinator.ActionManager can be employed
      * </p>
      * @param async false if the calling thread should wait for any in-progress scan to complete before returning.
      *              In case <code>isWaitForFinalRecovery() == true</code>, this parameter is override.
@@ -235,7 +236,7 @@ public class PeriodicRecovery extends Thread
                 * The Action Manager gets checked as in-flight transactions with timeout zero
                 * can still be around (as the Transaction Reaper doesn't handle those txns)
                 */
-               while (ActionManager.manager().getNumberOfInflightTransactions() != 0 || _blockSuspension) {
+               while (_blockSuspension) {
                    /*
                     * There might be another thread (the embedded thread or a user-request scan)
                     * running the recovery cycle.
