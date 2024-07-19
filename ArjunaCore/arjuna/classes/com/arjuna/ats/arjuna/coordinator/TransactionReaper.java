@@ -725,18 +725,7 @@ public class TransactionReaper
                 notifyAll();
             }
 
-            /*
-                * Wait for all of the transactions to
-                * terminate normally.
-                */
-            while (!_reaperElements.isEmpty()) {
-                
-                try {
-                    this.wait(1000);
-                }
-                catch (final Exception ex) {
-                }
-            }
+            waitForAllTxnsToTerminate();
 
             _reaperThread.shutdown();
 
@@ -766,6 +755,29 @@ public class TransactionReaper
         }
 
         _reaperWorkerThread = null;
+    }
+
+    /**
+     * <p>
+     *     Wait for all the transactions to terminate normally.
+     * </p>
+     * <p>
+     *     Note:
+     *     this method must only be used when the transaction
+     *     system is not currently capable of creating new
+     *     transactions (via TxControl.disable()).
+     * </p>
+     */
+    public void waitForAllTxnsToTerminate() {
+        synchronized (this) {
+            while (!_reaperElements.isEmpty()) {
+                try {
+                    this.wait(1000);
+                } catch (final InterruptedException ignore) {
+                    // Ignored
+                }
+            }
+        }
     }
 
     // called (indirectly) by user code doing removals on e.g. commit/rollback

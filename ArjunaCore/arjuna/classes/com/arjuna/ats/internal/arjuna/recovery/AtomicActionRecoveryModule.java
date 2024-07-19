@@ -16,7 +16,7 @@ import com.arjuna.ats.arjuna.objectstore.RecoveryStore;
 import com.arjuna.ats.arjuna.objectstore.StateStatus;
 import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.ats.arjuna.recovery.RecoverAtomicAction;
-import com.arjuna.ats.arjuna.recovery.RecoveryModule;
+import com.arjuna.ats.arjuna.recovery.SuspendBlockingRecoveryModule;
 import com.arjuna.ats.arjuna.recovery.TransactionStatusConnectionManager;
 import com.arjuna.ats.arjuna.state.InputObjectState;
 import com.arjuna.ats.internal.arjuna.common.UidHelper;
@@ -27,7 +27,7 @@ import com.arjuna.ats.internal.arjuna.common.UidHelper;
  * It is responsible for recovering failed AtomicAction transactions.
 */
 
-public class AtomicActionRecoveryModule implements RecoveryModule
+public class AtomicActionRecoveryModule implements SuspendBlockingRecoveryModule
 {
    public AtomicActionRecoveryModule()
    {
@@ -50,6 +50,8 @@ public class AtomicActionRecoveryModule implements RecoveryModule
    {
       // Transaction type
       boolean AtomicActions = false ;
+      // Does not block the suspension of the Recovery Manager by default
+      this.hasWork = false;
 
       // uids per transaction type
       InputObjectState aa_uids = new InputObjectState() ;
@@ -225,6 +227,20 @@ public class AtomicActionRecoveryModule implements RecoveryModule
                             _transactionType) != StateStatus.OS_UNKNOWN) {
                         doRecoverTransaction(currentUid);
                     }
+
+                    /*
+                     * If the current AtomicAction has been recovered,
+                     * its StateStatus should be OS_UNKNOWN.
+                     * If that is not the case, it means that the current
+                     * AtomicAction still needs to be recovered and this
+                     * SuspendBlockingRecoveryModule implementation should
+                     * block the suspension of the Recovery Manager
+                     */
+                    if (_recoveryStore.currentState(currentUid,
+                            _transactionType) != StateStatus.OS_UNKNOWN) {
+                        this.hasWork = true;
+                    }
+
                 } catch (ObjectStoreException ex) {
                     tsLogger.i18NLogger
                             .warn_recovery_AtomicActionRecoveryModule_3(
@@ -233,6 +249,11 @@ public class AtomicActionRecoveryModule implements RecoveryModule
             }
         }
    }
+
+    @Override
+    public boolean hasWork() {
+        return this.hasWork;
+    }
 
    // 'type' within the Object Store for AtomicActions.
    private String _transactionType = new AtomicAction().type() ;
@@ -247,5 +268,12 @@ public class AtomicActionRecoveryModule implements RecoveryModule
    // This object manages the interface to all TransactionStatusManagers
    // processes(JVMs) on this system/node.
    private TransactionStatusConnectionManager _transactionStatusConnectionMgr ;
+
+   /*
+    * This class field is not declared as volatile as Recovery Module's
+    * first pass and second pass can only be invoked sequentially and by
+    * one thread per time.
+    */
+   private boolean hasWork;
 
 }
