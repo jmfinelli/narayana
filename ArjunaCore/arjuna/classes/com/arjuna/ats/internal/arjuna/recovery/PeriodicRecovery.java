@@ -198,10 +198,10 @@ public class PeriodicRecovery extends Thread
      * Note that this method is also influenced by
      * {@link RecoveryEnvironmentBean#isWaitForRecovery()}.
      * In case {@link RecoveryEnvironmentBean#setWaitForRecovery(boolean)} was
-     * initialised to true, it is <b>very important</b> that, before invoking this
-     * method, all transactions will either be terminated by the Transaction Reaper
-     * or they have prepared and a log has been written, otherwise the suspend call
-     * may never return.
+     * initialised to true, it is important that, before invoking this method, all
+     * transactions will either be terminated by the Transaction Reaper or they
+     * have prepared and a log has been written, otherwise the suspend call may
+     * never return.
      *
      * @param async false if the calling thread should wait for any in-progress scan to
      * complete before returning. In case {@link RecoveryEnvironmentBean#isWaitForRecovery()}
@@ -725,8 +725,7 @@ public class PeriodicRecovery extends Thread
     /**
      * wait until some other thread stops scanning
      *
-     * <b>Caveats:</b> this must only be called when synchronized on {@link PeriodicRecovery#_stateLock} and when
-     * _currentStatus is SCANNING
+     * <b>Caveats:</b> this must only be called when synchronized on {@link PeriodicRecovery#_stateLock}
      */
     private void doScanningWait()
     {
