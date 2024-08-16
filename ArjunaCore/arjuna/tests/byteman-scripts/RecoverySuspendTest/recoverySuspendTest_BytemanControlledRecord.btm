@@ -11,17 +11,16 @@
 ########################################################################
 
 ########################################################################
-# Rule to set waitForRecoveryFlag when invoking
-# RecoveryEnvironmentBean.isWaitForRecovery() in
+# Rule to set waitForRecoveryFlag when
+# PeriodicRecovery._waitForRecovery is read in
 # PeriodicRecovery.suspendScan(boolean)
 ########################################################################
 
 RULE setWaitForRecoveryFlag
 CLASS com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery
 METHOD suspendScan
-AFTER INVOKE isWaitForRecovery
-BIND returnValue:boolean = $!
-IF returnValue
+AFTER READ _waitForRecovery
+IF $this._waitForRecovery
 DO debug("[PeriodicRecovery] Setting waitForRecoveryFlag to true"),
    flag("waitForRecoveryFlag")
 ENDRULE

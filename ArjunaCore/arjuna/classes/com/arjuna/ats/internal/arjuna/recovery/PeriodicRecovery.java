@@ -196,14 +196,16 @@ public class PeriodicRecovery extends Thread
      * without suspending.
      * <p>
      * Note that this method is also influenced by
-     * {@link com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean#setWaitForRecovery}.
-     * In case {@link RecoveryEnvironmentBean#isWaitForRecovery()} is true,
-     * it is <b>very important</b> that, before invoking this method, all in-flight
-     * transactions have passed the prepare phase.
+     * {@link RecoveryEnvironmentBean#isWaitForRecovery()}.
+     * In case {@link RecoveryEnvironmentBean#setWaitForRecovery(boolean)} was
+     * initialised to true, it is <b>very important</b> that, before invoking this
+     * method, all transactions will either be terminated by the Transaction Reaper
+     * or they have prepared and a log has been written, otherwise the suspend call
+     * may never return.
      *
-     * @param async false if the calling thread should wait for any in-progress scan to complete before returning.
-     * In case {@link RecoveryEnvironmentBean#isWaitForRecovery()} is true, this parameter is
-     * override.
+     * @param async false if the calling thread should wait for any in-progress scan to
+     * complete before returning. In case {@link RecoveryEnvironmentBean#isWaitForRecovery()}
+     * is true, this parameter is overridden.
      * @return the previous mode before attempting the suspension
      */
    public Mode suspendScan (boolean async)
@@ -212,11 +214,7 @@ public class PeriodicRecovery extends Thread
        {
            Mode currentMode = getMode();
 
-           /*
-            * isWaitForRecovery checks whether suspension should delay until RecoveryModule
-            * implementations recover all their transactions.
-            */
-           if (currentMode == Mode.ENABLED && recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitForRecovery()) {
+           if (currentMode == Mode.ENABLED && _waitForRecovery) {
 
                doScanningWait();
                doWork();
@@ -243,7 +241,7 @@ public class PeriodicRecovery extends Thread
                _stateLock.notifyAll();
            }
 
-           if (!async && !recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitForRecovery()) {
+           if (!async && _waitForRecovery) {
                // synchronous, so we keep waiting until the currently active scan stops
                while (getStatus() == Status.SCANNING) {
                    try {
@@ -912,6 +910,7 @@ public class PeriodicRecovery extends Thread
         setMode(Mode.ENABLED);
 
         _periodicRecoveryInitilizationOffset = recoveryPropertyManager.getRecoveryEnvironmentBean().getPeriodicRecoveryInitilizationOffset();
+        _waitForRecovery = recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitForRecovery();
     }
 
    // this refers to the modules specified in the recovery manager
@@ -985,6 +984,9 @@ public class PeriodicRecovery extends Thread
      * periodic recovery cycle (i.e. doWorkInternal()).
      */
     private volatile boolean _blockSuspension = true;
+
+    // Variable to cache RecoveryEnvironmentBean.isWaitForRecovery()
+    private boolean _waitForRecovery;
 
    /*
     * Read the system properties to set the configurable options
