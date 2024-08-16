@@ -898,6 +898,12 @@ public class PeriodicRecovery extends Thread
     private void loadModules ()
     {
         _recoveryModules.addAll(recoveryPropertyManager.getRecoveryEnvironmentBean().getRecoveryModules());
+
+        if (!_recoveryModules.isEmpty() &&
+                _recoveryModules.stream().anyMatch(
+                        x -> x.getClass().getName().equals("AtomicActionRecoveryModule"))) {
+            tsLogger.i18NLogger.only_support_atomicactionrecoverymodule();
+        }
     }
 
     /**

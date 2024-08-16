@@ -1645,6 +1645,11 @@ public interface arjunaI18NLogger {
 	@LogMessage(level = WARN)
 	void unexpected_exception(@Cause() Throwable arg0);
 
+	// TODO Delete this as soon as JBTM-3983 has been implemented
+	@Message(id = 12414, value = "Only AtomicActionRecoveryModule is supported in this phase of the implementation", format = MESSAGE_FORMAT)
+	@LogMessage(level = WARN)
+	void only_support_atomicactionrecoverymodule();
+
     /*
         Allocate new messages directly above this notice.
           - id: use the next id number in numeric sequence. Don't reuse ids.
