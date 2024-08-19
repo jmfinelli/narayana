@@ -1646,9 +1646,12 @@ public interface arjunaI18NLogger {
 	void unexpected_exception(@Cause() Throwable arg0);
 
 	// TODO Delete this as soon as JBTM-3983 has been implemented
-	@Message(id = 12414, value = "Only AtomicActionRecoveryModule is supported in this phase of the implementation", format = MESSAGE_FORMAT)
+	@Message(id = 12414, value = "A recovery module other than com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule " +
+			"has been configured to be used by the recovery manager. Please note that if you issue a request where you expect the " +
+			"Recovery Manager to be blocked during suspension until all transactions are recovered, then only AtomicActionRecoveryModule " +
+			"is currently supported for this purpose. Please see https://issues.redhat.com/browse/JBTM-3893 for more details", format = MESSAGE_FORMAT)
 	@LogMessage(level = WARN)
-	void only_support_atomicactionrecoverymodule();
+	void warn_only_support_atomicactionrecoverymodule();
 
     /*
         Allocate new messages directly above this notice.

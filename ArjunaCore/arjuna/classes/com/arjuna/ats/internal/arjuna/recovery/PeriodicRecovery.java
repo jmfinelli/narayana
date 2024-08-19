@@ -547,6 +547,12 @@ public class PeriodicRecovery extends Thread
             tsLogger.logger.debug("PeriodicRecovery: adding module " + module.getClass().getName());
         }
         _recoveryModules.add(module);
+
+        // TODO Delete this as soon as JBTM-3983 has been implemented
+        if (_recoveryModules.stream().anyMatch(
+                        x -> !x.getClass().getName().equals("com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule"))) {
+            tsLogger.i18NLogger.warn_only_support_atomicactionrecoverymodule();
+        }
     }
 
     /**
@@ -899,10 +905,11 @@ public class PeriodicRecovery extends Thread
     {
         _recoveryModules.addAll(recoveryPropertyManager.getRecoveryEnvironmentBean().getRecoveryModules());
 
+        // TODO Delete this as soon as JBTM-3983 has been implemented
         if (!_recoveryModules.isEmpty() &&
                 _recoveryModules.stream().anyMatch(
-                        x -> x.getClass().getName().equals("AtomicActionRecoveryModule"))) {
-            tsLogger.i18NLogger.only_support_atomicactionrecoverymodule();
+                        x -> !x.getClass().getName().equals("com.arjuna.ats.internal.arjuna.recovery.AtomicActionRecoveryModule"))) {
+            tsLogger.i18NLogger.warn_only_support_atomicactionrecoverymodule();
         }
     }
 

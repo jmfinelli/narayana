@@ -231,12 +231,14 @@ public class AtomicActionRecoveryModule implements RecoveryModule {
                             _transactionType) != StateStatus.OS_UNKNOWN) {
                         RecoverAtomicAction rcvAtomicAction = doRecoverTransaction(currentUid);
 
-                        /*
-                         * If the current AtomicAction has been recovered, its StateStatus should be OS_UNKNOWN.
-                         * If that is not the case, it means that the current AtomicAction still needs to be recovered
-                         */
-                        if (_recoveryStore.currentState(currentUid, _transactionType) != StateStatus.OS_UNKNOWN) {
-                            if (rcvAtomicAction.hasHeuristicParticipants()) {
+                        if (rcvAtomicAction.hasPreparedParticipants() || rcvAtomicAction.hasFailedParticipants() ||
+                                rcvAtomicAction.hasHeuristicParticipants()) {
+                            /*
+                             * If some participants in this AtomicAction fail to commit while others complete with a
+                             * heuristic outcome, another recovery attempt should be made to allow the failed participants
+                             * to fulfill their intention.
+                             */
+                            if (rcvAtomicAction.hasHeuristicParticipants() && !rcvAtomicAction.hasFailedParticipants()) {
                                 tsLogger.logger.tracef(
                                         "AtomicActionRecoveryModule.processTransactionsStatus heuristic action {0} " +
                                                 "was ignored during the assessment of leftover work.", currentUid);
