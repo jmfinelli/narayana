@@ -605,8 +605,8 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
      * {@link com.arjuna.ats.arjuna.recovery.RecoveryManager} when suspending.
      * 
      * @return true if {@link com.arjuna.ats.arjuna.recovery.RecoveryManager} should wait that all
-     * {@link RecoveryModule} implementations recover all their transactions before shutting down;
-     * false otherwise.
+     * {@link RecoveryModule} overriding {@link RecoveryModule#hasWork()} recover all their
+     * transactions before shutting down; false otherwise.
      */
     public boolean isWaitForRecovery()
     {
@@ -617,8 +617,8 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
      * Configure the suspension of {@link com.arjuna.ats.arjuna.recovery.RecoveryManager}
      * 
      * @param waitForRecovery true if {@link com.arjuna.ats.arjuna.recovery.RecoveryManager} should
-     * wait that all {@link RecoveryModule} implementations recover all their transactions before
-     * shutting down; false otherwise.
+     * wait that all {@link RecoveryModule} overriding {@link RecoveryModule#hasWork()} recover
+     * all their transactions before shutting down; false otherwise.
      */
     public void setWaitForRecovery(boolean waitForRecovery)
     {
