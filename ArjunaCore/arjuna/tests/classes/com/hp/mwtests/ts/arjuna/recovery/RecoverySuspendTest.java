@@ -60,7 +60,7 @@ public class RecoverySuspendTest {
         _recoveryConfig.setRecoveryBackoffPeriod(recoveryBackoffPeriod);
         _recoveryConfig.setPeriodicRecoveryPeriod(periodicRecoveryPeriod);
         // don't sign off until the store is empty
-        _recoveryConfig.setWaitForRecovery(true);
+        _recoveryConfig.setWaitForRecoveryBeforeSuspension(true);
 
         // the test set of modules
         _recoveryConfig.setRecoveryModuleClassNames(Arrays.asList(modules));
@@ -177,6 +177,15 @@ public class RecoverySuspendTest {
         heuristicTest(TwoPhaseOutcome.HEURISTIC_HAZARD);
     }
 
+    @Test
+    @BMScripts(scripts = {
+            @BMScript("RecoverySuspendTest/recoverySuspendTest_BytemanControlledRecord"),
+            @BMScript("RecoverySuspendTest/recoverySuspendTest_FailTest")
+    })
+    public void testSuspensionWhenThereIsAHeuristicRollbackAtomicActionToRecoverButNotWaiting() {
+        heuristicTest(TwoPhaseOutcome.HEURISTIC_ROLLBACK);
+    }
+
     private void heuristicTest(int heuristicType) {
         // Make sure that the test environment is ready
         BytemanControlledRecord.resetCommitCallCounter();
@@ -200,7 +209,7 @@ public class RecoverySuspendTest {
         // Makes sure that the transaction reaper completed all transactions
         TransactionReaper.transactionReaper().waitForAllTxnsToTerminate();
 
-        // Synchronization is not needed (i.e. async = true) as isWaitForRecovery() == true
+        // Synchronization is not needed (i.e. async = true) as shouldWaitForRecoveryBeforeSuspension() == true
         _manager.suspend(true);
 
         Assertions.assertEquals(numberOfCommits, BytemanControlledRecord.getCommitCallCounter(),

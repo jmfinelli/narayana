@@ -16,8 +16,8 @@ public interface ExtendedRecoveryModule extends RecoveryModule {
      * were logged. This means that any failure conditions are
      * guaranteed to be obtainable by inspecting the logs.
      *
-     * @return false if any RecoveryModule logged a warning or error
-     * on the previous recovery pass.
+     * @return (false if any RecoveryModule logged a warning or error
+     * on the previous recovery pass.)
      */
     default boolean isPeriodicWorkSuccessful() {
         return true;

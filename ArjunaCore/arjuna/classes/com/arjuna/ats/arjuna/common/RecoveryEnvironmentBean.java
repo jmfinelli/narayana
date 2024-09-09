@@ -608,7 +608,7 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
      * {@link RecoveryModule} overriding {@link RecoveryModule#hasWork()} recover all their
      * transactions before shutting down; false otherwise.
      */
-    public boolean isWaitForRecovery()
+    public boolean shouldWaitForRecoveryBeforeSuspension()
     {
         return waitForRecovery;
     }
@@ -620,7 +620,7 @@ public class RecoveryEnvironmentBean implements RecoveryEnvironmentBeanMBean
      * wait that all {@link RecoveryModule} overriding {@link RecoveryModule#hasWork()} recover
      * all their transactions before shutting down; false otherwise.
      */
-    public void setWaitForRecovery(boolean waitForRecovery)
+    public void setWaitForRecoveryBeforeSuspension(boolean waitForRecovery)
     {
         this.waitForRecovery = waitForRecovery;
     }

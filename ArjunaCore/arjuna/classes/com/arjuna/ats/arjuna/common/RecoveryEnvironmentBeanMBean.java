@@ -39,5 +39,5 @@ public interface RecoveryEnvironmentBeanMBean
 
     boolean isTimeoutSocket();
 
-    boolean isWaitForRecovery();
+    boolean shouldWaitForRecoveryBeforeSuspension();
 }

@@ -15,6 +15,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -77,6 +78,8 @@ public class BasicAction extends StateManager
 
         _childThreads = null;
         _childActions = null;
+
+        unsuccessfulRecordOutcomes = null;
     }
 
     /**
@@ -116,6 +119,8 @@ public class BasicAction extends StateManager
 
         _childThreads = null;
         _childActions = null;
+
+        unsuccessfulRecordOutcomes = null;
     }
 
     /**
@@ -1077,7 +1082,7 @@ public class BasicAction extends StateManager
             tsLogger.logger.trace("BasicAction::restore_state ()");
         }
 
-        createPreparedLists();
+        initialisationsBefore2PhaseCommitProtocol();
 
         boolean res = true;
         int record_type = RecordType.NONE_RECORD;
@@ -2176,7 +2181,7 @@ public class BasicAction extends StateManager
 
             criticalStart();
 
-            createPreparedLists();
+            initialisationsBefore2PhaseCommitProtocol();
 
             /*
              * Here is the start of the hard work. Walk down the pendingList
@@ -2438,6 +2443,11 @@ public class BasicAction extends StateManager
         if (failedList == null)
             failedList = new RecordList();
 
+        if (unsuccessfulRecordOutcomes == null)
+            unsuccessfulRecordOutcomes = new ConcurrentHashMap<>();
+        else
+            unsuccessfulRecordOutcomes.clear();
+
         /*
          * Since it is one-phase, the outcome from the record is the outcome of
          * the transaction. Therefore, we don't need to save much intermediary
@@ -2468,6 +2478,9 @@ public class BasicAction extends StateManager
         }
         else
         {
+            // Save the outcome in the map
+            unsuccessfulRecordOutcomes.put(recordBeingHandled.get_uid(), p);
+
             if ((p == TwoPhaseOutcome.FINISH_ERROR) || (p == TwoPhaseOutcome.ONE_PHASE_ERROR))
             {
                 /*
@@ -3015,6 +3028,9 @@ public class BasicAction extends StateManager
                 }
                 else
                 {
+                    // Save the outcome in the map
+                    unsuccessfulRecordOutcomes.put(recordBeingHandled.get_uid(), ok);
+
                     if (tsLogger.logger.isTraceEnabled()) {
                         tsLogger.logger.trace("BasicAction.doCommit for "+get_uid()+" received "+
                                 TwoPhaseOutcome.stringForm(ok)+" from "+RecordType.typeToClass(recordBeingHandled.typeIs()));
@@ -3150,6 +3166,9 @@ public class BasicAction extends StateManager
                 }
                 else
                 {
+                    // Save the outcome in the map
+                    unsuccessfulRecordOutcomes.put(recordBeingHandled.get_uid(), ok);
+
                     if ((reportHeuristics)
                             && ((ok == TwoPhaseOutcome.HEURISTIC_ROLLBACK)
                             || (ok == TwoPhaseOutcome.HEURISTIC_COMMIT)
@@ -3421,7 +3440,7 @@ public class BasicAction extends StateManager
      * entire transaction. Thus, the list may change before we return.
      */
 
-    private final void createPreparedLists ()
+    private final void initialisationsBefore2PhaseCommitProtocol()
     {
         if (preparedList == null)
             preparedList = new RecordList();
@@ -3437,6 +3456,11 @@ public class BasicAction extends StateManager
 
         if (pendingList == null)
             pendingList = new RecordList();
+
+        if (unsuccessfulRecordOutcomes == null)
+            unsuccessfulRecordOutcomes = new ConcurrentHashMap<>();
+        else
+            unsuccessfulRecordOutcomes.clear();
     }
 
     /**
@@ -3911,6 +3935,8 @@ public class BasicAction extends StateManager
     private CheckedAction _checkedAction; // control what happens if threads active when terminating.
     private boolean pastFirstParticipant;  // remember where we are (were) in committing during recovery
     private boolean internalError; // is there an error internal to the TM (such as write log errors, for example)
+
+    protected Map<Uid, Integer> unsuccessfulRecordOutcomes; // Holds AbstractRecord's errors
 
     /*
      * We need to keep track of the number of threads associated with each

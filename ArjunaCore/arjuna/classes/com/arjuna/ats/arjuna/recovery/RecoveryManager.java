@@ -226,7 +226,7 @@ public class RecoveryManager
      * preserve data integrity.
      * <p>
      * Note that this method is also influenced by
-     * {@link com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean#setWaitForRecovery}.
+     * {@link com.arjuna.ats.arjuna.common.RecoveryEnvironmentBean#setWaitForRecoveryBeforeSuspension}.
      * For more details, see {@link PeriodicRecovery#suspendScan(boolean)}
      *
      * @param async false means wait for the recovery manager to finish any scans before returning.

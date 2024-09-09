@@ -190,22 +190,23 @@ public class PeriodicRecovery extends Thread
      * Make all scanning operations suspend.
      * <p>
      * This switches the recovery operation mode to <code>SUSPENDED</code>.
-     * Any attempt to start a new scan either by an ad hoc threads or by the periodic
+     * Any attempt to start a new scan either by an ad hoc thread or by the periodic
      * recovery thread will suspend its thread until the mode changes.
      * If a scan is in progress when this method is called it will complete its scan
      * without suspending.
      * <p>
      * Note that this method is also influenced by
-     * {@link RecoveryEnvironmentBean#isWaitForRecovery()}.
-     * In case {@link RecoveryEnvironmentBean#setWaitForRecovery(boolean)} was
-     * initialised to true, it is important that, before invoking this method, all
+     * {@link RecoveryEnvironmentBean#shouldWaitForRecoveryBeforeSuspension()}.
+     * In case {@link RecoveryEnvironmentBean#setWaitForRecoveryBeforeSuspension(boolean)}
+     * was initialised to true, it is important that, before invoking this method, all
      * transactions will either be terminated by the Transaction Reaper or they
      * have prepared and a log has been written, otherwise the suspend call may
      * never return.
      *
      * @param async false if the calling thread should wait for any in-progress scan to
-     * complete before returning. In case {@link RecoveryEnvironmentBean#isWaitForRecovery()}
-     * is true, this parameter is overridden.
+     * complete before returning. In case
+     * {@link RecoveryEnvironmentBean#shouldWaitForRecoveryBeforeSuspension()} is true,
+     * this parameter is overridden.
      * @return the previous mode before attempting the suspension
      */
    public Mode suspendScan (boolean async)
@@ -818,7 +819,7 @@ public class PeriodicRecovery extends Thread
         }
 
         modules = copyOfModules.elements();
-        boolean isThereWorkLeftToDo = false;
+        boolean workLeftToDo = false;
 
         while (modules.hasMoreElements())
         {
@@ -829,7 +830,7 @@ public class PeriodicRecovery extends Thread
                 m.periodicWorkSecondPass();
 
                 // Checks if there is still work to do after periodicWorkSecondPass()
-                isThereWorkLeftToDo = isThereWorkLeftToDo || m.hasWork();
+                workLeftToDo = workLeftToDo || m.hasWork();
             } finally {
                 restoreClassLoader(cl);
             }
@@ -839,7 +840,7 @@ public class PeriodicRecovery extends Thread
             }
         }
 
-        this._blockSuspension = isThereWorkLeftToDo;
+        this._blockSuspension = workLeftToDo;
 
         // n.b. the caller is responsible for clearing the active scan
     }
@@ -922,7 +923,7 @@ public class PeriodicRecovery extends Thread
         setMode(Mode.ENABLED);
 
         _periodicRecoveryInitilizationOffset = recoveryPropertyManager.getRecoveryEnvironmentBean().getPeriodicRecoveryInitilizationOffset();
-        _waitForRecovery = recoveryPropertyManager.getRecoveryEnvironmentBean().isWaitForRecovery();
+        _waitForRecovery = recoveryPropertyManager.getRecoveryEnvironmentBean().shouldWaitForRecoveryBeforeSuspension();
     }
 
    // this refers to the modules specified in the recovery manager
@@ -997,7 +998,7 @@ public class PeriodicRecovery extends Thread
      */
     private volatile boolean _blockSuspension = true;
 
-    // Variable to cache RecoveryEnvironmentBean.isWaitForRecovery()
+    // Cache of RecoveryEnvironmentBean.shouldWaitForRecoveryBeforeSuspension()
     private boolean _waitForRecovery;
 
    /*
