@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
@@ -103,6 +104,45 @@ public class SimpleIsolatedServers {
         }
         completionCounter.reset();
         lookupProvider.clear();
+    }
+
+    @Test
+    public void testRestoreStateAfterXA_RBINTEGRITY() throws Exception {
+        System.out.println("testCrashAfterXA_RBINTEGRITY");
+
+        LocalServer originalServer = getLocalServer("1000");
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(originalServer.getClassLoader());
+        TransactionManager transactionManager = originalServer.getTransactionManager();
+        transactionManager.begin();
+        Transaction originalTransaction = transactionManager.getTransaction();
+        String get_uid = originalServer.get_uid();
+        originalTransaction.enlistResource(new TestResource(originalServer.getNodeName(), false));
+        TestResource testResource = new TestResource(originalServer.getNodeName(), false, true, new XAException(XAException.XA_RBINTEGRITY));
+        originalTransaction.enlistResource(testResource);
+        try {
+            transactionManager.commit();
+            fail("The transaction should not be able to commit normally");
+        } catch (HeuristicMixedException hme) {
+            // One of the resources did rollback
+        }
+        Thread.currentThread().setContextClassLoader(classLoader);
+
+        // Make sure that upon recovery an xa directive is not issued
+        assertTrue("" + completionCounter.getCommitCount("1000"), completionCounter.getCommitCount("1000") == 2);
+        assertTrue("" + completionCounter.getRollbackCount("1000"), completionCounter.getRollbackCount("1000") == 0);
+        getLocalServer("1000").doRecoveryManagerScan(true);
+        assertTrue("" + completionCounter.getCommitCount("1000"), completionCounter.getCommitCount("1000") == 2);
+        assertTrue("" + completionCounter.getRollbackCount("1000"), completionCounter.getRollbackCount("1000") == 0);
+
+        // Make sure that the Xid of the testResource is expectedly listed as a heuristic
+        String outcome = getLocalServer("1000").checkHeuristic(get_uid);
+        assertTrue(outcome.contains(testResource.getFatalXid().toString()));
+
+        // Make sure that upon recovery an xa directive is issued
+        getLocalServer("1000").doRecoveryManagerScan(true);
+        assertTrue("" + completionCounter.getCommitCount("1000"), completionCounter.getCommitCount("1000") == 3);
+        assertTrue("" + completionCounter.getRollbackCount("1000"), completionCounter.getRollbackCount("1000") == 0);
     }
 
     private void reboot(String serverName) throws Exception {
