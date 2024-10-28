@@ -6,9 +6,9 @@
 package io.narayana.lra.coordinator.tools.osb.mbean;
 
 import com.arjuna.ats.arjuna.coordinator.AbstractRecord;
-import com.arjuna.ats.arjuna.tools.osb.mbean.ActionBean;
-import com.arjuna.ats.arjuna.tools.osb.mbean.ParticipantStatus;
-import com.arjuna.ats.arjuna.tools.osb.mbean.UidWrapper;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.ActionBean;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.ParticipantStatus;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.UidWrapper;
 import io.narayana.lra.coordinator.domain.model.LongRunningAction;
 
 import java.net.URI;

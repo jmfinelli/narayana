@@ -13,9 +13,9 @@ import javax.management.MBeanException;
 import org.junit.Test;
 
 import com.arjuna.ats.arjuna.common.Uid;
-import com.arjuna.ats.arjuna.tools.osb.mbean.OSBTypeHandler;
-import com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowser;
-import com.arjuna.ats.arjuna.tools.osb.mbean.UidWrapper;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.OSBTypeHandler;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.ObjStoreBrowser;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.UidWrapper;
 import com.arjuna.ats.internal.jta.tools.osb.mbean.jts.JCAServerTransactionHeaderReader;
 /**
  * An example of how to instrument new record types.

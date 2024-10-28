@@ -2,7 +2,7 @@
    Copyright The Narayana Authors
    SPDX-License-Identifier: Apache-2.0
  */
-package com.arjuna.ats.arjuna.tools.osb.mbean;
+package com.arjuna.ats.internal.arjuna.tools.osb.mbean;
 
 import com.arjuna.ats.arjuna.common.Uid;
 
@@ -11,11 +11,7 @@ import com.arjuna.ats.arjuna.common.Uid;
  *
  * @author Mike Musgrove
  */
-/**
- * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to 
- * provide a better separation between public and internal classes.
- */
-@Deprecated // in order to provide a better separation between public and internal classes.
+
 public class HeaderState {
     String state;
     Uid txUid;

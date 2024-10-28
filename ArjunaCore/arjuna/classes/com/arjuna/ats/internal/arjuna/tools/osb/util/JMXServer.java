@@ -2,9 +2,8 @@
    Copyright The Narayana Authors
    SPDX-License-Identifier: Apache-2.0
  */
-package com.arjuna.ats.arjuna.tools.osb.util;
+package com.arjuna.ats.internal.arjuna.tools.osb.util;
 
-import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.util.List;
@@ -21,17 +20,14 @@ import javax.management.ObjectName;
 import javax.management.QueryExp;
 
 import com.arjuna.ats.arjuna.logging.tsLogger;
-import com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreItemMBean;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.ObjStoreItemMBean;
 
 /**
  * Simple wrapper for accessing the JMX server
  *
- * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to 
- * provide a better separation between public and internal classes.
- *
  * @author Mike Musgrove
  */
-@Deprecated // in order to provide a better separation between public and internal classes.
+
 public class JMXServer
 {
 	public static String JTS_INITIALISER_CNAME = "com.arjuna.ats.internal.jta.tools.osb.mbean.jts.ToolsInitialiser";

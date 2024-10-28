@@ -6,7 +6,7 @@
 package com.arjuna.ats.internal.jta.tools.osb.mbean.jts;
 
 import com.arjuna.ats.arjuna.coordinator.AbstractRecord;
-import com.arjuna.ats.arjuna.tools.osb.mbean.*;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.*;
 import com.arjuna.ats.internal.jta.resources.jts.orbspecific.XAResourceRecord;
 import com.arjuna.ats.internal.jta.tools.osb.mbean.jta.JTAActionBean;
 import com.arjuna.ats.internal.jta.tools.osb.mbean.jta.XARecoveryResourceMBean;

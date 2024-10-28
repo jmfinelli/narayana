@@ -2,7 +2,7 @@
    Copyright The Narayana Authors
    SPDX-License-Identifier: Apache-2.0
  */
-package com.arjuna.ats.arjuna.tools.osb.annotation;
+package com.arjuna.ats.internal.arjuna.tools.osb.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -15,11 +15,7 @@ import javax.management.DescriptorKey;
 /**
  * Annotation for adding a description to the MBeanInfo of an MBean
  */
-/**
- * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to 
- * provide a better separation between public and internal classes.
- */
-@Deprecated // in order to provide a better separation between public and internal classes.
+
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

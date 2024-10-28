@@ -7,11 +7,11 @@ package io.narayana.lra.coordinator.tools.osb.mbean;
 
 import com.arjuna.ats.arjuna.common.Uid;
 import com.arjuna.ats.arjuna.common.recoveryPropertyManager;
-import com.arjuna.ats.arjuna.tools.osb.mbean.ActionBean;
-import com.arjuna.ats.arjuna.tools.osb.mbean.LogRecordWrapper;
-import com.arjuna.ats.arjuna.tools.osb.mbean.OSEntryBean;
-import com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowser;
-import com.arjuna.ats.arjuna.tools.osb.mbean.UidWrapper;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.ActionBean;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.LogRecordWrapper;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.OSEntryBean;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.ObjStoreBrowser;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.UidWrapper;
 import com.arjuna.ats.internal.arjuna.recovery.RecoveryManagerImple;
 import io.narayana.lra.coordinator.domain.model.FailedLongRunningAction;
 import io.narayana.lra.coordinator.domain.model.LRAParticipantRecord;
@@ -37,7 +37,7 @@ public class ObjStoreBrowserLRATest {
     private ObjStoreBrowser osb;
 
     private static String[][] LRA_OSB_TYPES = {
-            // osTypeClassName, beanTypeClassName - see com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowser
+            // osTypeClassName, beanTypeClassName - see com.arjuna.ats.internal.arjuna.tools.osb.mbean.ObjStoreBrowser
             {LongRunningAction.getType().substring(1), LongRunningAction.class.getName(), LRAActionBean.class.getName()},
             {FailedLongRunningAction.getType().substring(1), FailedLongRunningAction.class.getName(), LRAActionBean.class.getName()}
     };

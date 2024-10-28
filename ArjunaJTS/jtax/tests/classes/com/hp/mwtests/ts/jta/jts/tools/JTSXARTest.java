@@ -6,11 +6,11 @@
 package com.hp.mwtests.ts.jta.jts.tools;
 
 import com.arjuna.ats.arjuna.common.Uid;
-import com.arjuna.ats.arjuna.tools.osb.mbean.HeuristicStatus;
-import com.arjuna.ats.arjuna.tools.osb.mbean.OSBTypeHandler;
-import com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowser;
-import com.arjuna.ats.arjuna.tools.osb.mbean.UidWrapper;
-import com.arjuna.ats.arjuna.tools.osb.util.JMXServer;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.HeuristicStatus;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.OSBTypeHandler;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.ObjStoreBrowser;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.UidWrapper;
+import com.arjuna.ats.internal.arjuna.tools.osb.util.JMXServer;
 import com.arjuna.ats.internal.arjuna.thread.ThreadActionData;
 import com.arjuna.ats.internal.jta.tools.osb.mbean.jts.ArjunaTransactionImpleWrapper;
 import com.arjuna.ats.internal.jta.transaction.jts.TransactionImple;

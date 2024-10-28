@@ -2,7 +2,7 @@
    Copyright The Narayana Authors
    SPDX-License-Identifier: Apache-2.0
  */
-package com.arjuna.ats.arjuna.tools.osb.mbean;
+package com.arjuna.ats.internal.arjuna.tools.osb.mbean;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,17 +25,15 @@ import com.arjuna.ats.arjuna.logging.tsLogger;
 import com.arjuna.ats.arjuna.objectstore.ObjectStoreIterator;
 import com.arjuna.ats.arjuna.objectstore.StoreManager;
 import com.arjuna.ats.arjuna.state.InputObjectState;
-import com.arjuna.ats.arjuna.tools.osb.util.JMXServer;
+import com.arjuna.ats.internal.arjuna.tools.osb.util.JMXServer;
 
 /**
  * An MBean implementation for walking an ObjectStore and creating/deleting MBeans
  * that represent completing transactions (ie ones on which the user has called commit)
  *
  * @author Mike Musgrove
- * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to
- * provide a better separation between public and internal classes.
  */
-@Deprecated // in order to provide a better separation between public and internal classes.
+
 public class ObjStoreBrowser implements ObjStoreBrowserMBean {
 
     private static final String SUBORDINATE_AA_TYPE =
@@ -63,7 +61,7 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
             new OSBTypeHandler(
                     true,
                     "com.arjuna.ats.arjuna.AtomicAction",
-                    "com.arjuna.ats.arjuna.tools.osb.mbean.ActionBean",
+                    "com.arjuna.ats.internal.arjuna.tools.osb.mbean.ActionBean",
                     "StateManager/BasicAction/TwoPhaseCoordinator/AtomicAction",
                     null
             ),
@@ -147,7 +145,7 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
 
     // A system property for defining extra bean types for instrumenting object store types
     // The format is OSType1=BeanType1,OSType2=BeanType2,etc
-    public static final String OBJ_STORE_BROWSER_HANDLERS = "com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowserHandlers";
+    public static final String OBJ_STORE_BROWSER_HANDLERS = "com.arjuna.ats.internal.arjuna.tools.osb.mbean.ObjStoreBrowserHandlers";
     private final String objStoreBrowserMBeanName;
 
     public static HeaderStateReader getHeaderStateUnpacker(String type) {
@@ -467,7 +465,7 @@ public class ObjStoreBrowser implements ObjStoreBrowserMBean {
         /*
          * now create the actual MBeans - we create all the UidWrappers before registering because
          * the process of creating a bean can call back into the browser to probe for a particular type
-         * (see for example com.arjuna.ats.arjuna.tools.osb.mbean.ActionBean)
+         * (see for example com.arjuna.ats.internal.arjuna.tools.osb.mbean.ActionBean)
          */
         registerMBeans();
     }

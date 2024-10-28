@@ -108,7 +108,7 @@ public class LongRunningAction extends BasicAction {
         }
     }
 
-    // used for MBean LRA listing, see com.arjuna.ats.arjuna.tools.osb.mbean.ObjStoreBrowser
+    // used for MBean LRA listing, see com.arjuna.ats.internal.arjuna.tools.osb.mbean.ObjStoreBrowser
     public LongRunningAction(Uid rcvUid) {
         this(new LRAService(), rcvUid);
     }

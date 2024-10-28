@@ -5,8 +5,8 @@
 
 package io.narayana.lra.coordinator.tools.osb.mbean;
 
-import com.arjuna.ats.arjuna.tools.osb.annotation.MXBeanDescription;
-import com.arjuna.ats.arjuna.tools.osb.mbean.LogRecordWrapperMBean;
+import com.arjuna.ats.internal.arjuna.tools.osb.annotation.MXBeanDescription;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.LogRecordWrapperMBean;
 
 import java.net.URI;
 

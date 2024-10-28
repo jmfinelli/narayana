@@ -6,7 +6,7 @@
 package com.arjuna.ats.internal.jta.tools.osb.mbean.jts;
 
 import com.arjuna.ats.arjuna.state.InputObjectState;
-import com.arjuna.ats.arjuna.tools.osb.mbean.HeaderState;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.HeaderState;
 import com.arjuna.ats.internal.jta.tools.osb.mbean.jts.ServerTransactionHeaderReader;
 import com.arjuna.ats.jta.xa.XidImple;
 

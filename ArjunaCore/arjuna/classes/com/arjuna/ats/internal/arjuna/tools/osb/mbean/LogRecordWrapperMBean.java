@@ -2,21 +2,17 @@
    Copyright The Narayana Authors
    SPDX-License-Identifier: Apache-2.0
  */
-package com.arjuna.ats.arjuna.tools.osb.mbean;
+package com.arjuna.ats.internal.arjuna.tools.osb.mbean;
 
-import com.arjuna.ats.arjuna.tools.osb.annotation.MXBeanDescription;
-import com.arjuna.ats.arjuna.tools.osb.annotation.MXBeanPropertyDescription;
+import com.arjuna.ats.internal.arjuna.tools.osb.annotation.MXBeanDescription;
+import com.arjuna.ats.internal.arjuna.tools.osb.annotation.MXBeanPropertyDescription;
 
 /**
  * JMX MBean interface for transaction participants.
  *
  * @author Mike Musgrove
  */
-/**
- * @deprecated as of 5.0.5.Final In a subsequent release we will change packages names in order to 
- * provide a better separation between public and internal classes.
- */
-@Deprecated // in order to provide a better separation between public and internal classes.
+
 @MXBeanDescription("Representation of a transaction participant")
 public interface LogRecordWrapperMBean extends OSEntryBeanMBean {
 	@MXBeanPropertyDescription("Indication of the status of this transaction participant (prepared, heuristic, etc)")

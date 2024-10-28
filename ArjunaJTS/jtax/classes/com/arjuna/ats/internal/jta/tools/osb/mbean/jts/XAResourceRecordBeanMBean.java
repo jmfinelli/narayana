@@ -4,7 +4,7 @@
  */
 package com.arjuna.ats.internal.jta.tools.osb.mbean.jts;
 
-import com.arjuna.ats.arjuna.tools.osb.annotation.MXBeanDescription;
+import com.arjuna.ats.internal.arjuna.tools.osb.annotation.MXBeanDescription;
 import com.arjuna.ats.internal.jta.tools.osb.mbean.jta.XAResourceMBean;
 
 /**

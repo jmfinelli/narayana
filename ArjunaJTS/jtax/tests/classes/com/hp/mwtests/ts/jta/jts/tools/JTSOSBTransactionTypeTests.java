@@ -10,7 +10,7 @@ import javax.management.MBeanException;
 import org.junit.Test;
 
 import com.arjuna.ats.arjuna.common.Uid;
-import com.arjuna.ats.arjuna.tools.osb.mbean.UidWrapper;
+import com.arjuna.ats.internal.arjuna.tools.osb.mbean.UidWrapper;
 import com.arjuna.ats.internal.jta.tools.osb.mbean.jts.ArjunaTransactionImpleWrapper;
 import com.arjuna.ats.internal.jts.recovery.transactions.AssumedCompleteHeuristicServerTransaction;
 import com.arjuna.ats.internal.jts.recovery.transactions.AssumedCompleteHeuristicTransaction;
