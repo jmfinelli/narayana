@@ -138,7 +138,7 @@ then
   exit
 fi
 # It is important in the deploy step that if you are deploying to nexus you provide a reference to your settings file as the ./build.sh overrides the default settings file discovery of Maven. Please see https://github.com/jbosstm/narayana/wiki/Narayana-Release-Process for details of the settings.xml requirements
-./build.sh clean deploy -Dmaven.repo.local=${PWD}/localm2repo -DskipTests -gs ~/.m2/settings.xml -Dorson.jar.location=$ORSON_PATH -Prelease,community -DskipNexusStagingDeployMojo=false
+./build.sh clean deploy -Dmaven.repo.local=${PWD}/localm2repo -DskipTests -gs ~/.m2/settings.xml -Dorson.jar.location=$ORSON_PATH -Pcommunity -Drelease -DstagingRelease
 if [[ $? != 0 ]]
 then
   echo 1>&2 Could not deploy narayana to nexus
