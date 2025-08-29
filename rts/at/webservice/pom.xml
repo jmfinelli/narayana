@@ -84,16 +84,8 @@
         <configuration>
           <forceCreation>true</forceCreation>
           <includePom>true</includePom>
+          <defaultManifestFile></defaultManifestFile>
         </configuration>
-        <executions>
-          <execution>
-            <id>create_sources_jar</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <phase>prepare-package</phase>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
