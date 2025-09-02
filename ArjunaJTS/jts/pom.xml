@@ -209,7 +209,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <executions>
               <execution>
-                <id>idlj-testCompile</id>
+                <id>default-testCompile</id>
                 <goals>
                   <goal>testCompile</goal>
                 </goals>
@@ -225,19 +225,21 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
+              </additionalClasspathElements>
+              <useManifestOnlyJar>false</useManifestOnlyJar>
+            </configuration>
             <executions>
               <execution>
-                <id>surefire-idlj-openjdk</id>
+                <id>default-test</id>
                 <goals>
                   <goal>test</goal>
                 </goals>
                 <phase>test</phase>
                 <configuration>
                   <systemProperties combine.children="append"></systemProperties>
-                  <additionalClasspathElements>
-                    <additionalClasspathElement>${env.JAVA_HOME}/lib/tools.jar</additionalClasspathElement>
-                  </additionalClasspathElements>
-                  <useManifestOnlyJar>false</useManifestOnlyJar>
                   <excludes>
                     <exclude>**/common/**</exclude>
                     <exclude>**/exceptions/**</exclude>

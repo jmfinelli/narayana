@@ -122,11 +122,6 @@
           <classifier>tests</classifier>
           <scope>test</scope>
         </dependency>
-        <dependency>
-          <groupId>org.jboss.openjdk-orb</groupId>
-          <artifactId>openjdk-orb</artifactId>
-          <scope>test</scope>
-        </dependency>
       </dependencies>
       <build>
         <plugins>
@@ -134,7 +129,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <executions>
               <execution>
-                <id>idlj-openjdk-testCompile</id>
+                <id>default-testCompile</id>
                 <goals>
                   <goal>testCompile</goal>
                 </goals>
@@ -152,7 +147,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <executions>
               <execution>
-                <id>surefire-idlj-openjdk</id>
+                <id>default-test</id>
                 <goals>
                   <goal>test</goal>
                 </goals>

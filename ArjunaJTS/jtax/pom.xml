@@ -171,7 +171,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <executions>
               <execution>
-                <id>surefire-idlj-openjdk</id>
+                <id>default-test</id>
                 <goals>
                   <goal>test</goal>
                 </goals>
