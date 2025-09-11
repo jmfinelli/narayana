@@ -1,10 +1,10 @@
-# This GitHub Action workflow automatically adds labels to a pull request based on keywords found in its description.
+# This GitHub Action workflow automatically adds labels to a pull request based on axes found in its description.
 
 name: Labeler
 
 on:
   pull_request:
-    types: [opened, edited]
+    types: [ opened, edited, synchronize, ready_for_review, reopened ]
 
 jobs:
   labeler:
@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
       contents: read
     steps:
-      - name: Label PR based on axes in its description
+      - name: Label PR based on description axes
         uses: actions/github-script@v7
         with:
           script: |
@@ -32,8 +32,10 @@ jobs:
               'CORE': 'testing/core',
               'AS_TESTS': 'testing/as_tests',
               'RTS': 'testing/rts',
+              'JACOCO': 'testing/jacoco',
               'XTS': 'testing/xts',
               'QA_JTA': 'testing/qa_jta',
+              'QA_JTS_OPENJDKORB': 'testing/qa_jts',
             };
 
             const labelsToAdd = [];
@@ -44,22 +46,29 @@ jobs:
             // Normalize body: replace newlines/commas with spaces and split into a set of unique words (tokens)
             const tokens = new Set(processedBody.replace(/[\r\n,]/g, ' ').split(/\s+/));
 
-            for (const [keyword, label] of Object.entries(labelMap)) {
-              // A label is added if the keyword exists as a token AND its negated version ("!keyword") does not.
-              if (tokens.has(keyword) && !tokens.has(`!${keyword}`)) {
+            for (const [axis, label] of Object.entries(labelMap)) {
+              // A label is added if the axis exists as a token AND its negated version ("!axis") does not.
+              if (tokens.has(axis) && !tokens.has(`!${axis}`)) {
                 labelsToAdd.push(label);
               }
             }
 
-            // If any labels need to be added, use the GitHub API to add them.
-            if (labelsToAdd.length > 0) {
-              core.info(`Adding labels: ${labelsToAdd.join(', ')}`);
+            // Get the names of labels already on the PR
+            const existingLabelSet = new Set(context.payload.pull_request.labels.map(l => l.name));
+            core.info(`Existing labels on PR: ${[...existingLabelSet].join(', ')}`);
+
+            // Filter out labels that are already present on the PR
+            const finalLabelsToAdd = labelsToAdd.filter(label => !existingLabelSet.has(label));
+
+            // If any new labels need to be added, use the GitHub API to add them.
+            if (finalLabelsToAdd.length > 0) {
+              core.info(`Adding labels: ${finalLabelsToAdd.join(', ')}`);
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                labels: labelsToAdd,
+                labels: finalLabelsToAdd,
               });
             } else {
-              core.info('No labels added.');
+              core.info('No new labels to add.');
             }
