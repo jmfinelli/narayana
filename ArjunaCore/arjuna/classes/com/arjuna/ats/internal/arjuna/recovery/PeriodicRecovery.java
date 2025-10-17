@@ -206,19 +206,25 @@ public class PeriodicRecovery extends Thread {
             if (currentMode == Mode.ENABLED && waitForWorkLeftToDo) {
 
                 doScanningWait();
-                doWork();
-
                 /*
+                 * At this point, _currentStatus is guaranteed to be INACTIVE.
+                 * Since _stateLock is still held by this thread, no other scan can start.
+                 *
                  * Now, it is finally possible to start checking if there are transactions that
                  * are still in need of recovery (or resolution, in case of heuristics).
+                 * A do-while loop make sure that at least one extra recovery scan is carried out.
                  */
-                while (_workLeftToDo) {
-                    try {
-                        _stateLock.wait();
-                    } catch (InterruptedException e) {
-                        // we can ignore this exception
-                    }
-                }
+                do {
+                    /*
+                     * A thread waiting via doPeriodicWait() may be notified and wake up
+                     * in the middle of a recovery scan. To address this, the calling thread
+                     * must immediately invoke doScanningWait(), which forces it to wait until
+                     * the current scan is finished. Once doScanningWait() completes,
+                     * the thread can safely resume execution.
+                     */
+                    doPeriodicWait();
+                    doScanningWait();
+                } while (getMode() == Mode.ENABLED && _workLeftToDo);
             }
 
             // only switch and kick everyone if we are currently ENABLED
