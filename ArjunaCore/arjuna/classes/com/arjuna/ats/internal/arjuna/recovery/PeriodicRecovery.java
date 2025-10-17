@@ -206,7 +206,12 @@ public class PeriodicRecovery extends Thread {
             if (currentMode == Mode.ENABLED && waitForWorkLeftToDo) {
 
                 doScanningWait();
-                doWork();
+                /*
+                 * At this point, _currentStatus is guaranteed to be INACTIVE.
+                 * Since _stateLock is still held by this thread, no other scan can start.
+                 * By setting _workLeftToDo to true, at least another scan will be performed.
+                 */
+                _workLeftToDo = true;
 
                 /*
                  * Now, it is finally possible to start checking if there are transactions that
