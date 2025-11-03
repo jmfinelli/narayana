@@ -4,13 +4,15 @@ on:
   pull_request:
     types: [ opened, edited, synchronize, ready_for_review, reopened ]
 
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  actions: write
+
 jobs:
   dispatcher:
     runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      pull-requests: read
-      contents: read
 
     steps:
       - name: Parse PR description and trigger workflows
@@ -48,16 +50,60 @@ jobs:
             for (const [axis, workflowFile] of Object.entries(workflowMap)) {
               if (tokens.has(axis) && !tokens.has(`!${axis}`)) {
                 core.info(`Detected axis ${axis}. Triggering ${workflowFile}...`);
-                await github.rest.actions.createWorkflowDispatch({
+
+                const checkRun = await github.rest.checks.create({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  workflow_id: workflowFile,
-                  ref: pr.head.ref,
-                  inputs: {
-                    pull_request_number: pr.number.toString(),
-                    pull_request_ref: pr.head.ref
+                  name: axis,
+                  head_sha: pr.head.sha,
+                  status: "in_progress",
+                  started_at: new Date().toISOString(),
+                  output: {
+                    title: `${axis} tests started`,
+                    summary: `Detected ${axis} axis. Dispatching ${workflowFile}...`
                   }
                 });
+
+                try {
+                  await github.rest.actions.createWorkflowDispatch({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    workflow_id: workflowFile,
+                    ref: pr.head.ref,
+                    inputs: {
+                      pull_request_number: pr.number.toString(),
+                      pull_request_ref: pr.head.ref
+                    }
+                  });
+
+                  await github.rest.checks.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    check_run_id: checkRun.data.id,
+                    status: "completed",
+                    conclusion: "neutral",
+                    completed_at: new Date().toISOString(),
+                    output: {
+                      title: `${axis} tests dispatched`,
+                      summary: `${workflowFile} workflow has been dispatched successfully and will appear in the Actions tab.`,
+                    },
+                  });
+
+                } catch (error) {
+                  core.error(`Failed to trigger ${workflowFile}: ${error.message}`);
+                  await github.rest.checks.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    check_run_id: checkRun.data.id,
+                    status: "completed",
+                    conclusion: "failure",
+                    completed_at: new Date().toISOString(),
+                    output: {
+                      title: `Failed to start ${axis} tests`,
+                      summary: `Error: ${error.message}`,
+                    },
+                  });
+                }
               } else {
                 core.info(`Axis ${axis} not requested or explicitly negated.`);
               }
