@@ -84,6 +84,15 @@ jobs:
           sudo systemctl start mysql.service
           mysql -h 127.0.0.1 -uroot -proot < .github/databases/mysql/init.sql
 
+      - name: Configure Oracle
+        uses: gvenzl/setup-oracle-free@v1
+        with:
+          tag: "full"
+          app-user: "jbossts"
+          app-user-password: "jbossts"
+          container-runtime: "docker"
+          setup-scripts: "${{ github.workspace }}/.github/databases/oracle"
+
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v4
         with:
