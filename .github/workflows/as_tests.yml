@@ -45,7 +45,7 @@ jobs:
     strategy:
       matrix:
         java-version: [ 17, 21 ]
-    name: AS_TESTS test with JDK ${{ matrix.java-version }}
+    name: AS_TESTS axis with JDK ${{ matrix.java-version }}
     timeout-minutes: 320
     runs-on: ubuntu-latest
 
@@ -82,13 +82,14 @@ jobs:
           restore-keys: |
             maven-${{ runner.os }}-
 
-      - name: AS_TESTS testing profile
+      - name: AS_TESTS testing axis
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"  
           WORKSPACE=$PWD PROFILE=AS_TESTS ./scripts/hudson/narayana.sh
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: as_tests-logs-jdk${{ matrix.java-version }}
           path: |
