@@ -79,6 +79,11 @@ jobs:
           sudo systemctl restart postgresql.service
           pg_isready
 
+      - name: Configure MySQL
+        run: |
+          sudo systemctl start mysql.service
+          mysql -h 127.0.0.1 -uroot -proot < .github/databases/mysql/init.sql
+
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v4
         with:
