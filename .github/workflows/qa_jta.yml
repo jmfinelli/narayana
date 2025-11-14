@@ -84,6 +84,15 @@ jobs:
           sudo systemctl start mysql.service
           mysql -h 127.0.0.1 -uroot -proot < .github/databases/mysql/init.sql
 
+      - name: Configure Oracle
+        uses: gvenzl/setup-oracle-free@v1
+        with:
+          app-user: "jbossts"
+          app-user-password: "jbossts"
+          container-runtime: "docker"
+          oracle-database: ${{ env.TARGET_DB }}
+          startup-scripts: "${{ github.workspace }}/.github/databases/oracle"
+
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v4
         with:
@@ -100,6 +109,7 @@ jobs:
           key: maven-${{ runner.os }}
           restore-keys: |
             maven-${{ runner.os }}-
+
 
       - name: QA_JTA testing axis
         run: |
