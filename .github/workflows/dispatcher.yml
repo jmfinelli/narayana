@@ -14,7 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      workflowToRunMap: ${{ steps.parse.outputs.result }}
+      CORE: ${{ steps.parse.outputs.CORE }}
+      AS_TESTS: ${{ steps.parse.outputs.AS_TESTS }}
+      RTS: ${{ steps.parse.outputs.RTS }}
+      XTS: ${{ steps.parse.outputs.XTS }}
+      QA_JTA: ${{ steps.parse.outputs.QA_JTA }}
+      QA_JTS_OPENJDKORB: ${{ steps.parse.outputs.QA_JTS_OPENJDKORB }}
+      JACOCO: ${{ steps.parse.outputs.JACOCO }}
+      jdk_version: ${{ steps.parse.outputs.jdk_version }}
       pr_number: ${{ steps.set-pr-data.outputs.pr_number }}
       pr_ref: ${{ steps.set-pr-data.outputs.pr_ref }}
       pr_repo: ${{ steps.set-pr-data.outputs.pr_repo }}
@@ -31,90 +38,111 @@ jobs:
         id: parse
         uses: actions/github-script@v8
         with:
-          result-encoding: string
           script: |
             const pr = context.payload.pull_request;
             const prBody = pr.body || "";
+            const workflowAxes = [
+              'CORE',
+              'AS_TESTS',
+              'RTS',
+              'XTS',
+              'QA_JTA',
+              'QA_JTS_OPENJDKORB',
+              'JACOCO'
+            ];
 
             if (!prBody) {
               core.info('PR body is empty. No test will be started.');
-              return JSON.stringify({});
+              return;
             }
-
-            if (prBody.includes('NO_TEST')) {
-              core.info('PR description contains `NO_TEST`. Skipping testing axes.');
-              return JSON.stringify({});
-            }
-
-            const workflowMap = {
-              'CORE': 'core.yml',
-              'AS_TESTS': 'as_tests.yml',
-              'RTS': 'rts.yml',
-              'XTS': 'xts.yml',
-              'QA_JTA': 'qa_jta.yml'
-            };
 
             // Convert "! AXIS" to "!AXIS"
             const processedBody = prBody.replace(/!\s+/g, '!');
             // Normalise description: replace newlines and commas with spaces and split the result into a set of tokens
             const tokens = new Set(processedBody.replace(/[\r\n,]/g, ' ').split(/\s+/));
 
-            const workflowToRunMap = Object.fromEntries(
-              Object.keys(workflowMap).map(k => [k, false])
-            );
-
-            for (const [axis, workflowFile] of Object.entries(workflowMap)) {
+            // Determine which workflows to run
+            for (const axis of workflowAxes) {
               if (tokens.has(axis) && !tokens.has(`!${axis}`)) {
-                core.info(`Detected axis ${axis}. Will trigger ${workflowFile}`);
-                workflowToRunMap[axis] = true;
+                core.info(`Detected axis ${axis}.`);
+                core.setOutput(axis, 'true');
               } else {
-                core.info(`Axis ${axis} not requested or explicitly negated.`);
+                core.info(`Axis ${axis} not requested.`);
+                core.setOutput(axis, 'false');
               }
             }
 
-            return JSON.stringify(workflowToRunMap);
+            // Matches JDK17, JDK 17, JDK:17, JDK=17, etc.
+            const jdkRegex = /\bJDK\s*[:=\-\s]*\s*(17|21|25)\b/i;
 
-  CORE:
+            const jdkMatch = prBody.match(jdkRegex);
+
+            let jdk_version = null;
+              if (jdkMatch) {
+              jdk_version = parseInt(jdkMatch[1], 10);
+              core.info(`Detected JDK${jdk_version} in PR body.`);
+            } else {
+              // default
+              jdk_version = 17;
+              core.info(`Using JDK${jdk_version}.`);
+            }
+
+            core.setOutput('jdk_version', jdk_version);
+
+      - name: debug
+        run: |
+          echo 'CORE: ${{ steps.parse.outputs.CORE }}'
+          echo 'AS_TESTS: ${{ steps.parse.outputs.AS_TESTS }}'
+          echo 'RTS: ${{ steps.parse.outputs.RTS }}'
+          echo 'XTS: ${{ steps.parse.outputs.XTS }}'
+          echo 'JACOCO: ${{ steps.parse.outputs.JACOCO }}'
+          echo 'QA_JTA: ${{ steps.parse.outputs.QA_JTA }}'
+          echo 'QA_JTS_OPENJDKORB: ${{ steps.parse.outputs.QA_JTS_OPENJDKORB }}'
+          echo 'jdk_version: ${{ steps.parse.outputs.jdk_version }}'
+
+  builder_dispatcher:
     needs: dispatcher
-    if: ${{ fromJson(needs.dispatcher.outputs.workflowToRunMap).CORE }}
-    uses: ./.github/workflows/core.yml
+    if: ${{ needs.dispatcher.outputs.CORE == 'true' ||
+      needs.dispatcher.outputs.RTS == 'true' ||
+      needs.dispatcher.outputs.XTS == 'true' ||
+      needs.dispatcher.outputs.JACOCO == 'true' }}
+    uses: ./.github/workflows/builder_dispatcher.yml
     with:
+      CORE: ${{ needs.dispatcher.outputs.CORE }}
+      RTS: ${{ needs.dispatcher.outputs.RTS }}
+      XTS: ${{ needs.dispatcher.outputs.XTS }}
+      JACOCO: ${{ needs.dispatcher.outputs.JACOCO }}
+      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
       pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
 
   AS_TESTS:
     needs: dispatcher
-    if: ${{ fromJson(needs.dispatcher.outputs.workflowToRunMap).AS_TESTS }}
+    if: ${{ needs.dispatcher.outputs.AS_TESTS == 'true' }}
     uses: ./.github/workflows/as_tests.yml
     with:
-      pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
-      pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
-  
-  RTS:
-    needs: dispatcher
-    if: ${{ fromJson(needs.dispatcher.outputs.workflowToRunMap).RTS }}
-    uses: ./.github/workflows/rts.yml
-    with:
-      pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
-      pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
-
-  XTS:
-    needs: dispatcher
-    if: ${{ fromJson(needs.dispatcher.outputs.workflowToRunMap).XTS }}
-    uses: ./.github/workflows/xts.yml
-    with:
+      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
       pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
 
   QA_JTA:
     needs: dispatcher
-    if: ${{ fromJson(needs.dispatcher.outputs.workflowToRunMap).QA_JTA }}
+    if: ${{ needs.dispatcher.outputs.QA_JTA == 'true' }}
     uses: ./.github/workflows/qa_jta.yml
     with:
+      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
+      pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
+      pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
+
+  QA_JTS_OPENJDKORB:
+    needs: dispatcher
+    if: ${{ needs.dispatcher.outputs.QA_JTS_OPENJDKORB == 'true' }}
+    uses: ./.github/workflows/qa_jts_openjdkorb.yml
+    with:
+      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
       pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}

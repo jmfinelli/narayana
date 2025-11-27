@@ -1,4 +1,4 @@
-name: xts
+name: jacoco
 
 on:
   push:
@@ -66,15 +66,15 @@ on:
         description: 'JBoss/WildFly zip artifact name'
         required: false
         type: string
-    
+
 # Only run the latest job
 concurrency:
-  group: 'xts @ ${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
+  group: 'jacoco @ ${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
 jobs:
-  xts-test:
-    name: XTS axis with JDK ${{ inputs.jdk_version }}
+  jacoco-test:
+    name: JACOCO axis with JDK ${{ inputs.jdk_version }}
     timeout-minutes: 120
     runs-on: ubuntu-latest
 
@@ -98,7 +98,7 @@ jobs:
           ref: ${{ inputs.pull_request_ref || github.ref }}
 
       - name: Set up JDK ${{ inputs.jdk_version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ inputs.jdk_version }}
@@ -138,18 +138,18 @@ jobs:
           dir=$(unzip -Z -1 wildfly-*.zip | head -n1 | cut -d/ -f1)
           mv "$dir" wildfly
 
-      - name: XTS testing axis
-        id: xts_axis
+      - name: jacoco testing axis
+        id: jacoco_axis
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          JBOSS_HOME=${{ github.workspace }}/wildfly AS_BUILD=0 NARAYANA_BUILD=0 PROFILE=XTS ./.github/scripts/narayana.sh
+          JBOSS_HOME=${{ github.workspace }}/wildfly AS_BUILD=0 NARAYANA_BUILD=0 PROFILE=JACOCO ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@v4
-        if: ${{ failure() && steps.xts_axis.conclusion == 'failure' }}
+        if: ${{ failure() && steps.jacoco_axis.conclusion == 'failure' }}
         with:
           retention-days: 30
-          name: xts-logs-jdk${{ inputs.jdk_version }}
+          name: jacoco-logs-jdk${{ inputs.jdk_version }}
           path: |
             **/*.*log*
             **/ObjectStore*/**
