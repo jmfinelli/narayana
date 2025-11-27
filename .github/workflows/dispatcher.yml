@@ -113,7 +113,6 @@ jobs:
       XTS: ${{ needs.dispatcher.outputs.XTS }}
       JACOCO: ${{ needs.dispatcher.outputs.JACOCO }}
       jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
 
@@ -122,8 +121,7 @@ jobs:
     if: ${{ needs.dispatcher.outputs.AS_TESTS == 'true' }}
     uses: ./.github/workflows/as_tests.yml
     with:
-      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
+      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }} 
       pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
 
@@ -133,7 +131,6 @@ jobs:
     uses: ./.github/workflows/qa_jta.yml
     with:
       jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
 
@@ -143,6 +140,5 @@ jobs:
     uses: ./.github/workflows/qa_jts_openjdkorb.yml
     with:
       jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}

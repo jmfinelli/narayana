@@ -26,10 +26,6 @@ on:
         description: 'Whether JACOCO should be run'
         required: true
         type: string
-      pull_request_number:
-        description: 'Pull request number'
-        required: true
-        type: string
       pull_request_repo:
         description: 'Repository to check out'
         required: true
@@ -61,10 +57,6 @@ on:
         description: 'Whether JACOCO should be run'
         required: true
         type: string
-      pull_request_number:
-        description: 'Pull request number (optional)'
-        required: false
-        type: string
       pull_request_repo:
         description: 'Repository to check out'
         required: true
@@ -92,7 +84,6 @@ jobs:
       XTS: ${{ inputs.XTS }}
       JACOCO: ${{ inputs.JACOCO }}
       jdk_version: ${{ inputs.jdk_version }}
-      pr_number: ${{ inputs.pull_request_number }}
       pr_ref: ${{ inputs.pull_request_ref }}
       pr_repo: ${{ inputs.pull_request_repo }}
       narayana_artifact_name: ${{ steps.export-artifacts-names.outputs.narayana_artifact_name }}
@@ -105,9 +96,6 @@ jobs:
           echo "Triggered by: ${{ github.event_name }}"
           echo "Repository: ${{ inputs.pull_request_repo || github.repository }}"
           echo "Branch/Ref: ${{ inputs.pull_request_ref || github.ref }}"
-          if [ ! -z "${{ inputs.pull_request_number }}" ]; then
-            echo "PR Number: #${{ inputs.pull_request_number }}"
-          fi
 
       - name: Checkout code
         uses: actions/checkout@v5
@@ -180,7 +168,6 @@ jobs:
     uses: ./.github/workflows/core.yml
     with:
       jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.builder_dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
       narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}
@@ -193,7 +180,6 @@ jobs:
     uses: ./.github/workflows/rts.yml
     with:
       jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.builder_dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
       narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}
@@ -206,7 +192,6 @@ jobs:
     uses: ./.github/workflows/xts.yml
     with:
       jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.builder_dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
       narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}
@@ -219,7 +204,6 @@ jobs:
     uses: ./.github/workflows/jacoco.yml
     with:
       jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_number: ${{ needs.builder_dispatcher.outputs.pr_number }}
       pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
       pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
       narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}

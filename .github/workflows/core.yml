@@ -10,10 +10,6 @@ on:
         description: 'JDK version'
         required: true
         type: string
-      pull_request_number:
-        description: 'Pull request number'
-        required: true
-        type: string
       pull_request_repo:
         description: 'Repository to check out'
         required: true
@@ -40,10 +36,6 @@ on:
       jdk_version:
         description: 'JDK version'
         required: true
-        type: string
-      pull_request_number:
-        description: 'Pull request number (optional)'
-        required: false
         type: string
       pull_request_repo:
         description: 'Repository to check out'
@@ -87,9 +79,6 @@ jobs:
           echo "Narayana artifacts: ${{ inputs.narayana_artifact_name }}"
           echo "WildFly artifacts: ${{ inputs.wildfly_artifact_name }}"
           echo "WildFly zip name: ${{ inputs.jboss_as_zip_name }}"
-          if [ ! -z "${{ inputs.pull_request_number }}" ]; then
-            echo "PR Number: #${{ inputs.pull_request_number }}"
-          fi
 
       - name: Checkout code
         uses: actions/checkout@v5

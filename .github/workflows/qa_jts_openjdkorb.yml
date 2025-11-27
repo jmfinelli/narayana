@@ -10,10 +10,6 @@ on:
         description: 'JDK version'
         required: true
         type: string
-      pull_request_number:
-        description: 'Pull request number'
-        required: true
-        type: string
       pull_request_repo:
         description: 'Repository to check out'
         required: true
@@ -28,10 +24,6 @@ on:
       jdk_version:
         description: 'JDK version'
         required: true
-        type: string
-      pull_request_number:
-        description: 'Pull request number (optional)'
-        required: false
         type: string
       pull_request_repo:
         description: 'Repository to check out'
@@ -62,9 +54,6 @@ jobs:
           echo "Triggered by: ${{ github.event_name }}"
           echo "Repository: ${{ inputs.pull_request_repo || github.repository }}"
           echo "Branch/Ref: ${{ inputs.pull_request_ref || github.ref }}"
-          if [ ! -z "${{ inputs.pull_request_number }}" ]; then
-            echo "PR Number: #${{ inputs.pull_request_number }}"
-          fi
 
       - name: Checkout code
         uses: actions/checkout@v5
