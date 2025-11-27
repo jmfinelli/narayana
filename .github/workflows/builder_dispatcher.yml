@@ -1,9 +1,6 @@
 name: builder_dispatcher
 
 on:
-  push:
-    branches:
-      - 'main'
   workflow_call:
     inputs:
       jdk_version:
@@ -34,37 +31,6 @@ on:
       pull_request_ref:
         description: 'Branch or commit to test'
         required: true
-        type: string
-  workflow_dispatch:
-    inputs:
-      jdk_version:
-        description: 'JDK version'
-        required: true
-        type: string
-      CORE:
-        description: 'Whether CORE should be run'
-        required: true
-        type: string
-      RTS:
-        description: 'Whether RTS should be run'
-        required: true
-        type: string
-      XTS:
-        description: 'Whether XTS should be run'
-        required: true
-        type: string
-      JACOCO:
-        description: 'Whether JACOCO should be run'
-        required: true
-        type: string
-      pull_request_repo:
-        description: 'Repository to check out'
-        required: true
-        type: string
-        default: 'jbosstm/narayana'
-      pull_request_ref:
-        description: 'Branch or commit to test (optional)'
-        required: false
         type: string
 
 # Only run the latest job

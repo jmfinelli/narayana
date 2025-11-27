@@ -1,9 +1,6 @@
 name: jacoco
 
 on:
-  push:
-    branches:
-      - 'main'
   workflow_call:
     inputs:
       jdk_version:
@@ -30,33 +27,6 @@ on:
       jboss_as_zip_name:
         description: 'JBoss/WildFly zip artifact name'
         required: true
-        type: string
-  workflow_dispatch:
-    inputs:
-      jdk_version:
-        description: 'JDK version'
-        required: true
-        type: string
-      pull_request_repo:
-        description: 'Repository to check out'
-        required: false
-        type: string
-        default: 'jbosstm/narayana'
-      pull_request_ref:
-        description: 'Branch or commit to test (optional)'
-        required: false
-        type: string
-      narayana_artifact_name:
-        description: 'Narayana Maven repository artifact name'
-        required: false
-        type: string
-      wildfly_artifact_name:
-        description: 'WIldFly Maven repository artifact name'
-        required: false
-        type: string
-      jboss_as_zip_name:
-        description: 'JBoss/WildFly zip artifact name'
-        required: false
         type: string
 
 # Only run the latest job
