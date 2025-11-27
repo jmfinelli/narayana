@@ -1,4 +1,4 @@
-name: builder_dispatcher
+name: builder
 
 on:
   workflow_call:
@@ -35,11 +35,11 @@ on:
 
 # Only run the latest job
 concurrency:
-  group: 'builder_dispatcher @ ${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
+  group: 'builder @ ${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
 
 jobs:
-  builder_dispatcher:
+  builder:
     name: Builder and dispatcher with JDK ${{ inputs.jdk_version }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -129,49 +129,49 @@ jobs:
           path: ${{ github.workspace }}/jboss-as/build/target/wildfly-${{ steps.builds.outputs.wildfly_version }}.zip
 
   CORE:
-    needs: builder_dispatcher
-    if: ${{ needs.builder_dispatcher.outputs.CORE == 'true' }}
+    needs: builder
+    if: ${{ needs.builder.outputs.CORE == 'true' }}
     uses: ./.github/workflows/core.yml
     with:
-      jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
-      narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}
-      wildfly_artifact_name: ${{ needs.builder_dispatcher.outputs.wildfly_artifact_name }}
-      jboss_as_zip_name: ${{ needs.builder_dispatcher.outputs.jboss_as_zip_name }}
+      jdk_version: ${{ needs.builder.outputs.jdk_version }}
+      pull_request_ref: ${{ needs.builder.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.builder.outputs.pr_repo }}
+      narayana_artifact_name: ${{ needs.builder.outputs.narayana_artifact_name }}
+      wildfly_artifact_name: ${{ needs.builder.outputs.wildfly_artifact_name }}
+      jboss_as_zip_name: ${{ needs.builder.outputs.jboss_as_zip_name }}
 
   RTS:
-    needs: builder_dispatcher
-    if: ${{ needs.builder_dispatcher.outputs.RTS == 'true' }}
+    needs: builder
+    if: ${{ needs.builder.outputs.RTS == 'true' }}
     uses: ./.github/workflows/rts.yml
     with:
-      jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
-      narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}
-      wildfly_artifact_name: ${{ needs.builder_dispatcher.outputs.wildfly_artifact_name }}
-      jboss_as_zip_name: ${{ needs.builder_dispatcher.outputs.jboss_as_zip_name }}
+      jdk_version: ${{ needs.builder.outputs.jdk_version }}
+      pull_request_ref: ${{ needs.builder.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.builder.outputs.pr_repo }}
+      narayana_artifact_name: ${{ needs.builder.outputs.narayana_artifact_name }}
+      wildfly_artifact_name: ${{ needs.builder.outputs.wildfly_artifact_name }}
+      jboss_as_zip_name: ${{ needs.builder.outputs.jboss_as_zip_name }}
 
   XTS:
-    needs: builder_dispatcher
-    if: ${{ needs.builder_dispatcher.outputs.XTS == 'true' }}
+    needs: builder
+    if: ${{ needs.builder.outputs.XTS == 'true' }}
     uses: ./.github/workflows/xts.yml
     with:
-      jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
-      narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}
-      wildfly_artifact_name: ${{ needs.builder_dispatcher.outputs.wildfly_artifact_name }}
-      jboss_as_zip_name: ${{ needs.builder_dispatcher.outputs.jboss_as_zip_name }}
+      jdk_version: ${{ needs.builder.outputs.jdk_version }}
+      pull_request_ref: ${{ needs.builder.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.builder.outputs.pr_repo }}
+      narayana_artifact_name: ${{ needs.builder.outputs.narayana_artifact_name }}
+      wildfly_artifact_name: ${{ needs.builder.outputs.wildfly_artifact_name }}
+      jboss_as_zip_name: ${{ needs.builder.outputs.jboss_as_zip_name }}
 
   JACOCO:
-    needs: builder_dispatcher
-    if: ${{ needs.builder_dispatcher.outputs.JACOCO == 'true' }}
+    needs: builder
+    if: ${{ needs.builder.outputs.JACOCO == 'true' }}
     uses: ./.github/workflows/jacoco.yml
     with:
-      jdk_version: ${{ needs.builder_dispatcher.outputs.jdk_version }}
-      pull_request_ref: ${{ needs.builder_dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.builder_dispatcher.outputs.pr_repo }}
-      narayana_artifact_name: ${{ needs.builder_dispatcher.outputs.narayana_artifact_name }}
-      wildfly_artifact_name: ${{ needs.builder_dispatcher.outputs.wildfly_artifact_name }}
-      jboss_as_zip_name: ${{ needs.builder_dispatcher.outputs.jboss_as_zip_name }}
+      jdk_version: ${{ needs.builder.outputs.jdk_version }}
+      pull_request_ref: ${{ needs.builder.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.builder.outputs.pr_repo }}
+      narayana_artifact_name: ${{ needs.builder.outputs.narayana_artifact_name }}
+      wildfly_artifact_name: ${{ needs.builder.outputs.wildfly_artifact_name }}
+      jboss_as_zip_name: ${{ needs.builder.outputs.jboss_as_zip_name }}

@@ -1,4 +1,4 @@
-name: dispatcher
+name: axes_selector
 
 on:
   push:
@@ -12,6 +12,7 @@ on:
         description: 'JDK version'
         required: true
         type: string
+        default: '17'
       pull_request_repo:
         description: 'Repository to check out'
         required: false
@@ -21,26 +22,50 @@ on:
         description: 'Branch or commit to test (optional)'
         required: false
         type: string
-      narayana_artifact_name:
-        description: 'Narayana Maven repository artifact name'
-        required: false
-        type: string
-      wildfly_artifact_name:
-        description: 'WIldFly Maven repository artifact name'
-        required: false
-        type: string
-      jboss_as_zip_name:
-        description: 'JBoss/WildFly zip artifact name'
-        required: false
-        type: string
-    
+        default: 'main'
+      CORE:
+        description: 'Whether CORE should be run'
+        required: true
+        type: boolean
+        default: true
+      RTS:
+        description: 'Whether RTS should be run'
+        required: true
+        type: boolean
+        default: false
+      XTS:
+        description: 'Whether XTS should be run'
+        required: true
+        type: boolean
+        default: false
+      AS_TESTS:
+        description: 'Whether AS_TESTS should be run'
+        required: true
+        type: boolean
+        default: false
+      QA_JTA:
+        description: 'Whether QA_JTA should be run'
+        required: true
+        type: boolean
+        default: false
+      QA_JTS_OPENJDKORB:
+        description: 'Whether QA_JTS_OPENJDKORB should be run'
+        required: true
+        type: boolean
+        default: false
+      JACOCO:
+        description: 'Whether JACOCO should be run'
+        required: true
+        type: boolean
+        default: false
+
 permissions:
   actions: write
   pull-requests: read
   contents: read
 
 jobs:
-  dispatcher:
+  axes_selector:
     runs-on: ubuntu-latest
 
     outputs:
@@ -59,18 +84,20 @@ jobs:
     steps:
       - name: Extract PR metadata
         id: set-pr-data
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
           echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           echo "pr_ref=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
           echo "pr_repo=${{ github.event.pull_request.head.repo.full_name }}" >> $GITHUB_OUTPUT
 
-      - name: Parse PR description and trigger workflows
+      - name: Parse PR description
         id: parse
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/github-script@v8
         with:
           script: |
             const pr = context.payload.pull_request;
-            const prBody = pr.body || "";
+            const prBody = pr.body;
             const workflowAxes = [
               'CORE',
               'AS_TESTS',
@@ -80,11 +107,6 @@ jobs:
               'QA_JTS_OPENJDKORB',
               'JACOCO'
             ];
-
-            if (!prBody) {
-              core.info('PR body is empty. No test will be started.');
-              return;
-            }
 
             // Convert "! AXIS" to "!AXIS"
             const processedBody = prBody.replace(/!\s+/g, '!');
@@ -119,56 +141,45 @@ jobs:
 
             core.setOutput('jdk_version', jdk_version);
 
-      - name: debug
-        run: |
-          echo 'CORE: ${{ steps.parse.outputs.CORE }}'
-          echo 'AS_TESTS: ${{ steps.parse.outputs.AS_TESTS }}'
-          echo 'RTS: ${{ steps.parse.outputs.RTS }}'
-          echo 'XTS: ${{ steps.parse.outputs.XTS }}'
-          echo 'JACOCO: ${{ steps.parse.outputs.JACOCO }}'
-          echo 'QA_JTA: ${{ steps.parse.outputs.QA_JTA }}'
-          echo 'QA_JTS_OPENJDKORB: ${{ steps.parse.outputs.QA_JTS_OPENJDKORB }}'
-          echo 'jdk_version: ${{ steps.parse.outputs.jdk_version }}'
-
-  builder_dispatcher:
-    needs: dispatcher
-    if: ${{ needs.dispatcher.outputs.CORE == 'true' ||
-      needs.dispatcher.outputs.RTS == 'true' ||
-      needs.dispatcher.outputs.XTS == 'true' ||
-      needs.dispatcher.outputs.JACOCO == 'true' }}
-    uses: ./.github/workflows/builder_dispatcher.yml
+  builder_axes_selector:
+    needs: axes_selector
+    if: ${{ needs.axes_selector.outputs.CORE == 'true' ||
+      needs.axes_selector.outputs.RTS == 'true' ||
+      needs.axes_selector.outputs.XTS == 'true' ||
+      needs.axes_selector.outputs.JACOCO == 'true' }}
+    uses: ./.github/workflows/builder.yml
     with:
-      CORE: ${{ needs.dispatcher.outputs.CORE }}
-      RTS: ${{ needs.dispatcher.outputs.RTS }}
-      XTS: ${{ needs.dispatcher.outputs.XTS }}
-      JACOCO: ${{ needs.dispatcher.outputs.JACOCO }}
-      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
-      pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
+      CORE: ${{ needs.axes_selector.outputs.CORE }}
+      RTS: ${{ needs.axes_selector.outputs.RTS }}
+      XTS: ${{ needs.axes_selector.outputs.XTS }}
+      JACOCO: ${{ needs.axes_selector.outputs.JACOCO }}
+      jdk_version: ${{ needs.axes_selector.outputs.jdk_version }}
+      pull_request_ref: ${{ needs.axes_selector.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.axes_selector.outputs.pr_repo }}
 
   AS_TESTS:
-    needs: dispatcher
-    if: ${{ needs.dispatcher.outputs.AS_TESTS == 'true' }}
+    needs: axes_selector
+    if: ${{ needs.axes_selector.outputs.AS_TESTS == 'true' }}
     uses: ./.github/workflows/as_tests.yml
     with:
-      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }} 
-      pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
+      jdk_version: ${{ needs.axes_selector.outputs.jdk_version }} 
+      pull_request_ref: ${{ needs.axes_selector.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.axes_selector.outputs.pr_repo }}
 
   QA_JTA:
-    needs: dispatcher
-    if: ${{ needs.dispatcher.outputs.QA_JTA == 'true' }}
+    needs: axes_selector
+    if: ${{ needs.axes_selector.outputs.QA_JTA == 'true' }}
     uses: ./.github/workflows/qa_jta.yml
     with:
-      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
-      pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
+      jdk_version: ${{ needs.axes_selector.outputs.jdk_version }}
+      pull_request_ref: ${{ needs.axes_selector.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.axes_selector.outputs.pr_repo }}
 
   QA_JTS_OPENJDKORB:
-    needs: dispatcher
-    if: ${{ needs.dispatcher.outputs.QA_JTS_OPENJDKORB == 'true' }}
+    needs: axes_selector
+    if: ${{ needs.axes_selector.outputs.QA_JTS_OPENJDKORB == 'true' }}
     uses: ./.github/workflows/qa_jts_openjdkorb.yml
     with:
-      jdk_version: ${{ needs.dispatcher.outputs.jdk_version }}
-      pull_request_ref: ${{ needs.dispatcher.outputs.pr_ref }}
-      pull_request_repo: ${{ needs.dispatcher.outputs.pr_repo }}
+      jdk_version: ${{ needs.axes_selector.outputs.jdk_version }}
+      pull_request_ref: ${{ needs.axes_selector.outputs.pr_ref }}
+      pull_request_repo: ${{ needs.axes_selector.outputs.pr_repo }}
