@@ -119,7 +119,7 @@ jobs:
           JBOSS_HOME=${{ github.workspace }}/wildfly AS_BUILD=0 NARAYANA_BUILD=0 PROFILE=JACOCO ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@v4
-        if: ${{ failure() && steps.jacoco_axis.conclusion == 'failure' }}
+        if: ${{ failure() && steps.jacoco_axis.conclusion == 'failure' || cancelled() && steps.jacoco_axis.conclusion == 'cancelled' }}
         with:
           retention-days: 30
           name: jacoco-logs-jdk${{ inputs.jdk_version }}

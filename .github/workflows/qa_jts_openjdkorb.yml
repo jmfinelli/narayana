@@ -81,7 +81,7 @@ jobs:
           PROFILE=QA_JTS_OPENJDKORB ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@v4
-        if: ${{ failure() && steps.qa_jts_openjdkorb.conclusion == 'failure' }}
+        if: ${{ failure() && steps.qa_jts_openjdkorb.conclusion == 'failure' || cancelled() && steps.qa_jts_openjdkorb.conclusion == 'cancelled' }}
         with:
           retention-days: 30
           name: qa_jts_openjdkorb-logs-jdk${{ inputs.jdk_version }}

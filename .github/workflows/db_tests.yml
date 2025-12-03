@@ -127,10 +127,10 @@ jobs:
           rm dbjbossts-properties.xml.template
 
           cd ${{ github.workspace }}
-          OBJECT_STORE_PROFILE=",${{ matrix.database }}-jdbc-store" QA_PROFILE='-Dprofile=${{ matrix.database }} ' PROFILE=DB_TESTS ./.github/scripts/narayana.sh
+          OBJECT_STORE_PROFILE=",${{ matrix.database }}-jdbc-store" QA_PROFILE="-Dprofile=${{ matrix.database }}" PROFILE=DB_TESTS ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@v4
-        if: ${{ failure() && steps.db_tests_axis.conclusion == 'failure' }}
+        if: ${{ failure() && steps.db_tests_axis.conclusion == 'failure' || cancelled() && steps.db_tests_axis.conclusion == 'cancelled' }}
         with:
           retention-days: 30
           name: db_tests-logs-jdk${{ inputs.jdk_version }}

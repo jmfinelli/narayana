@@ -81,7 +81,7 @@ jobs:
           PROFILE=QA_JTA ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@v4
-        if: ${{ failure() && steps.qa_jta_axis.conclusion == 'failure' }}
+        if: ${{ failure() && steps.qa_jta_axis.conclusion == 'failure' || cancelled() && steps.qa_jta_axis.conclusion == 'cancelled' }}
         with:
           retention-days: 30
           name: qa_jta-logs-jdk${{ inputs.jdk_version }}
