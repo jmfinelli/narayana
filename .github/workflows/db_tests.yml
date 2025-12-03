@@ -74,12 +74,6 @@ jobs:
           echo "JDBC_ACCESS=$JDBC_ACCESS" >> "$GITHUB_OUTPUT"
           echo "DB_DETAILS=$DB_DETAILS" >> "$GITHUB_OUTPUT"
 
-      - name: debug step
-        run: |
-          echo "DYNAMIC_DATASOURCE: ${{ steps.setting_env_vars.outputs.DYNAMIC_DATASOURCE }}"
-          echo "JDBC_ACCESS: ${{ steps.setting_env_vars.outputs.JDBC_ACCESS }}"
-          echo "DB_DETAILS: ${{ steps.setting_env_vars.outputs.DB_DETAILS }}"
-
       - name: Checkout code
         uses: actions/checkout@v5
         with:
@@ -131,7 +125,7 @@ jobs:
           cp dbjbossts-properties.xml dbjbossts-properties.xml.template
           envsubst < dbjbossts-properties.xml.template > dbjbossts-properties.xml
           rm dbjbossts-properties.xml.template
-          cat dbjbossts-properties.xml
+
           cd ${{ github.workspace }}
           OBJECT_STORE_PROFILE=",${{ matrix.database }}-jdbc-store" QA_PROFILE='-Dprofile=${{ matrix.database }} ' PROFILE=DB_TESTS ./.github/scripts/narayana.sh
 
