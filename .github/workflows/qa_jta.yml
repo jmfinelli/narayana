@@ -67,11 +67,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.m2/repository
+            ~/.m2/repository/*/*/*
             !~/.m2/repository/org/jboss/narayana
-            !~/.m2/repository/org/wildfly
+            !~/.m2/repository/org/wildfly/*
           key: maven-${{ runner.os }}
-          restore-keys: maven-${{ runner.os }}-
 
       - name: QA_JTA testing axis
         id: qa_jta_axis
