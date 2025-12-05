@@ -37,7 +37,6 @@ concurrency:
 jobs:
   jacoco-test:
     name: JACOCO axis with JDK ${{ inputs.jdk_version }}
-    timeout-minutes: 480
     runs-on: ubuntu-latest
 
     steps:

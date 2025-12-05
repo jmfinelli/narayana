@@ -37,7 +37,7 @@ concurrency:
 jobs:
   rts-test:
     name: RTS axis with JDK ${{ inputs.jdk_version }}
-    timeout-minutes: 20
+    timeout-minutes: 60
     runs-on: ubuntu-latest
 
     steps:

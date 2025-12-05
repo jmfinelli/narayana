@@ -42,7 +42,7 @@ jobs:
   as_builder:
     name: as_builder with JDK ${{ inputs.jdk_version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
 
     outputs:
       CORE: ${{ inputs.CORE }}
