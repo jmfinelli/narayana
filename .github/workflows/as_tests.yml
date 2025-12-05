@@ -16,7 +16,7 @@ on:
         description: 'Branch or commit to test'
         required: true
         type: string
-    
+
 # Only run the latest job
 concurrency:
   group: 'as_tests @ ${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'

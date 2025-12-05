@@ -28,7 +28,7 @@ on:
         description: 'JBoss/WildFly zip artifact name'
         required: true
         type: string
-    
+
 # Only run the latest job
 concurrency:
   group: 'xts @ ${{ github.workflow }} @ ${{ github.head_ref || github.ref }}'

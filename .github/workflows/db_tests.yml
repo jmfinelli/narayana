@@ -150,7 +150,7 @@ jobs:
     strategy:
       matrix:
         database: ${{ fromJson(inputs.enabled_databases) }}
-        qa_target: ['junit-testsuite', 'junit-jts-testsuite', 'junit-jts-testsuite-crashrecovery', 'junit-jdbc-testsuite']
+        qa_target: [ 'junit-testsuite', 'junit-jts-testsuite', 'junit-jts-testsuite-crashrecovery', 'junit-jdbc-testsuite' ]
     env:
       TARGET_DB: 'jbossts'
 
