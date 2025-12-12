@@ -93,6 +93,16 @@ jobs:
           dir=$(unzip -Z -1 wildfly-*.zip | head -n1 | cut -d/ -f1)
           mv "$dir" wildfly
 
+      - name: debug
+        run: |
+          echo "ls ${{ github.workspace }}" 
+          ls ${{ github.workspace }}
+          echo "ls ${{ github.workspace }}/wildfly"
+          ls ${{ github.workspace }}/wildfly
+          echo "ls ~/.m2/repository/org/wildfly"
+          ls ~/.m2/repository/org/wildfly
+          
+
       - name: XTS testing axis
         id: xts_axis
         run: |
