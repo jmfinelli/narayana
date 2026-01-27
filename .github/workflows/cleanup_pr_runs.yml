@@ -32,7 +32,7 @@ jobs:
             -q ".workflow_runs[]
             | select(.event == \"pull_request\")
             | select(.head_sha == \"$PR_SHA\")
-            | .id"
+            | .id")
 
           for RUN_ID in $RUN_IDS; do
             echo "Deleting workflow run $RUN_ID"
