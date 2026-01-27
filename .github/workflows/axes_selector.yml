@@ -216,6 +216,9 @@ jobs:
           echo 'pr_ref=${{ github.event.pull_request.head.ref }}' >> $GITHUB_OUTPUT
           echo 'pr_repo=${{ github.event.pull_request.head.repo.full_name }}' >> $GITHUB_OUTPUT
 
+      - name: Docker version
+        run: docker version
+
       - name: Parse PR description
         id: parse
         if: ${{ github.event_name == 'pull_request' }}
