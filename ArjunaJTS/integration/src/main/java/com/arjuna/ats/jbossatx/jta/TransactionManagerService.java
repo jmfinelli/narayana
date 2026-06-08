@@ -6,6 +6,7 @@
 
 package com.arjuna.ats.jbossatx.jta;
 
+import com.arjuna.ats.arjuna.coordinator.TxControl;
 import org.jboss.tm.*;
 
 import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
@@ -56,7 +57,17 @@ public class TransactionManagerService implements TransactionManagerServiceMBean
     {
     }
 
+    public void suspend() {
+        if (TxControl.isEnabled()) {
+            TxControl.disable();
+        }
+    }
 
+    public void resume() {
+        if (!TxControl.isEnabled()) {
+            TxControl.enable();
+        }
+    }
     /**
      * Retrieve a reference to the JTA transaction manager.
      *
