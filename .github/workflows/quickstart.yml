@@ -101,9 +101,9 @@ jobs:
 
       - name: Upload logs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: ${{ failure() || cancelled() }}
+        if: ${{ always() }}
         with:
-          retention-days: 30
+          retention-days: 7
           name: quickstart-logs-jdk${{ inputs.jdk_version }}
           path: |
             quickstart/**/*.*log*

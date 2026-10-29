@@ -88,9 +88,9 @@ jobs:
 
       - name: Upload test artifacts on failure
         uses: actions/upload-artifact@v7
-        if: ${{ (failure() && (steps.core_build.conclusion == 'failure' || steps.experimental_build.conclusion == 'failure')) || cancelled() }}
+        if: ${{ always() }}
         with:
-          retention-days: 30
+          retention-days: 7
           name: experimental-logs-jdk${{ inputs.jdk_version }}
           path: |
             **/*.*log*

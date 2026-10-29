@@ -9,7 +9,7 @@ on:
         type: string
       pull_request_repo:
         description: 'Repository to check out'
-        required: true
+        required: false
         type: string
         default: 'jbosstm/narayana'
       pull_request_ref:
@@ -100,9 +100,9 @@ jobs:
           CODE_COVERAGE_ARGS='-PcodeCoverage -Pfindbugs' JBOSS_HOME=${{ github.workspace }}/wildfly AS_BUILD=0 ${{ matrix.map.envVars }} ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: ${{ failure() && steps.jacoco_axis.conclusion == 'failure' || cancelled() && steps.jacoco_axis.conclusion == 'cancelled' }}
+        if: ${{ always() }}
         with:
-          retention-days: 30
+          retention-days: 7
           name: jacoco-logs-jdk${{ inputs.jdk_version }}-${{ matrix.map.artifact }}
           path: |
             **/*.*log*
@@ -116,7 +116,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ steps.jacoco_axis.conclusion == 'success' }}
         with:
-          retention-days: 1
+          retention-days: 7
           name: coverage-data-jdk${{ inputs.jdk_version }}-${{ matrix.map.artifact }}
           path: |
             **/target/site/
@@ -197,9 +197,9 @@ jobs:
           CODE_COVERAGE_ARGS='codeCoverage' QA_TARGET=${{ matrix.qa_target }} QA_TESTS=1 OPENJDK_ORB=1 ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: ${{ failure() && steps.jacoco_axis.conclusion == 'failure' || cancelled() && steps.jacoco_axis.conclusion == 'cancelled' }}
+        if: ${{ always() }}
         with:
-          retention-days: 30
+          retention-days: 7
           name: jacoco-qa-logs-jdk${{ inputs.jdk_version }}-${{ matrix.qa_target }}
           path: qa/testoutput
           if-no-files-found: warn
@@ -207,7 +207,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: ${{ steps.jacoco_axis.conclusion == 'success' }}
         with:
-          retention-days: 1
+          retention-days: 7
           name: coverage-data-jdk${{ inputs.jdk_version }}-${{ matrix.qa_target }}
           path: qa/testoutput
           if-no-files-found: warn
@@ -257,9 +257,9 @@ jobs:
           CODE_COVERAGE=1 CODE_COVERAGE_ARGS="-PcodeCoverage" ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: ${{ failure() && steps.code_coverage_generator.conclusion == 'failure' || cancelled() && steps.code_coverage_generator.conclusion == 'cancelled' }}
+        if: ${{ always() }}
         with:
-          retention-days: 30
+          retention-days: 7
           name: jacoco-logs-jdk${{ inputs.jdk_version }}
           path: |
             **/*.*log*

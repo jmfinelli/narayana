@@ -9,7 +9,7 @@ on:
         type: string
       pull_request_repo:
         description: 'Repository to check out'
-        required: true
+        required: false
         type: string
         default: 'jbosstm/narayana'
       pull_request_ref:
@@ -98,7 +98,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           ./build.sh -B -Pcommunity -Dexperimental -DskipTests clean install
-          echo "narayana-version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f pom.xml | tr -d '%')" >> $GITHUB_OUTPUT
+          echo "narayana-version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout -f pom.xml | tr -d '%')" >> "$GITHUB_OUTPUT"
 
       - name: Upload Narayana Maven artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -224,9 +224,9 @@ jobs:
 
       - name: Upload logs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: ${{ failure() && steps.benchmark.conclusion == 'failure' || cancelled() && steps.benchmark.conclusion == 'cancelled' }}
+        if: ${{ always() }}
         with:
-          retention-days: 30
+          retention-days: 7
           name: benchmark-${{ matrix.benchmark }}-logs-jdk${{ inputs.jdk_version }}
           path: |
             performance/**/*.*log*
@@ -240,7 +240,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          retention-days: 30
+          retention-days: 7
           name: benchmark-${{ matrix.benchmark }}-results-jdk${{ inputs.jdk_version }}
           path: |
             performance/**/target/**/*.csv
@@ -276,7 +276,7 @@ jobs:
       - name: Upload combined results
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          retention-days: 30
+          retention-days: 7
           name: performance-results-jdk${{ inputs.jdk_version }}
           path: collected-results/
           if-no-files-found: warn
