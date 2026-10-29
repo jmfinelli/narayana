@@ -85,9 +85,9 @@ jobs:
           QA_PROFILE="-Dprofile=${{ matrix.database }}" QA_TARGET=${{ matrix.qa_target }} NARAYANA_BUILD=1 NARAYANA_TESTS=0 QA_TESTS=1 OPENJDK_ORB=1 ./.github/scripts/narayana.sh
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        if: ${{ failure() && steps.qa_jta_axis.conclusion == 'failure' || cancelled() && steps.qa_jta_axis.conclusion == 'cancelled' }}
+        if: ${{ always() }}
         with:
-          retention-days: 30
+          retention-days: 7
           name: qa_jta-logs-jdk${{ inputs.jdk_version }}
           path: qa/testoutput
           if-no-files-found: warn
